@@ -15,9 +15,12 @@ export default function StoresPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user && (user.role !== 'DEVELOPER' && user.role !== 'SUPER_DEVELOPER')) { router.push('/login'); return; }
+    if (!user) return;
+    if (user.role !== 'DEVELOPER' && user.role !== 'SUPER_DEVELOPER') { router.push('/login'); return; }
     api.get('/stores').then((r: any) => setStores(r.data || [])).catch(() => {}).finally(() => setLoading(false));
   }, [user]);
+
+  if (!user) return <div style={{ padding: '2rem' }}>Redirecting...</div>;
 
   async function toggleStore(id: string, currentActive: boolean) {
     try {

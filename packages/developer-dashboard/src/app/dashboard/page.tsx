@@ -21,7 +21,7 @@ export default function DashboardPage() {
     ]).then(([s, h, k]) => { setStats(s.data); setHealth(h.data); setKillSwitch(k.data); }).catch(() => {});
   }, [user, loading]);
 
-  if (loading) return <div style={{ padding: '2rem' }}>Loading...</div>;
+  if (loading || !user) return <div style={{ padding: '2rem' }}>{loading ? 'Loading...' : 'Redirecting...'}</div>;
 
   const cards = [
     { label: 'Total Revenue', value: `$${(stats.totalRevenue || 0).toFixed(2)}`, icon: <DollarSign size={24} /> },

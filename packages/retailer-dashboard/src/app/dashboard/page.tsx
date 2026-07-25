@@ -20,9 +20,8 @@ function DashboardContent() {
     api.get('/analytics/summary').then((r: any) => setStats(r.data)).catch(() => setError('Failed to load analytics'));
   }, [user, loading]);
 
-  if (loading) return <div style={{ padding: '2rem' }}>Loading...</div>;
+  if (loading || !user) return <div style={{ padding: '2rem' }}>{loading ? 'Loading...' : 'Redirecting...'}</div>;
   if (error) return <div style={{ padding: '2rem', color: 'var(--error)' }}>{error}</div>;
-  if (!user) return null;
 
   const cards = [
     { label: 'Total Revenue', value: `UGX ${(stats.totalRevenue || 0).toLocaleString()}`, icon: <DollarSign size={24} />, change: '+12.5%', positive: true },
