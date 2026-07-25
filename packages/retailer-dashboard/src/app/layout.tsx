@@ -24,7 +24,7 @@ function Sidebar({ children }: { children: React.ReactNode }) {
     { href: '/settings', label: 'Settings', icon: <Settings size={18} /> },
   ];
 
-  if (pathname === '/login') return null;
+  if (pathname === '/login') return <>{children}</>;
 
   return (
     <>
