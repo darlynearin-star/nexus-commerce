@@ -1,0 +1,142 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
+import { setStoreSlug } from '@/lib/store-api';
+import { ArrowRight, Check } from 'lucide-react';
+
+const TEMPLATES = [
+  { id: 'elegance', name: 'Elegance', desc: 'Gold accents on dark — timeless luxury', colors: { primary: '#D4A843', secondary: '#A8822E', bg: '#0A0A0A', surface: '#141414', text: '#FAFAFA', accent: '#F0D48A' } },
+  { id: 'minimal', name: 'Minimal', desc: 'Clean whites, soft grays — modern simplicity', colors: { primary: '#2D2D2D', secondary: '#6B6B6B', bg: '#FFFFFF', surface: '#F8F8F6', text: '#1A1A1A', accent: '#B8B8B8' } },
+  { id: 'bold', name: 'Bold', desc: 'High contrast red on dark — energetic edge', colors: { primary: '#FF4433', secondary: '#CC3322', bg: '#0A0A0A', surface: '#1A1A1A', text: '#FAFAFA', accent: '#FF6655' } },
+  { id: 'nature', name: 'Nature', desc: 'Earthy greens, warm browns — organic feel', colors: { primary: '#5B8C5A', secondary: '#4A7349', bg: '#F8F6F0', surface: '#F0EDE4', text: '#2C2C2C', accent: '#7DAD7C' } },
+];
+
+export default function CreateStorePage() {
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [template, setTemplate] = useState(TEMPLATES[0]);
+  const [colors, setColors] = useState(template.colors);
+  const [name, setName] = useState('');
+  const [slug, setSlug] = useState('');
+  const [slugAvailable, setSlugAvailable] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    setColors(template.colors);
+    document.documentElement.setAttribute('data-theme', template.id === 'elegance' || template.id === 'bold' ? 'dark' : 'light');
+    const root = document.documentElement;
+    Object.entries(template.colors).forEach(([k, v]) => root.style.setProperty(`--${k === 'primary' ? 'primary' : k === 'secondary' ? 'primary-dark' : k === 'accent' ? 'primary-light' : k}`, v));
+  }, [template]);
+
+  useEffect(() => {
+    if (slug.length >= 3) {
+      api.get(`/stores/check-slug/${slug}`).then((r: any) => setSlugAvailable(r.data.available));
+    }
+  }, [slug]);
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await api.post('/stores', { name, slug, template: template.id, colors });
+      if (res.success) {
+        localStorage.setItem('activeStoreSlug', slug);
+        setStoreSlug(slug);
+        router.push(`/store/${slug}`);
+      }
+    } catch (e: any) {
+      setError(e.message || 'Failed to create store');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div style={{ maxWidth: 720, margin: '0 auto', padding: '3rem 1rem', position: 'relative', zIndex: 1 }}>
+
+      {/* Progress */}
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '3rem', justifyContent: 'center' }}>
+        {[{ n: 1, label: 'Template' }, { n: 2, label: 'Colors' }, { n: 3, label: 'Details' }].map(s => (
+          <div key={s.n} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.875rem', background: step >= s.n ? 'var(--primary)' : 'var(--bg-secondary)', color: step >= s.n ? 'var(--bg)' : 'var(--text-secondary)', border: step >= s.n ? 'none' : '1px solid var(--border)' }}>
+              {step > s.n ? <Check size={16} /> : s.n}
+            </div>
+            <span style={{ fontSize: '0.8125rem', color: step >= s.n ? 'var(--text)' : 'var(--text-secondary)' }}>{s.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Step 1: Pick Template */}
+      {step === 1 && (
+        <div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem' }}>Choose a template</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Pick a starting design. You can customize colors in the next step.</p>
+          <div style={{ display: 'grid', gap: '1rem' }}>
+            {TEMPLATES.map(t => (
+              <button key={t.id} onClick={() => { setTemplate(t); }} style={{ display: 'flex', gap: '1rem', alignItems: 'center', padding: '1.25rem', borderRadius: '0.75rem', border: `2px solid ${template.id === t.id ? 'var(--primary)' : 'var(--border)'}`, background: 'var(--surface)', cursor: 'pointer', textAlign: 'left', width: '100%' }}>
+                <div style={{ width: 48, height: 48, borderRadius: '0.5rem', background: t.colors.bg, border: `2px solid ${t.colors.primary}`, flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontWeight: 600 }}>{t.name}</div>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{t.desc}</div>
+                </div>
+                {template.id === t.id && <Check size={20} style={{ color: 'var(--primary)', marginLeft: 'auto' }} />}
+              </button>
+            ))}
+          </div>
+          <button className="btn btn-primary" style={{ marginTop: '2rem', width: '100%', justifyContent: 'center' }} onClick={() => setStep(2)}>Continue <ArrowRight size={16} /></button>
+        </div>
+      )}
+
+      {/* Step 2: Customize Colors */}
+      {step === 2 && (
+        <div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '2rem' }}>Customize colors</h2>
+          {Object.entries(colors).map(([key, val]) => (
+            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+              <label style={{ width: 100, fontSize: '0.875rem', fontWeight: 500, textTransform: 'capitalize' }}>{key}</label>
+              <input type="color" value={val} onChange={e => { const c = { ...colors, [key]: e.target.value }; setColors(c); document.documentElement.style.setProperty(`--${key}`, e.target.value); }} style={{ width: 48, height: 40, padding: 0, border: 'none', cursor: 'pointer', background: 'transparent' }} />
+              <input type="text" value={val} onChange={e => { const c = { ...colors, [key]: e.target.value }; setColors(c); }} style={{ flex: 1 }} className="input" />
+            </div>
+          ))}
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+            <button className="btn btn-secondary" onClick={() => setStep(1)}>Back</button>
+            <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setStep(3)}>Continue <ArrowRight size={16} /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: Name & Slug */}
+      {step === 3 && (
+        <div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '2rem' }}>Store details</h2>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.375rem' }}>Store Name</label>
+            <input className="input" value={name} onChange={e => { setName(e.target.value); setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')); }} placeholder="My Store" />
+          </div>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.375rem' }}>Store URL</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>/store/</span>
+              <input className="input" value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, ''))} placeholder="my-store" />
+            </div>
+            {slug.length >= 3 && (
+              <span style={{ fontSize: '0.8125rem', color: slugAvailable ? 'var(--success)' : 'var(--error)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.375rem' }}>
+                {slugAvailable ? '✓ Available' : '✗ Already taken'}
+              </span>
+            )}
+          </div>
+          {error && <div className="badge badge-error" style={{ marginBottom: '1rem' }}>{error}</div>}
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <button className="btn btn-secondary" onClick={() => setStep(2)}>Back</button>
+            <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} disabled={!name || !slug || !slugAvailable || submitting} onClick={handleSubmit}>
+              {submitting ? 'Creating...' : 'Launch Store'} <ArrowRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}

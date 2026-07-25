@@ -1,0 +1,275 @@
+
+> @nexus/storefront@1.0.0 dev
+> next dev -p 3000
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 13.3s
+ ○ Compiling / ...
+ ✓ Compiled / in 3.5s (536 modules)
+ GET / 200 in 4582ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 8.4s (539 modules)
+ GET /products 404 in 8733ms
+ GET /search?q=headphones 404 in 114ms
+ ○ Compiling /cart ...
+ ⨯ ./src/app/cart/page.tsx
+Error: 
+  [31mx[0m Unexpected token `div`. Expected jsx identifier
+    ,-[[36;1;4mC:\Users\DARLYNE\projects\nexus-commerce\packages\storefront\src\app\cart\page.tsx[0m:38:1]
+ [2m38[0m |   const subtotal = cart?.subtotal || 0;
+ [2m39[0m | 
+ [2m40[0m |   return (
+ [2m41[0m |     <div className="container" style={{ padding: '2rem 0' }}>
+    : [31;1m     ^^^[0m
+ [2m42[0m |       <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '2rem' }}>Shopping Cart</h1>
+ [2m43[0m |       {items.length === 0 ? (
+ [2m44[0m |         <div style={{ textAlign: 'center', padding: '4rem' }}>
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/app/cart/page.tsx
+ ⨯ ./src/app/cart/page.tsx
+Error: 
+  [31mx[0m Unexpected token `div`. Expected jsx identifier
+    ,-[[36;1;4mC:\Users\DARLYNE\projects\nexus-commerce\packages\storefront\src\app\cart\page.tsx[0m:38:1]
+ [2m38[0m |   const subtotal = cart?.subtotal || 0;
+ [2m39[0m | 
+ [2m40[0m |   return (
+ [2m41[0m |     <div className="container" style={{ padding: '2rem 0' }}>
+    : [31;1m     ^^^[0m
+ [2m42[0m |       <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '2rem' }}>Shopping Cart</h1>
+ [2m43[0m |       {items.length === 0 ? (
+ [2m44[0m |         <div style={{ textAlign: 'center', padding: '4rem' }}>
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/app/cart/page.tsx
+ GET /categories 500 in 7893ms
+ ⨯ ./src/app/cart/page.tsx
+Error: 
+  [31mx[0m Unexpected token `div`. Expected jsx identifier
+    ,-[[36;1;4mC:\Users\DARLYNE\projects\nexus-commerce\packages\storefront\src\app\cart\page.tsx[0m:38:1]
+ [2m38[0m |   const subtotal = cart?.subtotal || 0;
+ [2m39[0m | 
+ [2m40[0m |   return (
+ [2m41[0m |     <div className="container" style={{ padding: '2rem 0' }}>
+    : [31;1m     ^^^[0m
+ [2m42[0m |       <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '2rem' }}>Shopping Cart</h1>
+ [2m43[0m |       {items.length === 0 ? (
+ [2m44[0m |         <div style={{ textAlign: 'center', padding: '4rem' }}>
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/app/cart/page.tsx
+ GET /deals 500 in 3373ms
+ ⨯ ./src/app/cart/page.tsx
+Error: 
+  [31mx[0m Unexpected token `div`. Expected jsx identifier
+    ,-[[36;1;4mC:\Users\DARLYNE\projects\nexus-commerce\packages\storefront\src\app\cart\page.tsx[0m:38:1]
+ [2m38[0m |   const subtotal = cart?.subtotal || 0;
+ [2m39[0m | 
+ [2m40[0m |   return (
+ [2m41[0m |     <div className="container" style={{ padding: '2rem 0' }}>
+    : [31;1m     ^^^[0m
+ [2m42[0m |       <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '2rem' }}>Shopping Cart</h1>
+ [2m43[0m |       {items.length === 0 ? (
+ [2m44[0m |         <div style={{ textAlign: 'center', padding: '4rem' }}>
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/app/cart/page.tsx
+ GET /login 500 in 6320ms
+ ⨯ ./src/app/cart/page.tsx
+Error: 
+  [31mx[0m Unexpected token `div`. Expected jsx identifier
+    ,-[[36;1;4mC:\Users\DARLYNE\projects\nexus-commerce\packages\storefront\src\app\cart\page.tsx[0m:38:1]
+ [2m38[0m |   const subtotal = cart?.subtotal || 0;
+ [2m39[0m | 
+ [2m40[0m |   return (
+ [2m41[0m |     <div className="container" style={{ padding: '2rem 0' }}>
+    : [31;1m     ^^^[0m
+ [2m42[0m |       <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '2rem' }}>Shopping Cart</h1>
+ [2m43[0m |       {items.length === 0 ? (
+ [2m44[0m |         <div style={{ textAlign: 'center', padding: '4rem' }}>
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/app/cart/page.tsx
+ GET /shop 500 in 1311ms
+ ✓ Compiled /shop in 3.5s (812 modules)
+ GET /cart 200 in 633ms
+ GET /categories 200 in 115ms
+ GET /deals 200 in 133ms
+ GET /login 200 in 84ms
+ GET /shop 200 in 89ms
+ ○ Compiling /register ...
+ ✓ Compiled /register in 2.7s (813 modules)
+ GET /register 200 in 3443ms
+ ○ Compiling /wishlist ...
+ ✓ Compiled /wishlist in 3.3s (821 modules)
+ GET /wishlist 200 in 3651ms
+ ○ Compiling /account ...
+ ✓ Compiled /account in 2.1s (835 modules)
+ GET /account 200 in 2412ms
+ ○ Compiling /checkout ...
+ ✓ Compiled /checkout in 1279ms (838 modules)
+ GET /checkout 200 in 1476ms
+ ✓ Compiled in 5s (560 modules)
+ ✓ Compiled in 1844ms (498 modules)
+ ✓ Compiled in 999ms (498 modules)
+ ✓ Compiled in 1605ms (503 modules)
+ ✓ Compiled in 990ms (508 modules)
+ ✓ Compiled in 1447ms (508 modules)
+ ✓ Compiled in 431ms (508 modules)
+ ✓ Compiled in 800ms (508 modules)
+ ✓ Compiled in 616ms (508 modules)
+ ✓ Compiled in 518ms (508 modules)
+ ✓ Compiled in 718ms (508 modules)
+ ✓ Compiled in 752ms (508 modules)
+ ✓ Compiled in 1455ms (508 modules)
+ ✓ Compiled in 583ms (508 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 1612ms (316 modules)
+ ⨯ TypeError: __webpack_modules__[moduleId] is not a function
+    at Object.__webpack_require__ [as require] (C:\Users\DARLYNE\projects\nexus-commerce\packages\storefront\.next\server\webpack-runtime.js:33:42)
+digest: "1801157911"
+TypeError: __webpack_modules__[moduleId] is not a function
+    at Object.__webpack_require__ [as require] (C:\Users\DARLYNE\projects\nexus-commerce\packages\storefront\.next\server\webpack-runtime.js:33:42)
+    at require (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:40:20064)
+    at C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:108376
+    at ea (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:108583)
+    at C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:110813
+    at Object._fromJSON (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:111370)
+    at JSON.parse (<anonymous>)
+    at ec (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:109078)
+    at eo (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:108123)
+    at C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:115291
+    at C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:115308
+    at C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:115341
+    at C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:115358
+    at t (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:115581)
+ ⨯ TypeError: __webpack_modules__[moduleId] is not a function
+    at Object.__webpack_require__ [as require] (C:\Users\DARLYNE\projects\nexus-commerce\packages\storefront\.next\server\webpack-runtime.js:33:42)
+    at require (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:40:20064)
+    at C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:108376
+    at ea (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:108583)
+    at C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:110813
+    at Object._fromJSON (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:111370)
+    at JSON.parse (<anonymous>)
+    at ec (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:109078)
+    at eo (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:108123)
+    at C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:115291
+    at C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:115308
+    at C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:115341
+    at C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:115358
+    at t (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:115581) {
+  page: '/'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 1378ms (826 modules)
+ ⨯ Error: Cannot find module './135.js'
+Require stack:
+- C:\Users\DARLYNE\projects\nexus-commerce\packages\storefront\.next\server\webpack-runtime.js
+- C:\Users\DARLYNE\projects\nexus-commerce\packages\storefront\.next\server\pages\_document.js
+- C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\server\require.js
+- C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\server\load-components.js
+- C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\build\utils.js
+- C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\server\dev\hot-middleware.js
+- C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\server\dev\hot-reloader-webpack.js
+- C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\server\lib\router-utils\setup-dev-bundler.js
+- C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\server\lib\router-server.js
+- C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\server\lib\start-server.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1430:15)
+    at C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1040:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1045:22)
+    at Function._load (node:internal/modules/cjs/loader:1216:25)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1527:12)
+    at mod.require (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:147:16)
+    at __webpack_require__.f.require (C:\Users\DARLYNE\projects\nexus-commerce\packages\storefront\.next\server\webpack-runtime.js:198:28)
+    at C:\Users\DARLYNE\projects\nexus-commerce\packages\storefront\.next\server\webpack-runtime.js:111:40
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (C:\Users\DARLYNE\projects\nexus-commerce\packages\storefront\.next\server\webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (C:\Users\DARLYNE\projects\nexus-commerce\packages\storefront\.next\server\webpack-runtime.js:162:22)
+    at C:\Users\DARLYNE\projects\nexus-commerce\packages\storefront\.next\server\pages\_document.js:1:335
+    at Object.<anonymous> (C:\Users\DARLYNE\projects\nexus-commerce\packages\storefront\.next\server\pages\_document.js:1:376)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1527:12)
+    at mod.require (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:147:16)
+    at requirePage (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\server\require.js:109:84)
+    at C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\server\load-components.js:72:65
+    at async Promise.all (index 0)
+    at async loadComponentsImpl (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\server\load-components.js:71:33)
+    at async DevServer.findPageComponentsImpl (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\next\dist\server\next-server.js:714:36) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    'C:\\Users\\DARLYNE\\projects\\nexus-commerce\\packages\\storefront\\.next\\server\\webpack-runtime.js',
+    'C:\\Users\\DARLYNE\\projects\\nexus-commerce\\packages\\storefront\\.next\\server\\pages\\_document.js',
+    'C:\\Users\\DARLYNE\\projects\\nexus-commerce\\node_modules\\next\\dist\\server\\require.js',
+    'C:\\Users\\DARLYNE\\projects\\nexus-commerce\\node_modules\\next\\dist\\server\\load-components.js',
+    'C:\\Users\\DARLYNE\\projects\\nexus-commerce\\node_modules\\next\\dist\\build\\utils.js',
+    'C:\\Users\\DARLYNE\\projects\\nexus-commerce\\node_modules\\next\\dist\\server\\dev\\hot-middleware.js',
+    'C:\\Users\\DARLYNE\\projects\\nexus-commerce\\node_modules\\next\\dist\\server\\dev\\hot-reloader-webpack.js',
+    'C:\\Users\\DARLYNE\\projects\\nexus-commerce\\node_modules\\next\\dist\\server\\lib\\router-utils\\setup-dev-bundler.js',
+    'C:\\Users\\DARLYNE\\projects\\nexus-commerce\\node_modules\\next\\dist\\server\\lib\\router-server.js',
+    'C:\\Users\\DARLYNE\\projects\\nexus-commerce\\node_modules\\next\\dist\\server\\lib\\start-server.js'
+  ]
+}
+ GET / 500 in 3419ms
+ GET / 200 in 403ms
+ GET / 200 in 104ms
+ ○ Compiling /shop ...
+ ✓ Compiled /shop in 788ms (323 modules)
+ GET /shop 200 in 1138ms
+ ✓ Compiled /deals in 508ms (329 modules)
+ GET /deals 200 in 739ms
+ ○ Compiling /wishlist ...
+ ✓ Compiled /wishlist in 959ms (335 modules)
+ GET /wishlist 200 in 1203ms
+ ✓ Compiled /categories in 521ms (339 modules)
+ GET /categories 200 in 747ms
+ ○ Compiling /cart ...
+ ✓ Compiled /cart in 982ms (348 modules)
+ GET /cart 200 in 1308ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 639ms (352 modules)
+ GET /login 200 in 899ms
+ ○ Compiling /register ...
+ ✓ Compiled /register in 646ms (356 modules)
+ GET /register 200 in 890ms
+ ○ Compiling /account ...
+ ✓ Compiled /account in 1171ms (364 modules)
+ GET /account 200 in 1431ms
+ ○ Compiling /checkout ...
+ ✓ Compiled /checkout in 840ms (371 modules)
+ GET /checkout 200 in 1109ms
+ ○ Compiling /product/[slug] ...
+ ✓ Compiled /product/[slug] in 2.2s (892 modules)
+ GET /product/test-product 200 in 3932ms
+[?25h

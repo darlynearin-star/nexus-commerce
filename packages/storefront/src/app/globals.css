@@ -1,0 +1,184 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --gold: #D4A843;
+  --gold-light: #F0D48A;
+  --gold-dark: #A8822E;
+  --silver: #B8B8B8;
+  --silver-light: #E8E8E8;
+  --silver-dark: #8C8C8C;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --error: #ef4444;
+}
+
+[data-theme="dark"] {
+  --primary: var(--gold);
+  --primary-light: var(--gold-light);
+  --primary-dark: var(--gold-dark);
+  --bg: #0A0A0A;
+  --bg-secondary: #1A1A1A;
+  --surface: #141414;
+  --text: #FAFAFA;
+  --text-secondary: #A0A0A0;
+  --border: #2A2A2A;
+  --glow: rgba(212, 168, 67, 0.15);
+  --particle: rgba(212, 168, 67, 0.6);
+}
+
+[data-theme="light"] {
+  --primary: var(--silver-dark);
+  --primary-light: var(--silver);
+  --primary-dark: #6B6B6B;
+  --bg: #FFFFFF;
+  --bg-secondary: #F5F5F0;
+  --surface: #FAFAF8;
+  --text: #1A1A1A;
+  --text-secondary: #8C8C8C;
+  --border: #E0E0D8;
+  --glow: rgba(184, 184, 184, 0.15);
+  --particle: rgba(184, 184, 184, 0.5);
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.3s, color 0.3s;
+  overflow-x: hidden;
+}
+
+.container { max-width: 1280px; margin: 0 auto; padding: 0 1rem; }
+
+.gradient-gold {
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-silver {
+  background: linear-gradient(135deg, var(--silver-dark) 0%, var(--silver) 50%, var(--silver-light) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.625rem 1.25rem; border-radius: 0.5rem;
+  font-weight: 500; font-size: 0.875rem;
+  cursor: pointer; border: 1px solid transparent;
+  transition: all 0.2s; text-decoration: none;
+}
+.btn-primary { background: var(--primary); color: var(--bg); }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-secondary { background: var(--bg-secondary); color: var(--text); border-color: var(--border); }
+.btn-secondary:hover { border-color: var(--text-secondary); }
+.btn-ghost { background: transparent; color: var(--text-secondary); }
+.btn-ghost:hover { background: var(--bg-secondary); color: var(--text); }
+.btn-danger { background: var(--error); color: white; }
+.btn-danger:hover { opacity: 0.9; }
+.btn-sm { padding: 0.375rem 0.75rem; font-size: 0.8125rem; }
+.btn-icon { padding: 0.5rem; border-radius: 0.5rem; }
+
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 0.75rem; padding: 1.5rem;
+  transition: box-shadow 0.3s, border-color 0.3s, transform 0.3s;
+}
+.card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 8px 32px var(--glow);
+  transform: translateY(-2px);
+}
+
+.input {
+  width: 100%; padding: 0.625rem 0.875rem;
+  border: 1px solid var(--border); border-radius: 0.5rem;
+  background: var(--bg); color: var(--text);
+  font-size: 0.875rem; transition: border-color 0.2s;
+}
+.input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--glow); }
+
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 0.125rem 0.625rem; border-radius: 9999px;
+  font-size: 0.75rem; font-weight: 500;
+}
+.badge-gold { background: rgba(212, 168, 67, 0.15); color: var(--gold); }
+.badge-silver { background: rgba(184, 184, 184, 0.15); color: var(--silver-dark); }
+.badge-success { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+.badge-error { background: rgba(239, 68, 68, 0.15); color: var(--error); }
+
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-secondary) 25%, transparent 50%, var(--bg-secondary) 75%);
+  background-size: 200% 100%; animation: shimmer 1.5s infinite;
+  border-radius: 0.5rem;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+.toast {
+  position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 100;
+  padding: 1rem 1.5rem; border-radius: 0.75rem; background: var(--surface);
+  border: 1px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.glass {
+  background: rgba(10,10,10,0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(212, 168, 67, 0.1);
+}
+[data-theme="light"] .glass {
+  background: rgba(255,255,255,0.85);
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.fade-in { animation: fadeIn 0.5s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+.gold-shimmer {
+  background: linear-gradient(90deg, var(--gold-dark) 0%, var(--gold) 50%, var(--gold-light) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-size: 200% auto;
+  animation: shimmerText 3s ease infinite;
+}
+@keyframes shimmerText { 0% { background-position: 0% center; } 50% { background-position: 100% center; } 100% { background-position: 0% center; } }
+
+/* Particle background container */
+#particle-bg {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Hero overlay gradient */
+.hero-overlay {
+  position: relative;
+  overflow: hidden;
+}
+.hero-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(ellipse at 50% 0%, var(--glow) 0%, transparent 70%);
+  pointer-events: none;
+}

@@ -1,0 +1,22 @@
+[2026-07-25T08:06:42.857Z] [INFO] Nexus Commerce API running on port 4000
+[2026-07-25T08:06:42.866Z] [INFO] Environment: development
+[0mGET /api/health [32m200[0m 1500.925 ms - 78[0m
+[2026-07-25T08:07:36.542Z] [ERROR] Unhandled error: PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation in
+C:\Users\DARLYNE\projects\nexus-commerce\packages\api\src\routes\auth.ts:61:36
+
+  58   return res.status(400).json({ success: false, error: 'Email and password are required' });
+  59 }
+  60 
+→ 61 const user = await prisma.user.findUnique(
+Database `nexus_commerce` does not exist on the database server at `localhost:5432`.
+    at $n.handleRequestError (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\Users\DARLYNE\projects\nexus-commerce\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (C:\Users\DARLYNE\projects\nexus-commerce\packages\api\src\routes\auth.ts:61:18) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+[0mPOST /api/auth/login [31m500[0m 417.235 ms - 420[0m
+[0mPOST /api/orders [33m401[0m 238.352 ms - 51[0m
