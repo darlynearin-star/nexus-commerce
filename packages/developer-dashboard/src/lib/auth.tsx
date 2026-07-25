@@ -16,7 +16,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => { const token = localStorage.getItem('accessToken'); if (token) loadUser(); else setLoading(false); }, []);
 
   async function loadUser() {
-    try { const res = await api.get<any>('/auth/me'); setUser(res.data); } catch { localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); } finally { setLoading(false); }
+    try { const res = await api.get<any>('/auth/me'); setUser(res.data); } catch (e: any) { if (e?.status === 401) { localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); } } finally { setLoading(false); }
   }
 
   const login = async (email: string, password: string) => {

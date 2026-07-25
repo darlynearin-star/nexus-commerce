@@ -24,9 +24,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const res = await api.get<any>('/auth/me');
         setUser(res.data);
       }
-    } catch {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+    } catch (e: any) {
+      if (e?.status === 401) { localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); }
     } finally {
       setLoading(false);
     }
