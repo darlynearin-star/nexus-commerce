@@ -20,7 +20,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await api.get<any>('/auth/me');
       setUser(res.data);
       if (res.data.retailer?.storeSlug) localStorage.setItem('activeStoreSlug', res.data.retailer.storeSlug);
-    } catch { localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); } finally { setLoading(false); }
+    } catch (e: any) {
+      if (e?.status === 401) { localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); }
+    } finally { setLoading(false); }
   }
 
   const login = async (email: string, password: string) => {

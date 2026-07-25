@@ -2,6 +2,7 @@
 
 import './globals.css';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import ErrorBoundary from '@/lib/error-boundary';
 import { LayoutDashboard, Package, ShoppingCart, Users, BarChart3, Settings, Image, Megaphone, LogOut, Menu, X, Store } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -63,7 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <AuthProvider>
           <div style={{ display: 'flex' }}>
-            <Sidebar>{children}</Sidebar>
+            <Sidebar><ErrorBoundary>{children}</ErrorBoundary></Sidebar>
           </div>
         </AuthProvider>
       </body>
