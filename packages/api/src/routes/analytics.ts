@@ -9,13 +9,15 @@ analyticsRouter.use(authenticate);
 
 analyticsRouter.get('/summary', async (req: StoreRequest, res, next) => {
   try {
-    const periodStart = req.query.start ? new Date(req.query.start as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const periodEnd = req.query.end ? new Date(req.query.end as string) : new Date();
+    const days = Math.min(365, Math.max(1, parseInt(req.query.days as string) || 30));
+    const periodStart = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const periodEnd = new Date();
 
-    const [revenue, orders, products] = await Promise.all([
+    const [revenue, orders, products, customers] = await Promise.all([
       prisma.order.aggregate({ where: { storeId: req.storeId!, createdAt: { gte: periodStart, lte: periodEnd }, paymentStatus: 'PAID' }, _sum: { total: true } }),
       prisma.order.count({ where: { storeId: req.storeId!, createdAt: { gte: periodStart, lte: periodEnd } } }),
       prisma.product.count({ where: { storeId: req.storeId!, status: 'PUBLISHED' } }),
+      prisma.order.groupBy({ by: ['customerId'], where: { storeId: req.storeId!, createdAt: { gte: periodStart, lte: periodEnd } }, _count: true }),
     ]);
 
     res.json({
@@ -24,6 +26,7 @@ analyticsRouter.get('/summary', async (req: StoreRequest, res, next) => {
         totalRevenue: revenue._sum.total || 0,
         totalOrders: orders,
         totalProducts: products,
+        totalCustomers: customers.length,
         averageOrderValue: orders > 0 ? (revenue._sum.total || 0) / orders : 0,
         periodStart: periodStart.toISOString(),
         periodEnd: periodEnd.toISOString(),
@@ -34,7 +37,7 @@ analyticsRouter.get('/summary', async (req: StoreRequest, res, next) => {
 
 analyticsRouter.get('/revenue', async (req: StoreRequest, res, next) => {
   try {
-    const days = parseInt(req.query.days as string) || 30;
+    const days = Math.min(365, Math.max(1, parseInt(req.query.days as string) || 30));
     const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
     const orders = await prisma.order.findMany({
@@ -44,15 +47,46 @@ analyticsRouter.get('/revenue', async (req: StoreRequest, res, next) => {
     });
 
     const dailyRevenue: Record<string, number> = {};
+    const weeklyRevenue: Record<string, number> = {};
+    const monthlyRevenue: Record<string, number> = {};
+
     for (let i = 0; i < days; i++) {
-      const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      dailyRevenue[date] = 0;
+      const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+      dailyRevenue[d.toISOString().split('T')[0]] = 0;
     }
+
     orders.forEach(o => {
       const date = o.createdAt.toISOString().split('T')[0];
       if (dailyRevenue[date] !== undefined) dailyRevenue[date] += o.total;
+
+      const week = getWeekKey(o.createdAt);
+      weeklyRevenue[week] = (weeklyRevenue[week] || 0) + o.total;
+
+      const month = `${o.createdAt.getFullYear()}-${String(o.createdAt.getMonth() + 1).padStart(2, '0')}`;
+      monthlyRevenue[month] = (monthlyRevenue[month] || 0) + o.total;
     });
 
-    res.json({ success: true, data: Object.entries(dailyRevenue).map(([date, revenue]) => ({ date, revenue })) });
+    const weekly = Object.entries(weeklyRevenue).sort(([a], [b]) => a.localeCompare(b)).slice(-12).map(([week, revenue]) => ({ week, revenue }));
+    const monthly = Object.entries(monthlyRevenue).sort(([a], [b]) => a.localeCompare(b)).slice(-12).map(([month, revenue]) => ({ month, revenue }));
+
+    res.json({
+      success: true,
+      data: {
+        daily: Object.entries(dailyRevenue).sort(([a], [b]) => a.localeCompare(b)).map(([date, revenue]) => ({ date, revenue })),
+        weekly,
+        monthly,
+        totals: {
+          weekly: weekly.reduce((s, r) => s + r.revenue, 0),
+          monthly: monthly.reduce((s, r) => s + r.revenue, 0),
+          allTime: orders.reduce((s, o) => s + o.total, 0),
+        },
+      },
+    });
   } catch (error) { next(error); }
 });
+
+function getWeekKey(d: Date): string {
+  const start = new Date(d);
+  start.setDate(start.getDate() - start.getDay());
+  return `${start.getFullYear()}-W${String(Math.ceil((start.getTime() - new Date(start.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000))).padStart(2, '0')}`;
+}
