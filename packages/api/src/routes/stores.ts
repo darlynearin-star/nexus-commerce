@@ -6,6 +6,18 @@ import { logActivity } from '../utils/activity-log';
 
 export const storesRouter = Router();
 
+// Get current user's store
+storesRouter.get('/mine', authenticate, async (req: AuthRequest, res, next) => {
+  try {
+    const store = await prisma.store.findFirst({
+      where: { ownerId: req.user!.userId },
+      include: { settings: true, theme: true },
+    });
+    if (!store) return res.status(404).json({ success: false, error: 'No store found for this user' });
+    res.json({ success: true, data: store });
+  } catch (error) { next(error); }
+});
+
 // List all stores (dev)
 storesRouter.get('/', authenticate, requirePermission(Permission.MANAGE_SYSTEM), async (_req, res, next) => {
   try {

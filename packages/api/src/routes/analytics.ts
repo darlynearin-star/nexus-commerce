@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import prisma from '@nexus/database';
+import { authenticate } from '../middleware/auth';
 import { StoreRequest, requireStore } from '../middleware/resolve-store';
 
 export const analyticsRouter = Router();
 analyticsRouter.use(requireStore);
+analyticsRouter.use(authenticate);
 
 analyticsRouter.get('/summary', async (req: StoreRequest, res, next) => {
   try {

@@ -1,27 +1,35 @@
 'use client';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { Store, Palette, Globe, Shield, ArrowRight, Sparkles } from 'lucide-react';
+import { Store, Palette, Globe, Smartphone, Gift, CreditCard, ArrowRight, CheckCircle, Sparkles, Zap, Layout, Users, DollarSign } from 'lucide-react';
 
 export default function LandingPage() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
+  const ctaHref = user ? '/create-store' : '/register';
+
   return (
     <div style={{ position: 'relative', zIndex: 1 }}>
 
       {/* Hero */}
-      <section style={{ textAlign: 'center', padding: '6rem 1rem 4rem', maxWidth: 800, margin: '0 auto' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--glow)', border: '1px solid var(--border)', borderRadius: '9999px', padding: '0.375rem 1rem', fontSize: '0.875rem', color: 'var(--primary)', marginBottom: '2rem' }}>
-          <Sparkles size={14} /> Multi-Store Platform
+      <section style={{ textAlign: 'center', padding: '5rem 1rem 3rem', maxWidth: 800, margin: '0 auto' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--glow)', border: '1px solid var(--border)', borderRadius: '9999px', padding: '0.375rem 1rem', fontSize: '0.875rem', color: 'var(--primary)', marginBottom: '1.5rem' }}>
+          <Gift size={14} /> <strong>14-Day Free Trial</strong> — No credit card required
         </div>
         <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 700, lineHeight: 1.15, marginBottom: '1rem' }}>
-          Launch Your <span className="gradient-gold">Custom Store</span> in Minutes
+          Launch Your <span className="gradient-gold">Fashion Store</span> in Minutes
         </h1>
-        <p style={{ fontSize: '1.125rem', color: 'var(--text-secondary)', maxWidth: 600, margin: '0 auto 2rem', lineHeight: 1.6 }}>
-          Create a personalized online store for your fashion and accessories brand. Pick a template, set your colors, and start selling — no code needed.
+        <p style={{ fontSize: '1.125rem', color: 'var(--text-secondary)', maxWidth: 600, margin: '0 auto 1.5rem', lineHeight: 1.6 }}>
+          Create a personalized online store for your brand. Pick a template, set your colors, add products — and start selling. No coding, no hassle.
         </p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '2rem', fontSize: '0.9375rem', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><CheckCircle size={14} style={{ color: 'var(--primary)' }} /> 14 days free</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><CheckCircle size={14} style={{ color: 'var(--primary)' }} /> 3,000 UGX/week after</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><CheckCircle size={14} style={{ color: 'var(--primary)' }} /> MTN MoMo &amp; Airtel</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><CheckCircle size={14} style={{ color: 'var(--primary)' }} /> Cancel anytime</span>
+        </div>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link href={user ? '/create-store' : '/register'} className="btn btn-primary" style={{ fontSize: '1rem', padding: '0.75rem 2rem' }}>
-            Create Your Store <ArrowRight size={18} />
+          <Link href={ctaHref} className="btn btn-primary" style={{ fontSize: '1rem', padding: '0.75rem 2rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+            Start Free Trial <ArrowRight size={18} />
           </Link>
           <Link href="/store/adorn" className="btn btn-secondary" style={{ fontSize: '1rem', padding: '0.75rem 2rem' }}>
             View Demo Store
@@ -29,21 +37,60 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features */}
+      {/* Pricing highlight */}
+      <section style={{ padding: '2rem 1rem' }}>
+        <div className="container" style={{ maxWidth: 500, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', padding: '1.5rem', border: '1px solid var(--primary)', borderRadius: '1rem', background: 'var(--glow)' }}>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>After your free trial</p>
+            <p style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--primary)' }}>3,000 UGX <span style={{ fontSize: '1rem', fontWeight: 400, color: 'var(--text-secondary)' }}>/ week</span></p>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Cancel anytime. No long-term contracts.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Everything you need */}
       <section style={{ padding: '4rem 1rem' }}>
         <div className="container">
           <h2 style={{ textAlign: 'center', fontSize: '1.75rem', fontWeight: 600, marginBottom: '3rem' }}>Everything you need to sell</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem' }}>
             {[
-              { icon: <Palette size={24} />, title: 'Custom Templates', desc: 'Choose from 4 professionally designed templates and customize every color to match your brand.' },
-              { icon: <Store size={24} />, title: 'Your Own Storefront', desc: 'Each store gets a unique URL — share it directly with your customers on social media.' },
-              { icon: <Globe size={24} />, title: 'UGX Pricing', desc: 'Built for Uganda — prices in UGX, local shipping rates, and Kampala store location.' },
-              { icon: <Shield size={24} />, title: 'Full Control', desc: 'Toggle your store on/off anytime, manage products, track orders, and view analytics.' },
+              { icon: <Layout size={24} />, title: '4 Templates', desc: 'Elegance, Minimal, Bold, Nature — pick the look that fits your brand.' },
+              { icon: <Palette size={24} />, title: 'Custom Branding', desc: 'Set your colors, upload your logo and banner. Your store, your identity.' },
+              { icon: <Globe size={24} />, title: 'Your Own URL', desc: 'Get a unique Adorn URL for your store. Share it everywhere.' },
+              { icon: <Store size={24} />, title: 'Own Products', desc: 'List your items, set UGX prices, organize categories, manage stock.' },
+              { icon: <Users size={24} />, title: 'Own Customers', desc: 'Build your customer base. Track orders and engagement.' },
+              { icon: <Smartphone size={24} />, title: 'Mobile Money', desc: 'Accept MTN MoMo and Airtel Money payments from day one.' },
+              { icon: <DollarSign size={24} />, title: 'UGX Pricing', desc: 'Everything in Uganda Shillings. Local shipping, local rates.' },
+              { icon: <Zap size={24} />, title: 'Fast Setup', desc: 'From signup to live store in under 10 minutes. No code needed.' },
             ].map((f, i) => (
-              <div key={i} className="card" style={{ textAlign: 'center', padding: '2rem' }}>
-                <div style={{ color: 'var(--primary)', marginBottom: '1rem' }}>{f.icon}</div>
-                <h3 style={{ fontWeight: 600, marginBottom: '0.5rem' }}>{f.title}</h3>
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{f.desc}</p>
+              <div key={i} className="card" style={{ textAlign: 'center', padding: '1.5rem' }}>
+                <div style={{ color: 'var(--primary)', marginBottom: '0.75rem' }}>{f.icon}</div>
+                <h3 style={{ fontWeight: 600, marginBottom: '0.25rem', fontSize: '0.9375rem' }}>{f.title}</h3>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Templates */}
+      <section style={{ padding: '4rem 1rem', background: 'var(--bg-secondary)' }}>
+        <div className="container" style={{ maxWidth: 700 }}>
+          <h2 style={{ textAlign: 'center', fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem' }}>Professional Templates</h2>
+          <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '2.5rem', fontSize: '0.9375rem' }}>Choose from four designer-crafted templates and customize every color.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+            {[
+              { name: 'Elegance', colors: ['#D4A843', '#0A0A0A'], desc: 'Gold & dark luxury' },
+              { name: 'Minimal', colors: ['#FFFFFF', '#1A1A2E'], desc: 'Clean & modern' },
+              { name: 'Bold', colors: ['#FF6B35', '#0A0A0A'], desc: 'Vibrant & energetic' },
+              { name: 'Nature', colors: ['#2D6A4F', '#F0F7F4'], desc: 'Organic & fresh' },
+            ].map((t, i) => (
+              <div key={i} className="card" style={{ textAlign: 'center', padding: '1.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.375rem', justifyContent: 'center', marginBottom: '0.75rem' }}>
+                  {t.colors.map((c, j) => <div key={j} style={{ width: 24, height: 24, borderRadius: '50%', background: c, border: '1px solid var(--border)' }} />)}
+                </div>
+                <h3 style={{ fontWeight: 600, fontSize: '0.9375rem', marginBottom: '0.25rem' }}>{t.name}</h3>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{t.desc}</p>
               </div>
             ))}
           </div>
@@ -51,15 +98,15 @@ export default function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section style={{ padding: '4rem 1rem', background: 'var(--bg-secondary)' }}>
+      <section style={{ padding: '4rem 1rem' }}>
         <div className="container" style={{ maxWidth: 700 }}>
-          <h2 style={{ textAlign: 'center', fontSize: '1.75rem', fontWeight: 600, marginBottom: '3rem' }}>How it works</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          <h2 style={{ textAlign: 'center', fontSize: '1.5rem', fontWeight: 600, marginBottom: '3rem' }}>How it works</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {[
-              { step: '1', title: 'Sign up', desc: 'Create your account with email in seconds.' },
-              { step: '2', title: 'Pick a template', desc: 'Choose a design that fits your brand and customize the colors.' },
-              { step: '3', title: 'Add your products', desc: 'List your items, set prices in UGX, and organize categories.' },
-              { step: '4', title: 'Go live', desc: 'Share your store link and start selling. Full analytics included.' },
+              { step: '1', title: 'Sign up', desc: 'Create your account with email. Free for 14 days.' },
+              { step: '2', title: 'Pick a template', desc: 'Choose from Elegance, Minimal, Bold, or Nature. Customize colors to match your brand.' },
+              { step: '3', title: 'Add products', desc: 'Upload photos, set UGX prices, organize categories, and manage stock.' },
+              { step: '4', title: 'Go live', desc: 'Share your store link. Start accepting MTN MoMo and Airtel Money payments immediately.' },
             ].map((s, i) => (
               <div key={i} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
                 <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary)', color: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, flexShrink: 0 }}>{s.step}</div>
@@ -73,12 +120,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section style={{ textAlign: 'center', padding: '5rem 1rem' }}>
-        <h2 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '1rem' }}>Ready to launch?</h2>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Create your store in under 5 minutes — free to start.</p>
-        <Link href={user ? '/create-store' : '/register'} className="btn btn-primary" style={{ fontSize: '1.125rem', padding: '0.875rem 2.5rem' }}>
-          Get Started <ArrowRight size={18} />
+      {/* Final CTA */}
+      <section style={{ textAlign: 'center', padding: '5rem 1rem', background: 'var(--bg-secondary)' }}>
+        <h2 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '0.75rem' }}>Start selling today</h2>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem', fontSize: '1rem' }}>14 days free. Then 3,000 UGX/week. Cancel anytime.</p>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.875rem' }}>MTN MoMo &amp; Airtel Money supported. No coding required.</p>
+        <Link href={ctaHref} className="btn btn-primary" style={{ fontSize: '1.125rem', padding: '0.875rem 2.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Sparkles size={20} /> Start Your Free Trial
         </Link>
       </section>
 
