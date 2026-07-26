@@ -68,7 +68,7 @@ export default function CreateStorePage() {
         localStorage.setItem('activeStoreSlug', slug);
         setStoreSlug(slug);
         const token = localStorage.getItem('accessToken') || '';
-        window.location.href = (process.env.NEXT_PUBLIC_RETAILER_DASHBOARD_URL || 'https://nexus-commerce-retailer-dashboard.vercel.app') + '/dashboard?token=' + encodeURIComponent(token);
+        window.location.href = (process.env.NEXT_PUBLIC_RETAILER_DASHBOARD_URL || 'https://nexus-commerce-retailer-dashboard.vercel.app') + '/dashboard#token=' + encodeURIComponent(token);
         return;
       }
     } catch (e: any) {

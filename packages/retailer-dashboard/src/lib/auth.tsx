@@ -14,8 +14,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tokenParam = params.get('token');
+    const hash = window.location.hash.slice(1);
+    const hashParams = new URLSearchParams(hash);
+    const tokenParam = hashParams.get('token');
     if (tokenParam) {
       localStorage.setItem('accessToken', tokenParam);
       window.history.replaceState({}, '', window.location.pathname);
