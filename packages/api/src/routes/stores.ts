@@ -53,7 +53,7 @@ storesRouter.get('/check-slug/:slug', async (req, res, next) => {
 // Create a store (authenticated users)
 storesRouter.post('/', authenticate, async (req: AuthRequest, res, next) => {
   try {
-    const { name, slug, template, colors } = req.body;
+    const { name, slug, template, colors, logoUrl } = req.body;
     const existingSlug = await prisma.store.findUnique({ where: { slug } });
     if (existingSlug) return res.status(409).json({ success: false, error: 'Store slug already taken' });
 
@@ -62,7 +62,7 @@ storesRouter.post('/', authenticate, async (req: AuthRequest, res, next) => {
 
     const store = await prisma.store.create({
       data: {
-        name, slug, ownerId: req.user!.userId,
+        name, slug, logoUrl: logoUrl || null, ownerId: req.user!.userId,
         theme: { create: { template: template || 'elegance', colors: JSON.stringify(colors || { primary: '#D4A843', secondary: '#A8822E', bg: '#0A0A0A', surface: '#141414', text: '#FAFAFA', accent: '#F0D48A' }) } },
         settings: { create: { currency: 'UGX', taxRate: 18, shippingThreshold: 150000, location: 'Kampala, Uganda', shippingRate: 15000 } },
       },
@@ -83,10 +83,11 @@ storesRouter.put('/:id', authenticate, async (req: AuthRequest, res, next) => {
       return res.status(403).json({ success: false, error: 'Not authorized' });
     }
 
-    const { name, isActive, settings, theme } = req.body;
+    const { name, isActive, logoUrl, settings, theme } = req.body;
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
     if (isActive !== undefined) updateData.isActive = isActive;
+    if (logoUrl !== undefined) updateData.logoUrl = logoUrl;
 
     const updated = await prisma.store.update({
       where: { id: req.params.id },

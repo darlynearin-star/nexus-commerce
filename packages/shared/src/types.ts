@@ -557,6 +557,7 @@ export interface Store {
   id: string;
   name: string;
   slug: string;
+  logoUrl?: string | null;
   ownerId: string;
   isActive: boolean;
   settings?: StoreSettings;

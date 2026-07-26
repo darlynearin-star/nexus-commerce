@@ -199,6 +199,7 @@ model Store {
   id        String   @id @default(uuid())
   name      String
   slug      String   @unique
+  logoUrl   String?
   ownerId   String
   owner     User     @relation(fields: [ownerId], references: [id])
   isActive  Boolean  @default(true)

@@ -1,10 +1,18 @@
 'use client';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Gem } from 'lucide-react';
 import { useTheme } from '@/lib/theme';
 
 export default function Footer() {
   const { isDark } = useTheme();
+  const [isStorePage, setIsStorePage] = useState(false);
+
+  useEffect(() => {
+    setIsStorePage(window.location.pathname.startsWith('/store/'));
+  }, []);
+
+  if (isStorePage) return null;
 
   return (
     <footer style={{ borderTop: '1px solid var(--border)', padding: '3rem 0', marginTop: '3rem' }}>

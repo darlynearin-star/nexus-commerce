@@ -11,10 +11,14 @@ export default function Header() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [storeSlug, setStoreSlug] = useState<string | null>(null);
+  const [isStorePage, setIsStorePage] = useState(false);
 
   useEffect(() => {
     setStoreSlug(localStorage.getItem('activeStoreSlug'));
+    setIsStorePage(window.location.pathname.startsWith('/store/'));
   }, [user]);
+
+  if (isStorePage) return null;
 
   const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || '';
   const retDashUrl = process.env.NEXT_PUBLIC_RETAILER_DASHBOARD_URL || 'https://nexus-commerce-retailer-dashboard.vercel.app';

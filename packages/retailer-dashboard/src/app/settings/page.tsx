@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
-import { Save, Power, ExternalLink, Eye } from 'lucide-react';
+import { Save, Power, ExternalLink, Eye, Image } from 'lucide-react';
 import Link from 'next/link';
 
 export default function SettingsPage() {
@@ -11,7 +11,9 @@ export default function SettingsPage() {
   const [store, setStore] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [brandSaving, setBrandSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
 
   useEffect(() => {
     Promise.all([
@@ -20,6 +22,7 @@ export default function SettingsPage() {
     ]).then(([sRes, storeRes]: [any, any]) => {
       setSettings(sRes.data || {});
       setStore(storeRes.data);
+      setLogoUrl(storeRes.data?.logoUrl || '');
     }).catch((e: any) => console.error('API error:', e)).finally(() => setLoading(false));
   }, []);
 
@@ -32,6 +35,18 @@ export default function SettingsPage() {
     } catch (e: any) {
       setMessage(e?.message || 'Failed to save');
     } finally { setSaving(false); }
+  };
+
+  const saveBranding = async () => {
+    setBrandSaving(true);
+    try {
+      const r: any = await api.put(`/stores/${store.id}`, { logoUrl: logoUrl || null });
+      setStore(r.data);
+      setMessage('Branding saved');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (e: any) {
+      setMessage(e?.message || 'Failed to save branding');
+    } finally { setBrandSaving(false); }
   };
 
   const toggleStore = async () => {
@@ -108,6 +123,45 @@ export default function SettingsPage() {
               <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>Standard Shipping Rate (UGX)</label>
               <input className="input" type="number" value={settings.shippingRate || 15000} onChange={e => setSettings((p: any) => ({ ...p, shippingRate: parseFloat(e.target.value) }))} />
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Branding Section */}
+      <div className="card" style={{ padding: '1.5rem', marginTop: '1.5rem' }}>
+        <h3 style={{ fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Image size={18} /> Store Branding
+        </h3>
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+          Upload a logo image or leave empty to use your store name as text. Recommended: rectangular image, max 400px wide.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div>
+            <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>Logo URL</label>
+            <input className="input" value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://example.com/logo.png" />
+          </div>
+          {logoUrl && (
+            <div>
+              <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>Preview</label>
+              <div style={{ padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 80 }}>
+                <img src={logoUrl} alt="Logo preview" style={{ maxHeight: 60, maxWidth: 300, objectFit: 'contain' }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              </div>
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <button className="btn btn-primary" onClick={saveBranding} disabled={brandSaving} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+              <Save size={14} /> {brandSaving ? 'Saving...' : 'Save Logo'}
+            </button>
+            {store?.logoUrl && (
+              <button className="btn btn-ghost" onClick={async () => {
+                setLogoUrl('');
+                await api.put(`/stores/${store.id}`, { logoUrl: null });
+                setStore((p: any) => ({ ...p, logoUrl: null }));
+                setMessage('Logo removed');
+                setTimeout(() => setMessage(''), 3000);
+              }}>Remove Logo</button>
+            )}
           </div>
         </div>
       </div>

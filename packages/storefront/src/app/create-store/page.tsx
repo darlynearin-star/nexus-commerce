@@ -45,6 +45,7 @@ export default function CreateStorePage() {
   const [slugAvailable, setSlugAvailable] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
 
   useEffect(() => {
     setColors(template.colors);
@@ -63,7 +64,7 @@ export default function CreateStorePage() {
     setSubmitting(true);
     setError('');
     try {
-      const res = await api.post('/stores', { name, slug, template: template.id, colors });
+      const res = await api.post('/stores', { name, slug, template: template.id, colors, logoUrl: logoUrl || undefined });
       if (res.success) {
         localStorage.setItem('activeStoreSlug', slug);
         setStoreSlug(slug);
@@ -195,6 +196,19 @@ export default function CreateStorePage() {
               <span style={{ fontSize: '0.8125rem', color: slugAvailable ? 'var(--success)' : 'var(--error)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.375rem' }}>
                 {slugAvailable ? '✓ Available' : '✗ Already taken'}
               </span>
+            )}
+          </div>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.375rem' }}>Store Logo (optional)</label>
+            <input className="input" value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://example.com/logo.png" />
+            <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', display: 'block', marginTop: '0.25rem' }}>
+              Upload a rectangular logo image or leave empty to use your store name as text.
+            </span>
+            {logoUrl && (
+              <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <img src={logoUrl} alt="Logo preview" style={{ maxHeight: 50, maxWidth: 250, objectFit: 'contain' }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              </div>
             )}
           </div>
           {error && <div className="badge badge-error" style={{ marginBottom: '1rem' }}>{error}</div>}
