@@ -17,7 +17,7 @@ export default function StoreProductPage() {
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
-    storeApi.get(`/products/${slug}`).then((r: any) => setProduct(r.data)).catch(() => {}).finally(() => setLoading(false));
+    storeApi.get(`/products/${slug}`).then((r: any) => setProduct(r.data)).catch((e: any) => console.error('API error:', e)).finally(() => setLoading(false));
   }, [slug]);
 
   if (loading) return <div className="container" style={{ padding: '4rem 1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading...</div>;
@@ -73,7 +73,7 @@ export default function StoreProductPage() {
                 await storeApi.post('/cart/add', { productId: product.id, quantity });
                 setAddedToCart(true);
                 setTimeout(() => setAddedToCart(false), 2000);
-              } catch {}
+              } catch (e: any) { console.error('Error:', e); }
             }}>
               {addedToCart ? '✓ Added!' : <><ShoppingCart size={16} /> Add to Cart</>}
             </button>

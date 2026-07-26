@@ -6,7 +6,7 @@ import { ToggleLeft, ToggleRight } from 'lucide-react';
 export default function FeatureFlagsPage() {
   const [flags, setFlags] = useState<any[]>([]);
 
-  useEffect(() => { api.get('/system/feature-flags').then((r: any) => setFlags(r.data)).catch(() => {}); }, []);
+  useEffect(() => { api.get('/system/feature-flags').then((r: any) => setFlags(r.data)).catch((e: any) => console.error('API error:', e)); }, []);
 
   const toggle = async (key: string, enabled: boolean) => {
     await api.put(`/system/feature-flags/${key}`, { enabled: !enabled });

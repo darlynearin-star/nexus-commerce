@@ -11,12 +11,9 @@ export async function logActivity(params: {
   req?: Request;
 }) {
   try {
-    const user = await prisma.user.findUnique({ where: { id: params.userId } });
     await prisma.activityLog.create({
       data: {
         userId: params.userId,
-        userEmail: user?.email || '',
-        userName: user ? `${user.firstName} ${user.lastName}` : '',
         action: params.action,
         resource: params.resource,
         resourceId: params.resourceId || '',

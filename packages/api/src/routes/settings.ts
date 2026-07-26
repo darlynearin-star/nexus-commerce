@@ -19,7 +19,7 @@ settingsRouter.put('/', authenticate, requirePermission(Permission.MANAGE_SETTIN
   try {
     const updates = req.body;
     for (const [key, value] of Object.entries(updates)) {
-      await prisma.setting.upsert({ where: { key }, update: { value }, create: { key, value } });
+      await prisma.setting.upsert({ where: { key }, update: { value: value as any }, create: { key, value: value as any } });
     }
     logActivity({ userId: req.user!.userId, action: 'settings:modified', resource: 'settings', details: { updated: Object.keys(updates) }, req: req as any });
     res.json({ success: true, message: 'Settings updated' });

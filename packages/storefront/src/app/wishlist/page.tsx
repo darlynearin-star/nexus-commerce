@@ -9,7 +9,7 @@ export default function WishlistPage() {
   const [wishlists, setWishlists] = useState<any[]>([]);
   const { isDark } = useTheme();
 
-  useEffect(() => { api.get('/wishlist').then((r: any) => setWishlists(r.data)).catch(() => {}); }, []);
+  useEffect(() => { api.get('/wishlist').then((r: any) => setWishlists(r.data)).catch((e: any) => console.error('API error:', e)); }, []);
 
   const removeItem = async (itemId: string) => {
     await api.delete(`/wishlist/item/${itemId}`);

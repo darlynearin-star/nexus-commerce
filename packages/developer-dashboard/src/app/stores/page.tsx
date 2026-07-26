@@ -17,7 +17,7 @@ export default function StoresPage() {
   useEffect(() => {
     if (!user) return;
     if (user.role !== 'DEVELOPER' && user.role !== 'SUPER_DEVELOPER') { router.push('/login'); return; }
-    api.get('/stores').then((r: any) => setStores(r.data || [])).catch(() => {}).finally(() => setLoading(false));
+    api.get('/stores').then((r: any) => setStores(r.data || [])).catch((e: any) => console.error('API error:', e)).finally(() => setLoading(false));
   }, [user]);
 
   if (!user) return <div style={{ padding: '2rem' }}>Redirecting...</div>;
@@ -26,7 +26,7 @@ export default function StoresPage() {
     try {
       await api.post(`/stores/${id}/toggle`);
       setStores(stores.map(s => s.id === id ? { ...s, isActive: !currentActive } : s));
-    } catch {}
+    } catch (e: any) { console.error('Error:', e); }
   }
 
   if (loading) return <div style={{ padding: '2rem', color: 'var(--text-secondary)' }}>Loading stores...</div>;

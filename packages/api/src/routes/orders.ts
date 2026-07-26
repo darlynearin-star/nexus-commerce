@@ -3,9 +3,11 @@ import prisma from '@nexus/database';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { logActivity } from '../utils/activity-log';
 import { StoreRequest, requireStore } from '../middleware/resolve-store';
+import { requireActiveSubscription } from '../middleware/subscription-check';
 
 export const ordersRouter = Router();
 ordersRouter.use(requireStore);
+ordersRouter.use(requireActiveSubscription);
 
 ordersRouter.get('/', authenticate, async (req: StoreRequest, res, next) => {
   try {

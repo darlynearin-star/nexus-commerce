@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import prisma from '@nexus/database';
-import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth';
-import { StoreRequest, requireStore } from '../middleware/resolve-store';
+import { authenticate, optionalAuth } from '../middleware/auth';
+import { requireStore } from '../middleware/resolve-store';
 
 export const cartRouter = Router();
 cartRouter.use(requireStore);
 
-cartRouter.get('/', optionalAuth, async (req: StoreRequest, res, next) => {
+cartRouter.get('/', optionalAuth, async (req: any, res, next) => {
   try {
     const sessionId = req.headers['x-session-id'] as string;
     const where: any = { storeId: req.storeId! };
@@ -31,7 +31,7 @@ cartRouter.get('/', optionalAuth, async (req: StoreRequest, res, next) => {
   } catch (error) { next(error); }
 });
 
-cartRouter.post('/add', optionalAuth, async (req: StoreRequest, res, next) => {
+cartRouter.post('/add', optionalAuth, async (req: any, res, next) => {
   try {
     const { productId, variantId, quantity = 1 } = req.body;
     const sessionId = req.headers['x-session-id'] as string;
@@ -75,7 +75,7 @@ cartRouter.delete('/item/:id', optionalAuth, async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-cartRouter.post('/coupon', optionalAuth, async (req: StoreRequest, res, next) => {
+cartRouter.post('/coupon', optionalAuth, async (req: any, res, next) => {
   try {
     const { code } = req.body;
     const coupon = await prisma.coupon.findFirst({ where: { code, storeId: req.storeId! } });
@@ -90,10 +90,12 @@ cartRouter.post('/coupon', optionalAuth, async (req: StoreRequest, res, next) =>
     });
 
     if (cart) {
-      const discount = coupon.discountType === 'PERCENTAGE' ? coupon.discountValue : coupon.discountValue;
+      const subtotal = (cart as any).items?.reduce((sum: number, item: any) => sum + (item.product?.price || 0) * item.quantity, 0) || 0;
+      const discount = coupon.discountType === 'PERCENTAGE' ? Math.round(subtotal * coupon.discountValue) / 100 : coupon.discountValue;
       await prisma.cart.update({ where: { id: cart.id }, data: { couponCode: code, couponDiscount: discount } });
     }
 
-    res.json({ success: true, data: { discount: coupon.discountValue, type: coupon.discountType } });
+    const finalDiscount = coupon.discountType === 'PERCENTAGE' ? coupon.discountValue + '%' : coupon.discountValue;
+    res.json({ success: true, data: { discount: finalDiscount, type: coupon.discountType } });
   } catch (error) { next(error); }
 });

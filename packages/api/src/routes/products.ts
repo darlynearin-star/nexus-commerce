@@ -116,7 +116,7 @@ productsRouter.post('/:id/duplicate', authenticate, requirePermission(Permission
 
     const { id, createdAt, updatedAt, variants, ...data } = original;
     const duplicate = await prisma.product.create({
-      data: { ...data, name: `${data.name} (Copy)`, slug: `${data.slug}-copy`, sku: `${data.sku}-COPY`, status: 'DRAFT' },
+      data: { ...data, name: `${data.name} (Copy)`, slug: `${data.slug}-copy`, sku: `${data.sku}-COPY`, status: 'DRAFT' } as any,
     });
     if (variants.length > 0) {
       await prisma.productVariant.createMany({

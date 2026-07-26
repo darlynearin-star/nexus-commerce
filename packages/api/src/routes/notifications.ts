@@ -16,16 +16,16 @@ notificationsRouter.get('/', authenticate, async (req: AuthRequest, res, next) =
   } catch (error) { next(error); }
 });
 
-notificationsRouter.put('/:id/read', authenticate, async (req, res, next) => {
-  try {
-    await prisma.notification.update({ where: { id: req.params.id }, data: { isRead: true, readAt: new Date() } });
-    res.json({ success: true, message: 'Marked as read' });
-  } catch (error) { next(error); }
-});
-
 notificationsRouter.put('/read-all', authenticate, async (req: AuthRequest, res, next) => {
   try {
     await prisma.notification.updateMany({ where: { userId: req.user!.userId, isRead: false }, data: { isRead: true, readAt: new Date() } });
     res.json({ success: true, message: 'All marked as read' });
+  } catch (error) { next(error); }
+});
+
+notificationsRouter.put('/:id/read', authenticate, async (req, res, next) => {
+  try {
+    await prisma.notification.update({ where: { id: req.params.id }, data: { isRead: true, readAt: new Date() } });
+    res.json({ success: true, message: 'Marked as read' });
   } catch (error) { next(error); }
 });

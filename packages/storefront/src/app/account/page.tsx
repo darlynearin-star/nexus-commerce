@@ -10,7 +10,7 @@ export default function AccountPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  useEffect(() => { if (user) api.get('/orders').then((r: any) => setOrders(r.data)).catch(() => {}); }, [user]);
+  useEffect(() => { if (user) api.get('/orders').then((r: any) => setOrders(r.data)).catch((e: any) => console.error('API error:', e)); }, [user]);
 
   if (!user) return <div className="container" style={{ padding: '3rem 0', textAlign: 'center' }}><h2>Please sign in to view your account</h2></div>;
 

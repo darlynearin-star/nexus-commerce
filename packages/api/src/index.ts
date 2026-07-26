@@ -24,6 +24,9 @@ import { activityLogsRouter } from './routes/activity-logs';
 import { systemRouter } from './routes/system';
 import { storesRouter } from './routes/stores';
 import { templatesRouter } from './routes/templates';
+import { apiConfigRouter } from './routes/api-config';
+import { subscriptionsRouter } from './routes/subscriptions';
+import { paymentsRouter } from './routes/payments';
 import { resolveStore } from './middleware/resolve-store';
 import { errorHandler } from './middleware/error-handler';
 import { checkKillSwitch } from './middleware/kill-switch';
@@ -84,10 +87,18 @@ app.use('/api/activity-logs', activityLogsRouter);
 app.use('/api/system', systemRouter);
 app.use('/api/stores', storesRouter);
 app.use('/api/templates', templatesRouter);
+app.use('/api/api-config', apiConfigRouter);
+app.use('/api/subscriptions', subscriptionsRouter);
+app.use('/api/payments', paymentsRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => {
   res.json({ success: true, data: { status: 'ok', timestamp: new Date().toISOString() } });
+});
+
+// 404 handler
+app.use('/api/*', (_req, res) => {
+  res.status(404).json({ success: false, error: 'API endpoint not found' });
 });
 
 // Error handling

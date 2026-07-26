@@ -21,11 +21,11 @@ export default function StoreShopPage() {
     const params: Record<string, string | number | undefined> = { page, limit: 12, sort, order: 'desc' };
     if (search) params.search = search;
     if (category) params.category = category;
-    storeApi.get('/products', params).then((r: any) => { setProducts(r.data || []); setTotalPages(r.meta?.totalPages || 1); }).catch(() => {}).finally(() => setLoading(false));
+    storeApi.get('/products', params).then((r: any) => { setProducts(r.data || []); setTotalPages(r.meta?.totalPages || 1); }).catch((e: any) => console.error('API error:', e)).finally(() => setLoading(false));
   };
 
   useEffect(() => { fetchProducts(); }, [page, sort, category]);
-  useEffect(() => { storeApi.get('/categories').then((r: any) => setCategories(r.data || [])).catch(() => {}); }, []);
+  useEffect(() => { storeApi.get('/categories').then((r: any) => setCategories(r.data || [])).catch((e: any) => console.error('API error:', e)); }, []);
 
   return (
     <div style={{ position: 'relative', zIndex: 1, padding: '2rem 0' }}>

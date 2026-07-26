@@ -18,7 +18,7 @@ export default function CartPage() {
       if (!user) headers['x-session-id'] = localStorage.getItem('sessionId') || 'guest';
       const res = await api.get('/cart');
       setCart(res.data);
-    } catch {} finally { setLoading(false); }
+    } catch (e: any) { console.error('Error:', e); } finally { setLoading(false); }
   };
 
   const updateQuantity = async (itemId: string, quantity: number) => {

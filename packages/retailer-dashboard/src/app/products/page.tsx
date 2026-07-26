@@ -12,7 +12,7 @@ export default function ProductsPage() {
   useEffect(() => { loadProducts(); }, []);
 
   const loadProducts = async () => {
-    try { const res = await api.get('/products', { limit: 50, status: undefined }); setProducts(res.data); } catch {} finally { setLoading(false); }
+    try { const res = await api.get('/products', { limit: 50, status: undefined }); setProducts(res.data); } catch (e: any) { console.error('Error:', e); } finally { setLoading(false); }
   };
 
   const deleteProduct = async (id: string) => {

@@ -7,7 +7,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [search, setSearch] = useState('');
 
-  useEffect(() => { api.get('/admin/users').then((r: any) => setUsers(r.data)).catch(() => {}); }, []);
+  useEffect(() => { api.get('/admin/users').then((r: any) => setUsers(r.data)).catch((e: any) => console.error('API error:', e)); }, []);
 
   const toggleUser = async (id: string, isActive: boolean) => {
     await api.put(`/admin/users/${id}`, { isActive: !isActive });

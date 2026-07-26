@@ -4,7 +4,7 @@ import { api } from '@/lib/api';
 
 export default function ReportsPage() {
   const [stats, setStats] = useState<any>({});
-  useEffect(() => { api.get('/analytics/summary').then((r: any) => setStats(r.data)).catch(() => {}); }, []);
+  useEffect(() => { api.get('/analytics/summary').then((r: any) => setStats(r.data)).catch((e: any) => console.error('API error:', e)); }, []);
 
   return (
     <div style={{ padding: '2rem' }}>

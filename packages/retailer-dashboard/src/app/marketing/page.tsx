@@ -4,7 +4,7 @@ import { api } from '@/lib/api';
 
 export default function MarketingPage() {
   const [coupons, setCoupons] = useState<any[]>([]);
-  useEffect(() => { api.get('/coupons').then((r: any) => setCoupons(r.data)).catch(() => {}); }, []);
+  useEffect(() => { api.get('/coupons').then((r: any) => setCoupons(r.data)).catch((e: any) => console.error('API error:', e)); }, []);
 
   return (
     <div style={{ padding: '2rem' }}>

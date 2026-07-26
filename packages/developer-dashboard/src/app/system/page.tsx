@@ -8,7 +8,7 @@ export default function SystemHealthPage() {
 
   useEffect(() => {
     const load = async () => {
-      try { const res = await api.get('/system/health'); setHealth(res.data); } catch {}
+      try { const res = await api.get('/system/health'); setHealth(res.data); } catch (e: any) { console.error('Error:', e); }
     };
     load();
     const interval = setInterval(load, 10000);

@@ -7,7 +7,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { api.get('/orders', { limit: 50 }).then((r: any) => setOrders(r.data)).catch(() => {}).finally(() => setLoading(false)); }, []);
+  useEffect(() => { api.get('/orders', { limit: 50 }).then((r: any) => setOrders(r.data)).catch((e: any) => console.error('API error:', e)).finally(() => setLoading(false)); }, []);
 
   const updateStatus = async (id: string, status: string) => {
     await api.put(`/orders/${id}/status`, { status });

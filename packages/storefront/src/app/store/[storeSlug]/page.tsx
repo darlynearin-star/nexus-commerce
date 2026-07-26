@@ -18,9 +18,9 @@ export default function StoreHomePage() {
   const [categories, setCategories] = useState<any[]>([]);
 
   useEffect(() => {
-    storeApi.get('/products/featured/list').then((r: any) => setFeatured(r.data || [])).catch(() => {});
-    storeApi.get('/products/new/list').then((r: any) => setNewArrivals(r.data || [])).catch(() => {});
-    storeApi.get('/categories').then((r: any) => setCategories(r.data || [])).catch(() => {});
+    storeApi.get('/products/featured/list').then((r: any) => setFeatured(r.data || [])).catch((e: any) => console.error('API error:', e));
+    storeApi.get('/products/new/list').then((r: any) => setNewArrivals(r.data || [])).catch((e: any) => console.error('API error:', e));
+    storeApi.get('/categories').then((r: any) => setCategories(r.data || [])).catch((e: any) => console.error('API error:', e));
   }, []);
 
   const storeName = store?.name || 'Store';

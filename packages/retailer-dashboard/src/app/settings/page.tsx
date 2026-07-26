@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Record<string, any>>({});
 
-  useEffect(() => { api.get('/settings').then((r: any) => setSettings(r.data)).catch(() => {}); }, []);
+  useEffect(() => { api.get('/settings').then((r: any) => setSettings(r.data)).catch((e: any) => console.error('API error:', e)); }, []);
 
   const updateSetting = async (key: string, value: any) => {
     await api.put('/settings', { [key]: value });

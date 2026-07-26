@@ -7,7 +7,7 @@ export default function SecurityPage() {
   const [logs, setLogs] = useState<any[]>([]);
 
   useEffect(() => {
-    api.get('/activity-logs', { limit: 50, action: 'user:login' }).then((r: any) => setLogs(r.data)).catch(() => {});
+    api.get('/activity-logs', { limit: 50, action: 'user:login' }).then((r: any) => setLogs(r.data)).catch((e: any) => console.error('API error:', e));
   }, []);
 
   return (

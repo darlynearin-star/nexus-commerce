@@ -2,8 +2,9 @@
 
 import './globals.css';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { AuthGuard } from '@/lib/auth-guard';
 import ErrorBoundary from '@/lib/error-boundary';
-import { LayoutDashboard, Package, ShoppingCart, Users, BarChart3, Settings, Image, Megaphone, LogOut, Menu, X, Store } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Users, BarChart3, Settings, Image, Megaphone, LogOut, Menu, X, Store, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -21,13 +22,14 @@ function Sidebar({ children }: { children: React.ReactNode }) {
     { href: '/marketing', label: 'Marketing', icon: <Megaphone size={18} /> },
     { href: '/media', label: 'Media', icon: <Image size={18} /> },
     { href: '/reports', label: 'Reports', icon: <BarChart3 size={18} /> },
+    { href: '/subscription', label: 'Subscription', icon: <CreditCard size={18} /> },
     { href: '/settings', label: 'Settings', icon: <Settings size={18} /> },
   ];
 
   if (pathname === '/login') return <>{children}</>;
 
   return (
-    <>
+    <AuthGuard roles={['RETAILER', 'DEVELOPER', 'SUPER_DEVELOPER']}>
       <div className="sidebar" style={{ width: collapsed ? 64 : 'var(--sidebar)', transition: 'width 0.2s' }}>
         <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'space-between' }}>
           {!collapsed && <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary)', textDecoration: 'none' }}><Store size={22} /> Retailer</Link>}
@@ -51,9 +53,9 @@ function Sidebar({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       <div className="main-content" style={{ marginLeft: collapsed ? 64 : 'var(--sidebar)', transition: 'margin 0.2s' }}>
-        {children}
+        <ErrorBoundary>{children}</ErrorBoundary>
       </div>
-    </>
+    </AuthGuard>
   );
 }
 

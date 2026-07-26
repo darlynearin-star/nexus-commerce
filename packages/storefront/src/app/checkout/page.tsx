@@ -17,7 +17,7 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true);
-    try { await api.post('/orders'); router.push('/account'); } catch {} finally { setLoading(false); }
+    try { await api.post('/orders'); router.push('/account'); } catch (e: any) { console.error('Error:', e); } finally { setLoading(false); }
   };
 
   return (

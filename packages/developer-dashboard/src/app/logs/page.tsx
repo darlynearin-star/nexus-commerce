@@ -6,7 +6,7 @@ export default function LogsPage() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { api.get('/activity-logs', { limit: 100 }).then((r: any) => setLogs(r.data)).catch(() => {}).finally(() => setLoading(false)); }, []);
+  useEffect(() => { api.get('/activity-logs', { limit: 100 }).then((r: any) => setLogs(r.data)).catch((e: any) => console.error('API error:', e)).finally(() => setLoading(false)); }, []);
 
   return (
     <div style={{ padding: '2rem' }}>

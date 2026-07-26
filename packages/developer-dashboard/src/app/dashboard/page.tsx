@@ -18,7 +18,7 @@ export default function DashboardPage() {
       api.get('/analytics/summary'),
       api.get('/system/health'),
       api.get('/kill-switch'),
-    ]).then(([s, h, k]) => { setStats(s.data); setHealth(h.data); setKillSwitch(k.data); }).catch(() => {});
+    ]).then(([s, h, k]) => { setStats(s.data); setHealth(h.data); setKillSwitch(k.data); }).catch((e: any) => console.error('API error:', e));
   }, [user, loading]);
 
   if (loading || !user) return <div style={{ padding: '2rem' }}>{loading ? 'Loading...' : 'Redirecting...'}</div>;

@@ -7,7 +7,7 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [search, setSearch] = useState('');
 
-  useEffect(() => { api.get('/customers', { limit: 50 }).then((r: any) => setCustomers(r.data)).catch(() => {}); }, []);
+  useEffect(() => { api.get('/customers', { limit: 50 }).then((r: any) => setCustomers(r.data)).catch((e: any) => console.error('API error:', e)); }, []);
 
   return (
     <div style={{ padding: '2rem' }}>

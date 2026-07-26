@@ -25,7 +25,7 @@ export default function KillSwitchPage() {
     api.get('/kill-switch').then((r: any) => {
       setState(r.data);
       setMessage(r.data.maintenanceMessage || '');
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch((e: any) => console.error('API error:', e)).finally(() => setLoading(false));
   }, []);
 
   const toggle = async (key: string) => {

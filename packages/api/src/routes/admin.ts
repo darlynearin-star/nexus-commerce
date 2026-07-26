@@ -16,19 +16,30 @@ adminRouter.get('/users', authenticate, requirePermission(Permission.MANAGE_USER
   } catch (error) { next(error); }
 });
 
+const ALLOWED_USER_FIELDS = ['email', 'firstName', 'lastName', 'isActive'];
 adminRouter.put('/users/:id', authenticate, requirePermission(Permission.MANAGE_USERS), async (req: AuthRequest, res, next) => {
   try {
-    const user = await prisma.user.update({ where: { id: req.params.id }, data: req.body });
-    logActivity({ userId: req.user!.userId, action: 'user:updated', resource: 'user', resourceId: user.id, details: { changes: Object.keys(req.body) }, req: req as any });
+    const data: any = {};
+    for (const key of ALLOWED_USER_FIELDS) { if (req.body[key] !== undefined) data[key] = req.body[key]; }
+    if (req.body.password) data.passwordHash = await require('bcryptjs').hash(req.body.password, 10);
+    const user = await prisma.user.update({ where: { id: req.params.id }, data });
+    logActivity({ userId: req.user!.userId, action: 'user:updated', resource: 'user', resourceId: user.id, details: { changes: Object.keys(data) }, req: req as any });
     res.json({ success: true, data: { ...user, passwordHash: undefined } });
   } catch (error) { next(error); }
 });
 
+const ALLOWED_CREATE_FIELDS = ['email', 'firstName', 'lastName', 'role'];
 adminRouter.post('/users', authenticate, requirePermission(Permission.MANAGE_USERS), async (req: AuthRequest, res, next) => {
   try {
     const bcrypt = require('bcryptjs');
-    const passwordHash = await bcrypt.hash(req.body.password || 'Password123!', 10);
-    const user = await prisma.user.create({ data: { ...req.body, passwordHash, emailVerified: true } });
+    const password = req.body.password || 'Password123!';
+    if (password === 'Password123!') console.warn('Using default password - user should change on first login');
+    const passwordHash = await bcrypt.hash(password, 10);
+    const data: any = {};
+    for (const key of ALLOWED_CREATE_FIELDS) data[key] = req.body[key];
+    data.passwordHash = passwordHash;
+    data.emailVerified = true;
+    const user = await prisma.user.create({ data });
     if (user.role === 'CUSTOMER') await prisma.customer.create({ data: { userId: user.id } });
     if (user.role === 'RETAILER') await prisma.retailer.create({ data: { userId: user.id, storeName: `${user.firstName}'s Store`, storeSlug: `${user.firstName.toLowerCase()}-store` } });
     if (user.role === 'DEVELOPER' || user.role === 'SUPER_DEVELOPER') await prisma.developer.create({ data: { userId: user.id } });

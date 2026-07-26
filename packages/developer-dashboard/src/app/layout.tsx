@@ -2,7 +2,8 @@
 
 import './globals.css';
 import { AuthProvider, useAuth } from '@/lib/auth';
-import { LayoutDashboard, Users, Shield, Database, Activity, Settings, AlertTriangle, LogOut, Menu, X, Terminal, Server, FileText, Flag, Store } from 'lucide-react';
+import { AuthGuard } from '@/lib/auth-guard';
+import { LayoutDashboard, Users, Shield, Database, Activity, Settings, AlertTriangle, LogOut, Menu, X, Terminal, Server, FileText, Flag, Store, Key } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -21,6 +22,7 @@ function Sidebar({ children }: { children: React.ReactNode }) {
     { href: '/system', label: 'System Health', icon: <Activity size={18} /> },
     { href: '/kill-switch', label: 'Kill Switch', icon: <AlertTriangle size={18} />, danger: true },
     { href: '/settings', label: 'Global Settings', icon: <Settings size={18} /> },
+    { href: '/api-config', label: 'API Configuration', icon: <Key size={18} /> },
     { href: '/feature-flags', label: 'Feature Flags', icon: <Flag size={18} /> },
     { href: '/logs', label: 'Activity Logs', icon: <FileText size={18} /> },
   ];
@@ -28,7 +30,7 @@ function Sidebar({ children }: { children: React.ReactNode }) {
   if (pathname === '/login') return <>{children}</>;
 
   return (
-    <>
+    <AuthGuard roles={['DEVELOPER', 'SUPER_DEVELOPER']}>
       <div className="sidebar" style={{ width: collapsed ? 64 : 'var(--sidebar)', transition: 'width 0.2s' }}>
         <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'space-between' }}>
           {!collapsed && <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary)', textDecoration: 'none' }}><Terminal size={22} /> Developer</Link>}
@@ -52,7 +54,7 @@ function Sidebar({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       <div className="main-content" style={{ marginLeft: collapsed ? 64 : 'var(--sidebar)', transition: 'margin 0.2s' }}>{children}</div>
-    </>
+    </AuthGuard>
   );
 }
 
