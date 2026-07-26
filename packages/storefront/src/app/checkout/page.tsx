@@ -12,7 +12,8 @@ export default function CheckoutPage() {
   const [method, setMethod] = useState('mtn_momo');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
-  const [form] = useState({ firstName: user?.firstName || '', lastName: user?.lastName || '', email: user?.email || '', phone: '', line1: '', city: 'Kampala', state: 'Kampala', postalCode: '', country: 'UG' });
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
 
   useEffect(() => { if (!user) router.push('/login'); else loadCart(); }, [user]);
 
@@ -27,8 +28,8 @@ export default function CheckoutPage() {
     setSubmitting(true); setMessage('');
     try {
       const orderRes: any = await api.post('/orders');
-      if (!orderRes.success) { setMessage(orderRes.error || 'Failed to create order'); return; }
-      const payRes: any = await api.post('/payments/charge', { orderId: orderRes.data.id, method, phone: form.phone || '256700000000' });
+      if (!orderRes.success) { setMessage(orderRes.error || 'Failed to create order'); setSubmitting(false); return; }
+      const payRes: any = await api.post('/payments/charge', { orderId: orderRes.data.id, method, phone: phone || '256700000000' });
       if (payRes.success) {
         setMessage('Order placed! Payment request sent to your phone.');
         setTimeout(() => router.push('/account'), 2000);
@@ -57,14 +58,14 @@ export default function CheckoutPage() {
           <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Shipping Information</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>First Name</label><input className="input" value={form.firstName} disabled /></div>
-              <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Last Name</label><input className="input" value={form.lastName} disabled /></div>
+              <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>First Name</label><input className="input" value={user?.firstName || ''} disabled /></div>
+              <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Last Name</label><input className="input" value={user?.lastName || ''} disabled /></div>
             </div>
-            <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Email</label><input className="input" value={form.email} disabled /></div>
-            <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Phone (for Mobile Money)</label><input className="input" defaultValue={form.phone} onChange={e => form.phone = e.target.value} placeholder="2567XXXXXXXX" /></div>
-            <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Address</label><input className="input" defaultValue={form.line1} onChange={e => form.line1 = e.target.value} placeholder="Street address" /></div>
+            <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Email</label><input className="input" value={user?.email || ''} disabled /></div>
+            <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Phone (for Mobile Money)</label><input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="2567XXXXXXXX" /></div>
+            <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Address</label><input className="input" value={address} onChange={e => setAddress(e.target.value)} placeholder="Street address" /></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>City</label><input className="input" defaultValue={form.city} /></div>
+              <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>City</label><input className="input" value="Kampala" /></div>
               <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Country</label><input className="input" value="Uganda" disabled /></div>
             </div>
           </div>
