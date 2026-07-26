@@ -5,13 +5,13 @@ import Link from 'next/link';
 
 export default function RegisterPage() {
   const { register } = useAuth();
-  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', role: 'CUSTOMER' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(''); setLoading(true);
-    try { await register(form); } catch (err: any) { setError(err.message); } finally { setLoading(false); }
+    try { await register({ ...form, role: form.role }); } catch (err: any) { setError(err.message); } finally { setLoading(false); }
   };
 
   return (
@@ -27,6 +27,21 @@ export default function RegisterPage() {
           </div>
           <div><label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Email</label><input className="input" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required /></div>
           <div><label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Password</label><input className="input" type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required /></div>
+          <div>
+            <label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Account Type</label>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {[
+                { value: 'CUSTOMER', label: 'Customer', desc: 'Browse & shop' },
+                { value: 'RETAILER', label: 'Retailer', desc: 'Sell products' },
+              ].map(opt => (
+                <button key={opt.value} type="button" onClick={() => setForm({ ...form, role: opt.value })}
+                  style={{ flex: 1, padding: '0.75rem', borderRadius: '0.5rem', border: `2px solid ${form.role === opt.value ? 'var(--primary)' : 'var(--border)'}`, background: 'var(--surface)', cursor: 'pointer', textAlign: 'center' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{opt.label}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{opt.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
           <button className="btn btn-primary" style={{ justifyContent: 'center', padding: '0.75rem' }} disabled={loading}>{loading ? 'Creating...' : 'Create Account'}</button>
         </form>
         <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>

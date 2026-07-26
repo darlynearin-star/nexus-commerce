@@ -4,7 +4,7 @@ import './globals.css';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/lib/auth-guard';
 import ErrorBoundary from '@/lib/error-boundary';
-import { LayoutDashboard, Package, ShoppingCart, Users, BarChart3, Settings, Image, Megaphone, LogOut, Menu, X, Store, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Users, BarChart3, Settings, Image, Megaphone, LogOut, Menu, X, Store, CreditCard, Eye, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -42,6 +42,11 @@ function Sidebar({ children }: { children: React.ReactNode }) {
             </Link>
           ))}
         </nav>
+        <div style={{ padding: '0.5rem 0.75rem', borderTop: '1px solid var(--border)' }}>
+          <a href={`${process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app'}/store/${typeof window !== 'undefined' ? localStorage.getItem('activeStoreSlug') : ''}`} target="_blank" className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: collapsed ? 'center' : 'flex-start', gap: '0.375rem' }}>
+            <Eye size={16} /> {!collapsed && <>View Store <ExternalLink size={12} /></>}
+          </a>
+        </div>
         <div style={{ padding: '0.75rem', borderTop: '1px solid var(--border)', marginTop: 'auto' }}>
           {!collapsed && user && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', padding: '0 0.5rem' }}>

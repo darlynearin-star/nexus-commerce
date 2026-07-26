@@ -44,7 +44,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('accessToken', res.data.accessToken);
     localStorage.setItem('refreshToken', res.data.refreshToken);
     setUser(res.data.user);
-    router.push('/create-store');
+    if (data.role === 'RETAILER') router.push('/create-store');
+    else router.push('/account');
   };
 
   const logout = () => {
