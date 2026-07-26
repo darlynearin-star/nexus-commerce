@@ -47,7 +47,7 @@ export default function CachePage() {
           <button className="btn btn-danger btn-sm" onClick={flushAll} disabled={flushing === 'all'}><Trash2 size={14} /> {flushing === 'all' ? 'Clearing...' : 'Flush All'}</button>
         </div>
         {entries.length === 0 ? <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', textAlign: 'center', padding: '2rem' }}>No cache entries</p> : (
-          <table className="table"><thead><tr><th>Key</th><th>TTL (ms)</th><th>Age (ms)</th><th>Status</th><th></th></tr></thead>
+          <div className="table-container"><table className="table"><thead><tr><th>Key</th><th>TTL (ms)</th><th>Age (ms)</th><th>Status</th><th></th></tr></thead>
             <tbody>{entries.map((e: any) => (
               <tr key={e.key}><td style={{ fontFamily: 'monospace', fontSize: '0.8125rem' }}>{e.key}</td>
                 <td style={{ fontSize: '0.875rem' }}>{e.ttl}</td>
@@ -56,7 +56,7 @@ export default function CachePage() {
                 <td><button className="btn btn-ghost btn-sm" onClick={() => flushKey(e.key)} disabled={flushing === e.key}>{flushing === e.key ? '...' : <RefreshCw size={14} />}</button></td>
               </tr>
             ))}</tbody>
-          </table>
+          </table></div>
         )}
       </div>
     </div>

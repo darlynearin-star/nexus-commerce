@@ -19,7 +19,7 @@ export default function OrdersPage() {
       <div style={{ marginBottom: '1.5rem' }}><h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Orders</h1><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{orders.length} orders</p></div>
       {loading ? <div className="card"><div className="skeleton" style={{ height: 200 }} /></div> : (
         <div className="card" style={{ padding: 0 }}>
-          <table className="table">
+          <div className="table-container"><table className="table">
             <thead><tr><th>Order</th><th>Customer</th><th>Date</th><th>Total</th><th>Status</th><th>Payment</th><th>Actions</th></tr></thead>
             <tbody>
               {orders.map(o => (
@@ -40,7 +40,7 @@ export default function OrdersPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
     </div>

@@ -46,7 +46,7 @@ export default function ProductsPage() {
         <div className="card"><div className="skeleton" style={{ height: 200 }} /></div>
       ) : (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <table className="table">
+          <div className="table-container"><table className="table">
             <thead>
               <tr><th>Product</th><th>SKU</th><th>Price</th><th>Stock</th><th>Status</th><th style={{ width: 120 }}>Actions</th></tr>
             </thead>
@@ -73,7 +73,7 @@ export default function ProductsPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
     </div>

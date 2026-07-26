@@ -52,7 +52,7 @@ export default function BackupsPage() {
             <p>No backups yet. Click "Create Backup" to take your first snapshot.</p>
           </div>
         ) : (
-          <table className="table"><thead><tr><th>Backup ID</th><th>Date</th><th>Tables</th><th>Rows</th><th>Size</th><th></th></tr></thead>
+          <div className="table-container"><table className="table"><thead><tr><th>Backup ID</th><th>Date</th><th>Tables</th><th>Rows</th><th>Size</th><th></th></tr></thead>
             <tbody>{backups.map(b => (
               <tr key={b.id}><td style={{ fontFamily: 'monospace', fontSize: '0.8125rem' }}>{b.id.slice(0, 24)}...</td>
                 <td style={{ fontSize: '0.875rem' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}><Clock size={14} />{new Date(b.createdAt).toLocaleString()}</div></td>
@@ -65,7 +65,7 @@ export default function BackupsPage() {
                 </div></td>
               </tr>
             ))}</tbody>
-          </table>
+          </table></div>
         )}
       </div>
     </div>

@@ -13,6 +13,9 @@ function Sidebar({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const closeMobile = () => setMobileOpen(false);
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
@@ -30,14 +33,15 @@ function Sidebar({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthGuard roles={['RETAILER', 'DEVELOPER', 'SUPER_DEVELOPER']}>
-      <div className="sidebar" style={{ width: collapsed ? 64 : 'var(--sidebar)', transition: 'width 0.2s' }}>
+      <div className={`sidebar-overlay ${mobileOpen ? 'open' : ''}`} onClick={closeMobile} />
+      <div className={`sidebar ${mobileOpen ? 'open' : ''}`} style={{ width: collapsed ? 64 : 'var(--sidebar)', transition: 'width 0.2s' }}>
         <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'space-between' }}>
-          {!collapsed && <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary)', textDecoration: 'none' }}><Store size={22} /> Retailer</Link>}
-          <button className="btn btn-ghost btn-icon" onClick={() => setCollapsed(!collapsed)}>{collapsed ? <Menu size={18} /> : <X size={18} />}</button>
+          {!collapsed && <Link href="/dashboard" onClick={closeMobile} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary)', textDecoration: 'none' }}><Store size={22} /> Retailer</Link>}
+          <button className="btn btn-ghost btn-icon" onClick={() => { if (window.innerWidth < 768) setMobileOpen(false); else setCollapsed(!collapsed); }}>{collapsed ? <Menu size={18} /> : <X size={18} />}</button>
         </div>
         <nav style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
           {navItems.map(item => (
-            <Link key={item.href} href={item.href} className={`nav-item ${pathname.startsWith(item.href) ? 'active' : ''}`} style={{ justifyContent: collapsed ? 'center' : 'flex-start' }}>
+            <Link key={item.href} href={item.href} onClick={closeMobile} className={`nav-item ${pathname.startsWith(item.href) ? 'active' : ''}`} style={{ justifyContent: collapsed ? 'center' : 'flex-start' }}>
               {item.icon} {!collapsed && item.label}
             </Link>
           ))}
@@ -58,6 +62,7 @@ function Sidebar({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       <div className="main-content" style={{ marginLeft: collapsed ? 64 : 'var(--sidebar)', transition: 'margin 0.2s' }}>
+        <button className="btn btn-ghost btn-icon mobile-sidebar-btn" onClick={() => setMobileOpen(true)} style={{ position: 'fixed', top: '0.75rem', left: '0.75rem', zIndex: 50, background: 'var(--bg-card)' }}><Menu size={20} /></button>
         <ErrorBoundary>{children}</ErrorBoundary>
       </div>
     </AuthGuard>

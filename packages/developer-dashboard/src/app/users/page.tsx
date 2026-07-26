@@ -26,7 +26,7 @@ export default function UsersPage() {
         <button className="btn btn-primary btn-sm">Create User</button>
       </div>
       <div className="card" style={{ padding: 0 }}>
-        <table className="table">
+        <div className="table-container"><table className="table">
           <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>2FA</th><th>Sessions</th><th>Actions</th></tr></thead>
           <tbody>
             {users
@@ -50,7 +50,7 @@ export default function UsersPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   );

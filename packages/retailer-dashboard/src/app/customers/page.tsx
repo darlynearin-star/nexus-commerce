@@ -17,7 +17,7 @@ export default function CustomersPage() {
         <input className="input" style={{ paddingLeft: '2.25rem' }} placeholder="Search customers..." value={search} onChange={e => setSearch(e.target.value)} />
       </div>
       <div className="card" style={{ padding: 0 }}>
-        <table className="table">
+        <div className="table-container"><table className="table">
           <thead><tr><th>Customer</th><th>Email</th><th>Orders</th><th>Spent</th><th>Group</th><th>Joined</th></tr></thead>
           <tbody>
             {customers.filter(c => !search || c.user?.email?.includes(search) || c.user?.firstName?.includes(search)).map(c => (
@@ -34,7 +34,7 @@ export default function CustomersPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   );

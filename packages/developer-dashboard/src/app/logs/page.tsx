@@ -14,7 +14,7 @@ export default function LogsPage() {
       <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>All platform activity recorded with timestamps</p>
       {loading ? <div className="card"><div className="skeleton" style={{ height: 400 }} /></div> : (
         <div className="card" style={{ padding: 0 }}>
-          <table className="table">
+          <div className="table-container"><table className="table">
             <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Resource</th><th>IP</th></tr></thead>
             <tbody>
               {logs.map(log => (
@@ -28,7 +28,7 @@ export default function LogsPage() {
               ))}
               {logs.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No activity logs yet</td></tr>}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
     </div>

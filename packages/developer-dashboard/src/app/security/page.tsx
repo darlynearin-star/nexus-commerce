@@ -34,7 +34,7 @@ export default function SecurityPage() {
       </div>
       <div className="card" style={{ marginTop: '1.5rem' }}>
         <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Recent Login Activity</h3>
-        <table className="table">
+        <div className="table-container"><table className="table">
           <thead><tr><th>Time</th><th>User</th><th>IP</th></tr></thead>
           <tbody>
             {logs.slice(0, 10).map(log => (
@@ -45,7 +45,7 @@ export default function SecurityPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   );
