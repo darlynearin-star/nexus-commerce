@@ -21,11 +21,19 @@ authRouter.post('/register', async (req, res, next) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+    const role = (req.body.role === 'RETAILER' || req.body.role === 'DEVELOPER') ? req.body.role : 'CUSTOMER';
+
     const user = await prisma.user.create({
-      data: { email, passwordHash, firstName, lastName, role: 'CUSTOMER', emailVerified: true },
+      data: { email, passwordHash, firstName, lastName, role, emailVerified: true },
     });
 
-    await prisma.customer.create({ data: { userId: user.id } });
+    if (role === 'CUSTOMER') {
+      await prisma.customer.create({ data: { userId: user.id } });
+    } else if (role === 'RETAILER') {
+      await prisma.retailer.create({ data: { userId: user.id, storeName: `${firstName}'s Store`, storeSlug: `${firstName.toLowerCase()}-${Date.now().toString(36)}` } });
+    } else if (role === 'DEVELOPER') {
+      await prisma.developer.create({ data: { userId: user.id } });
+    }
 
     const payload = { userId: user.id, email: user.email, role: user.role };
     const accessToken = signAccessToken(payload);
