@@ -23,8 +23,10 @@ reviewsRouter.post('/', authenticate, async (req: StoreRequest, res, next) => {
     const customer = await prisma.customer.findUnique({ where: { userId: (req as any).user!.userId } });
     if (!customer) return res.status(400).json({ success: false, error: 'Customer not found' });
 
+    const { productId, rating, title, content, images } = req.body;
+    if (!productId) return res.status(400).json({ success: false, error: 'productId is required' });
     const review = await prisma.review.create({
-      data: { ...req.body, storeId: req.storeId!, customerId: customer.id, isVerifiedPurchase: true },
+      data: { productId, rating: Math.max(1, Math.min(5, rating || 5)), title: title || '', content: content || '', images: images || [], storeId: req.storeId!, customerId: customer.id, isVerifiedPurchase: true },
     });
     res.status(201).json({ success: true, data: review });
   } catch (error) { next(error); }

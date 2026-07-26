@@ -27,6 +27,9 @@ import { templatesRouter } from './routes/templates';
 import { apiConfigRouter } from './routes/api-config';
 import { subscriptionsRouter } from './routes/subscriptions';
 import { paymentsRouter } from './routes/payments';
+import { announcementsRouter } from './routes/announcements';
+import { cacheRouter } from './routes/cache';
+import { backupsRouter } from './routes/backups';
 import { storeSettingsRouter } from './routes/store-settings';
 import { resolveStore } from './middleware/resolve-store';
 import { errorHandler } from './middleware/error-handler';
@@ -38,9 +41,26 @@ const PORT = process.env.PORT || 4000;
 
 // Security
 app.use(helmet({
-  contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:', 'blob:', 'https://picsum.photos', 'https://res.cloudinary.com'],
+      connectSrc: ["'self'"],
+    },
+  },
 }));
+app.use((_req, res, next) => {
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'same-origin');
+  next();
+});
 app.use(cors({
   origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'],
   credentials: true,
@@ -91,6 +111,9 @@ app.use('/api/templates', templatesRouter);
 app.use('/api/api-config', apiConfigRouter);
 app.use('/api/subscriptions', subscriptionsRouter);
 app.use('/api/payments', paymentsRouter);
+app.use('/api/announcements', announcementsRouter);
+app.use('/api/cache', cacheRouter);
+app.use('/api/backups', backupsRouter);
 app.use('/api/store-settings', storeSettingsRouter);
 
 // Health check

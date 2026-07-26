@@ -87,7 +87,10 @@ productsRouter.get('/new/list', async (req: StoreRequest, res, next) => {
 
 productsRouter.post('/', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), async (req: StoreRequest, res, next) => {
   try {
-    const product = await prisma.product.create({ data: { ...req.body, storeId: req.storeId!, status: req.body.status || 'DRAFT' } });
+    const { name, slug, brand, sku, description, specifications, features, price, compareAtPrice, costPerItem, stock, lowStockThreshold, trackInventory, allowBackorder, status, categoryId, tags, seoTitle, seoDescription, returnPolicy, warranty, weight, weightUnit, shippingClass, estimatedDays, freeShipping, isFeatured, isNew } = req.body;
+    const product = await prisma.product.create({
+      data: { name, slug, brand: brand || '', sku, description: description || '', specifications: specifications || {}, features: features || [], price, compareAtPrice: compareAtPrice || null, costPerItem: costPerItem || null, stock: stock ?? 0, lowStockThreshold: lowStockThreshold ?? 10, trackInventory: trackInventory ?? true, allowBackorder: allowBackorder ?? false, status: status || 'DRAFT', categoryId, tags: tags || [], seoTitle: seoTitle || '', seoDescription: seoDescription || '', returnPolicy: returnPolicy || '', warranty: warranty || '', weight: weight ?? 0, weightUnit: weightUnit || 'kg', shippingClass: shippingClass || 'standard', estimatedDays: estimatedDays || '5-7 business days', freeShipping: freeShipping ?? false, isFeatured: isFeatured ?? false, isNew: isNew ?? false, storeId: req.storeId! },
+    });
     logActivity({ userId: (req as any).user!.userId, action: 'product:created', resource: 'product', resourceId: product.id, req: req as any });
     res.status(201).json({ success: true, data: product });
   } catch (error) { next(error); }
@@ -95,7 +98,37 @@ productsRouter.post('/', authenticate, requirePermission(Permission.MANAGE_PRODU
 
 productsRouter.put('/:id', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), async (req: StoreRequest, res, next) => {
   try {
-    const product = await prisma.product.update({ where: { id: req.params.id }, data: req.body });
+    const { name, slug, brand, sku, description, specifications, features, price, compareAtPrice, costPerItem, stock, lowStockThreshold, trackInventory, allowBackorder, status, categoryId, tags, seoTitle, seoDescription, returnPolicy, warranty, weight, weightUnit, shippingClass, estimatedDays, freeShipping, isFeatured, isNew } = req.body;
+    const data: any = {};
+    if (name !== undefined) data.name = name;
+    if (slug !== undefined) data.slug = slug;
+    if (brand !== undefined) data.brand = brand;
+    if (sku !== undefined) data.sku = sku;
+    if (description !== undefined) data.description = description;
+    if (specifications !== undefined) data.specifications = specifications;
+    if (features !== undefined) data.features = features;
+    if (price !== undefined) data.price = price;
+    if (compareAtPrice !== undefined) data.compareAtPrice = compareAtPrice;
+    if (costPerItem !== undefined) data.costPerItem = costPerItem;
+    if (stock !== undefined) data.stock = stock;
+    if (lowStockThreshold !== undefined) data.lowStockThreshold = lowStockThreshold;
+    if (trackInventory !== undefined) data.trackInventory = trackInventory;
+    if (allowBackorder !== undefined) data.allowBackorder = allowBackorder;
+    if (status !== undefined) data.status = status;
+    if (categoryId !== undefined) data.categoryId = categoryId;
+    if (tags !== undefined) data.tags = tags;
+    if (seoTitle !== undefined) data.seoTitle = seoTitle;
+    if (seoDescription !== undefined) data.seoDescription = seoDescription;
+    if (returnPolicy !== undefined) data.returnPolicy = returnPolicy;
+    if (warranty !== undefined) data.warranty = warranty;
+    if (weight !== undefined) data.weight = weight;
+    if (weightUnit !== undefined) data.weightUnit = weightUnit;
+    if (shippingClass !== undefined) data.shippingClass = shippingClass;
+    if (estimatedDays !== undefined) data.estimatedDays = estimatedDays;
+    if (freeShipping !== undefined) data.freeShipping = freeShipping;
+    if (isFeatured !== undefined) data.isFeatured = isFeatured;
+    if (isNew !== undefined) data.isNew = isNew;
+    const product = await prisma.product.update({ where: { id: req.params.id }, data });
     logActivity({ userId: (req as any).user!.userId, action: 'product:updated', resource: 'product', resourceId: product.id, details: { changes: Object.keys(req.body) }, req: req as any });
     res.json({ success: true, data: product });
   } catch (error) { next(error); }

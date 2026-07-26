@@ -335,6 +335,9 @@ model Product {
 
   @@unique([storeId, slug])
   @@unique([storeId, sku])
+  @@index([categoryId])
+  @@index([status])
+  @@index([isFeatured])
   @@map("products")
 }
 
@@ -437,6 +440,10 @@ model Order {
   items     OrderItem[]
   payments  Payment[]
 
+  @@index([storeId])
+  @@index([customerId])
+  @@index([createdAt])
+  @@index([paymentStatus])
   @@map("orders")
 }
 
@@ -587,6 +594,8 @@ model Notification {
   readAt    DateTime?
   createdAt DateTime           @default(now())
 
+  @@index([userId, isRead])
+  @@index([createdAt])
   @@map("notifications")
 }
 
@@ -602,6 +611,9 @@ model ActivityLog {
   userAgent String   @default("")
   createdAt DateTime @default(now())
 
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
   @@map("activity_logs")
 }
 

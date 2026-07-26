@@ -16,7 +16,8 @@ mediaRouter.get('/', authenticate, async (req: StoreRequest, res, next) => {
 
 mediaRouter.post('/', authenticate, requirePermission(Permission.MANAGE_MEDIA), async (req: StoreRequest, res, next) => {
   try {
-    const media = await prisma.media.create({ data: { ...req.body, storeId: req.storeId! } });
+    const { url, thumbnailUrl, alt, type, mimeType, size, width, height, folder, productId } = req.body;
+    const media = await prisma.media.create({ data: { url, thumbnailUrl: thumbnailUrl || '', alt: alt || '', type: type || 'image', mimeType: mimeType || 'image/jpeg', size: size || 0, width: width || 0, height: height || 0, folder: folder || 'general', productId: productId || null, storeId: req.storeId! } });
     res.status(201).json({ success: true, data: media });
   } catch (error) { next(error); }
 });

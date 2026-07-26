@@ -3,7 +3,7 @@
 import './globals.css';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/lib/auth-guard';
-import { LayoutDashboard, Users, Shield, Database, Activity, Settings, AlertTriangle, LogOut, Menu, X, Terminal, Server, FileText, Flag, Store, Key } from 'lucide-react';
+import { LayoutDashboard, Users, Shield, Database, Activity, Settings, AlertTriangle, LogOut, Menu, X, Terminal, Server, FileText, Flag, Store, Key, Megaphone, RefreshCw, HardDrive } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -25,6 +25,9 @@ function Sidebar({ children }: { children: React.ReactNode }) {
     { href: '/api-config', label: 'API Configuration', icon: <Key size={18} /> },
     { href: '/feature-flags', label: 'Feature Flags', icon: <Flag size={18} /> },
     { href: '/logs', label: 'Activity Logs', icon: <FileText size={18} /> },
+    { href: '/announcements', label: 'Announcements', icon: <Megaphone size={18} /> },
+    { href: '/cache', label: 'Cache', icon: <RefreshCw size={18} /> },
+    { href: '/backups', label: 'Backups', icon: <HardDrive size={18} /> },
   ];
 
   if (pathname === '/login') return <>{children}</>;

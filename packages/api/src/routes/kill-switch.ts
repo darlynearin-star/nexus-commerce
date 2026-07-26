@@ -15,8 +15,9 @@ killSwitchRouter.get('/', authenticate, async (req, res, next) => {
 
 killSwitchRouter.put('/', authenticate, requirePermission(Permission.MANAGE_KILL_SWITCH), async (req: AuthRequest, res, next) => {
   try {
+    const { storefront, retailerDashboard, customerRegistration, checkout, orders, uploads, payments, apis, search, maintenance, maintenanceMessage } = req.body;
     const state = await prisma.killSwitch.updateMany({
-      data: { ...req.body, updatedBy: req.user!.email, updatedAt: new Date() },
+      data: { storefront, retailerDashboard, customerRegistration, checkout, orders, uploads, payments, apis, search, maintenance, maintenanceMessage, updatedBy: req.user!.email, updatedAt: new Date() },
     });
     logActivity({
       userId: req.user!.userId,
