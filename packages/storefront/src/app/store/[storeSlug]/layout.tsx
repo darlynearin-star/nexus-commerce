@@ -3,9 +3,6 @@ import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { StoreProvider, useStore } from '@/lib/store-context';
 import { setStoreSlug } from '@/lib/store-api';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-
 function StoreInner({ children }: { children: React.ReactNode }) {
   const { store, loading } = useStore();
 
@@ -28,13 +25,7 @@ function StoreInner({ children }: { children: React.ReactNode }) {
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'var(--text-secondary)' }}>Loading store...</div>;
   if (!store) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'var(--error)' }}>Store not found or is disabled</div>;
 
-  return (
-    <>
-      <Header />
-      <main style={{ minHeight: 'calc(100vh - 64px)', position: 'relative', zIndex: 1 }}>{children}</main>
-      <Footer />
-    </>
-  );
+  return <>{children}</>;
 }
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {

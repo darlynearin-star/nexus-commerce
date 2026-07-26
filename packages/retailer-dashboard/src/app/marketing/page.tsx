@@ -16,7 +16,7 @@ export default function MarketingPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {coupons.map(c => <div key={c.id} style={{ padding: '0.75rem', background: 'var(--bg)', borderRadius: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div><p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{c.code}</p><p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{c.description}</p></div>
-                <div style={{ textAlign: 'right' }}><p style={{ fontWeight: 600, color: 'var(--primary)' }}>{c.discountType === 'PERCENTAGE' ? `${c.discountValue}%` : `$${c.discountValue}`}</p><span className={`badge ${c.isActive ? 'badge-success' : 'badge-error'}`}>{c.isActive ? 'Active' : 'Inactive'}</span></div>
+                <div style={{ textAlign: 'right' }}><p style={{ fontWeight: 600, color: 'var(--primary)' }}>{c.discountType === 'PERCENTAGE' ? `${c.discountValue}%` : `UGX ${c.discountValue.toLocaleString()}`}</p><span className={`badge ${c.isActive ? 'badge-success' : 'badge-error'}`}>{c.isActive ? 'Active' : 'Inactive'}</span></div>
               </div>)}
             </div>
           )}

@@ -24,7 +24,7 @@ export default function DashboardPage() {
   if (loading || !user) return <div style={{ padding: '2rem' }}>{loading ? 'Loading...' : 'Redirecting...'}</div>;
 
   const cards = [
-    { label: 'Total Revenue', value: `$${(stats.totalRevenue || 0).toFixed(2)}`, icon: <DollarSign size={24} /> },
+    { label: 'Total Revenue', value: `UGX ${(stats.totalRevenue || 0).toLocaleString()}`, icon: <DollarSign size={24} /> },
     { label: 'Total Users', value: (stats.totalCustomers || 0).toString(), icon: <Users size={24} /> },
     { label: 'System Status', value: health?.status || 'checking...', icon: <Activity size={24} />, status: true },
     { label: 'API Uptime', value: health?.api ? `${Math.round(health.api.uptime / 60)} min` : 'N/A', icon: <Server size={24} /> },

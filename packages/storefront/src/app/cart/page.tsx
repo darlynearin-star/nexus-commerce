@@ -14,8 +14,6 @@ export default function CartPage() {
 
   const loadCart = async () => {
     try {
-      const headers: any = {};
-      if (!user) headers['x-session-id'] = localStorage.getItem('sessionId') || 'guest';
       const res = await api.get('/cart');
       setCart(res.data);
     } catch (e: any) { console.error('Error:', e); } finally { setLoading(false); }

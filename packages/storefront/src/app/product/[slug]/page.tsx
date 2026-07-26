@@ -118,7 +118,7 @@ export default function ProductPage() {
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <Truck size={18} color="var(--primary)" />
-              <span style={{ fontSize: '0.875rem' }}>Free shipping on orders over $50</span>
+              <span style={{ fontSize: '0.875rem' }}>Free shipping on orders over UGX 150,000</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <Shield size={18} color="var(--primary)" />
@@ -193,7 +193,7 @@ export default function ProductPage() {
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{p.brand}</p>
                 <p style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{p.name}</p>
-                <p style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary)' }}>${p.price.toFixed(2)}</p>
+                <p style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary)' }}>UGX {p.price.toLocaleString()}</p>
               </Link>
             ))}
           </div>

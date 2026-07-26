@@ -27,7 +27,7 @@ export default function OrdersPage() {
                   <td style={{ fontWeight: 600, fontSize: '0.875rem' }}>{o.orderNumber}</td>
                   <td style={{ fontSize: '0.875rem' }}>{o.customer?.user?.firstName} {o.customer?.user?.lastName}</td>
                   <td style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{new Date(o.createdAt).toLocaleDateString()}</td>
-                  <td style={{ fontWeight: 600 }}>${o.total.toFixed(2)}</td>
+                  <td style={{ fontWeight: 600 }}>UGX {o.total.toLocaleString()}</td>
                   <td><span className={`badge ${o.status === 'COMPLETED' ? 'badge-success' : o.status === 'PROCESSING' ? 'badge-warning' : o.status === 'CANCELLED' ? 'badge-error' : 'badge-info'}`}>{o.status}</span></td>
                   <td><span className={`badge ${o.paymentStatus === 'PAID' ? 'badge-success' : 'badge-warning'}`}>{o.paymentStatus}</span></td>
                   <td>

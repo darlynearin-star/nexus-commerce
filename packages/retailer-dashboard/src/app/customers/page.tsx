@@ -28,7 +28,7 @@ export default function CustomersPage() {
                 </td>
                 <td style={{ fontSize: '0.8125rem' }}>{c.user?.email}</td>
                 <td>{c.totalOrders || 0}</td>
-                <td style={{ fontWeight: 600 }}>${(c.totalSpent || 0).toFixed(2)}</td>
+                <td style={{ fontWeight: 600 }}>UGX {(c.totalSpent || 0).toLocaleString()}</td>
                 <td><span className={`badge ${c.group === 'VIP' ? 'badge-warning' : 'badge-info'}`}>{c.group}</span></td>
                 <td style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{new Date(c.createdAt).toLocaleDateString()}</td>
               </tr>

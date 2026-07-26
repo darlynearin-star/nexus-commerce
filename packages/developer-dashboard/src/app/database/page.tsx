@@ -1,10 +1,16 @@
 'use client';
 import { Database, Download, Upload, RefreshCw } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 
 export default function DatabasePage() {
-  const [status, setStatus] = useState('Connected');
+  const [status, setStatus] = useState('Checking...');
+
+  useEffect(() => {
+    api.get('/system/health').then((r: any) => {
+      setStatus(r.data?.database?.status === 'connected' ? 'Connected' : 'Disconnected');
+    }).catch(() => setStatus('Error'));
+  }, []);
 
   return (
     <div style={{ padding: '2rem' }}>

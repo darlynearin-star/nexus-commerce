@@ -60,7 +60,7 @@ export default function ProductsPage() {
                     </div>
                   </td>
                   <td style={{ fontSize: '0.8125rem' }}>{p.sku}</td>
-                  <td style={{ fontWeight: 600 }}>${p.price.toFixed(2)}</td>
+                  <td style={{ fontWeight: 600 }}>UGX {p.price.toLocaleString()}</td>
                   <td><span className={`badge ${p.stock > 0 ? 'badge-success' : 'badge-error'}`}>{p.stock > 0 ? p.stock : 'Out'}</span></td>
                   <td><span className={`badge ${p.status === 'PUBLISHED' ? 'badge-success' : p.status === 'DRAFT' ? 'badge-warning' : 'badge-info'}`}>{p.status}</span></td>
                   <td>

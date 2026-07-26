@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import Link from 'next/link';
-import { useTheme } from '@/lib/theme';
 
 export default function LoginPage() {
   const { login } = useAuth();

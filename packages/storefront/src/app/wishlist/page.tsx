@@ -3,11 +3,9 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { Heart, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { useTheme } from '@/lib/theme';
 
 export default function WishlistPage() {
   const [wishlists, setWishlists] = useState<any[]>([]);
-  const { isDark } = useTheme();
 
   useEffect(() => { api.get('/wishlist').then((r: any) => setWishlists(r.data)).catch((e: any) => console.error('API error:', e)); }, []);
 
