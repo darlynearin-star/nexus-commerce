@@ -30,9 +30,16 @@ export default function Header() {
           <Link href="/wishlist" className="btn btn-ghost btn-icon"><Heart size={20} /></Link>
           <Link href="/cart" className="btn btn-ghost btn-icon"><ShoppingCart size={20} /></Link>
           {user ? (
-            <Link href="/account" className="btn btn-ghost btn-sm" style={{ gap: '0.375rem' }}>
-              <User size={18} /> {user.firstName}
-            </Link>
+            <>
+              {(user.role === 'RETAILER' || user.role === 'DEVELOPER' || user.role === 'SUPER_DEVELOPER') && (
+                <a href={process.env.NEXT_PUBLIC_RETAILER_DASHBOARD_URL || 'https://nexus-commerce-retailer-dashboard.vercel.app'} className="btn btn-ghost btn-sm" style={{ gap: '0.375rem', color: 'var(--primary)' }}>
+                  Dashboard
+                </a>
+              )}
+              <Link href="/account" className="btn btn-ghost btn-sm" style={{ gap: '0.375rem' }}>
+                <User size={18} /> {user.firstName}
+              </Link>
+            </>
           ) : (
             <Link href="/login" className="btn btn-primary btn-sm">Sign In</Link>
           )}
