@@ -1,7 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ShoppingCart, Heart, Search, User, Sun, Moon, Menu, X, Gem } from 'lucide-react';
+import { ShoppingCart, Heart, Search, User, Sun, Moon, Menu, X, Gem, Store, ExternalLink, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
 
@@ -10,6 +10,15 @@ export default function Header() {
   const { isDark, toggleDark } = useTheme();
   const [mobileMenu, setMobileMenu] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [storeSlug, setStoreSlug] = useState<string | null>(null);
+
+  useEffect(() => {
+    setStoreSlug(localStorage.getItem('activeStoreSlug'));
+  }, [user]);
+
+  const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || '';
+  const retDashUrl = process.env.NEXT_PUBLIC_RETAILER_DASHBOARD_URL || 'https://nexus-commerce-retailer-dashboard.vercel.app';
+  const devDashUrl = process.env.NEXT_PUBLIC_DEVELOPER_DASHBOARD_URL || 'https://nexus-commerce-developer-dashboard.vercel.app';
 
   return (
     <header className="glass" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
@@ -31,11 +40,27 @@ export default function Header() {
           <Link href="/cart" className="btn btn-ghost btn-icon"><ShoppingCart size={20} /></Link>
           {user ? (
             <>
-              {(user.role === 'RETAILER' || user.role === 'DEVELOPER' || user.role === 'SUPER_DEVELOPER') && (
-                <a href={process.env.NEXT_PUBLIC_RETAILER_DASHBOARD_URL || 'https://nexus-commerce-retailer-dashboard.vercel.app'} className="btn btn-ghost btn-sm" style={{ gap: '0.375rem', color: 'var(--primary)' }}>
-                  Dashboard
-                </a>
+              {user.role === 'RETAILER' && (
+                <>
+                  {storeSlug ? (
+                    <a href={`${storefrontUrl}/store/${storeSlug}`} target="_blank" className="btn btn-ghost btn-sm" style={{ gap: '0.375rem' }}>
+                      <Store size={16} /> Visit Store <ExternalLink size={12} />
+                    </a>
+                  ) : (
+                    <Link href="/create-store" className="btn btn-ghost btn-sm" style={{ gap: '0.375rem', color: 'var(--primary)' }}>
+                      <Store size={16} /> Create Store
+                    </Link>
+                  )}
+                  <a href={retDashUrl + '/dashboard'} className="btn btn-ghost btn-sm" style={{ gap: '0.375rem' }}>
+                    <LayoutDashboard size={16} /> Dashboard
+                  </a>
+                </>
               )}
+              {user.role === 'DEVELOPER' || user.role === 'SUPER_DEVELOPER' ? (
+                <a href={devDashUrl + '/dashboard'} className="btn btn-ghost btn-sm" style={{ gap: '0.375rem' }}>
+                  <LayoutDashboard size={16} /> Dashboard
+                </a>
+              ) : null}
               <Link href="/account" className="btn btn-ghost btn-sm" style={{ gap: '0.375rem' }}>
                 <User size={18} /> {user.firstName}
               </Link>

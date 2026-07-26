@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { setStoreSlug } from '@/lib/store-api';
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRight, Check, Store, Palette, CreditCard, Shield, Gem, Smartphone, ChevronRight } from 'lucide-react';
 
 const TEMPLATES = [
   { id: 'elegance', name: 'Elegance', desc: 'Gold accents on dark — timeless luxury', colors: { primary: '#D4A843', secondary: '#A8822E', bg: '#0A0A0A', surface: '#141414', text: '#FAFAFA', accent: '#F0D48A' } },
@@ -12,9 +12,32 @@ const TEMPLATES = [
   { id: 'nature', name: 'Nature', desc: 'Earthy greens, warm browns — organic feel', colors: { primary: '#5B8C5A', secondary: '#4A7349', bg: '#F8F6F0', surface: '#F0EDE4', text: '#2C2C2C', accent: '#7DAD7C' } },
 ];
 
+const slides = [
+  {
+    icon: <Store size={48} />,
+    title: 'Sell Your Fashion Online',
+    desc: 'Create a personalized storefront for your brand in minutes. No coding, no hassle — just pick a design, add your products, and start selling across Uganda.',
+    feat: ['4 professional templates', 'Custom branding & colors', 'Your own store URL'],
+  },
+  {
+    icon: <Palette size={48} />,
+    title: 'Pick Your Style',
+    desc: 'Choose from four designer-crafted templates: Elegance (gold & dark), Minimal (clean & modern), Bold (vibrant & energetic), or Nature (organic & fresh). Every color is customizable.',
+    feat: ['Live preview as you customize', 'Dark & light mode support', 'Mobile-friendly design'],
+  },
+  {
+    icon: <Smartphone size={48} />,
+    title: 'Accept UGX Payments Instantly',
+    desc: 'Your customers can pay with MTN Mobile Money and Airtel Money from day one. Everything in Uganda Shillings — local shipping, local rates, local payments.',
+    feat: ['MTN MoMo & Airtel Money', 'Flutterwave card payments', '14-day free trial, then 3,000 UGX/week'],
+  },
+];
+
 export default function CreateStorePage() {
   const router = useRouter();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0);
+  const [slideIdx, setSlideIdx] = useState(0);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [template, setTemplate] = useState(TEMPLATES[0]);
   const [colors, setColors] = useState(template.colors);
   const [name, setName] = useState('');
@@ -52,6 +75,51 @@ export default function CreateStorePage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  // Onboarding slides
+  if (step === 0) {
+    const slide = slides[slideIdx];
+    return (
+      <div style={{ maxWidth: 600, margin: '0 auto', padding: '3rem 1rem', position: 'relative', zIndex: 1, textAlign: 'center' }}>
+        <div style={{ color: 'var(--primary)', marginBottom: '2rem' }}>{slide.icon}</div>
+        <h2 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '1rem' }}>{slide.title}</h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: 1.7, marginBottom: '1.5rem' }}>{slide.desc}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem', textAlign: 'left', maxWidth: 400, margin: '0 auto 2rem' }}>
+          {slide.feat.map((f, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Check size={18} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.9375rem' }}>{f}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Slide indicators */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '2rem' }}>
+          {slides.map((_, i) => (
+            <div key={i} style={{ width: slideIdx === i ? 24 : 8, height: 8, borderRadius: 4, background: slideIdx === i ? 'var(--primary)' : 'var(--border)', transition: 'all 0.2s' }} />
+          ))}
+        </div>
+
+        {slideIdx < slides.length - 1 ? (
+          <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '0.875rem', fontSize: '1rem' }} onClick={() => setSlideIdx(slideIdx + 1)}>
+            Next <ChevronRight size={20} />
+          </button>
+        ) : (
+          <div>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '1.5rem', textAlign: 'left', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '0.75rem' }}>
+              <input type="checkbox" id="terms" checked={acceptedTerms} onChange={e => setAcceptedTerms(e.target.checked)} style={{ marginTop: '0.125rem' }} />
+              <label htmlFor="terms" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                I agree to the <strong style={{ color: 'var(--text)' }}>Terms of Service</strong> and <strong style={{ color: 'var(--text)' }}>Privacy Policy</strong>. I understand that after a 14-day free trial, the subscription costs 3,000 UGX per week and can be cancelled anytime.
+              </label>
+            </div>
+            <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '0.875rem', fontSize: '1rem' }} disabled={!acceptedTerms} onClick={() => { setStep(1); setSlideIdx(0); }}>
+              Accept & Continue <ArrowRight size={20} />
+            </button>
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
