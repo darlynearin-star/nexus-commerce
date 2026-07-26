@@ -13,7 +13,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => { const token = localStorage.getItem('accessToken'); if (token) loadUser(); else { setLoading(false); if (!localStorage.getItem('activeStoreSlug')) localStorage.setItem('activeStoreSlug', 'adorn'); } }, []);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tokenParam = params.get('token');
+    if (tokenParam) {
+      localStorage.setItem('accessToken', tokenParam);
+      window.history.replaceState({}, '', window.location.pathname);
+      loadUser();
+      return;
+    }
+    const token = localStorage.getItem('accessToken');
+    if (token) loadUser();
+    else { setLoading(false); if (!localStorage.getItem('activeStoreSlug')) localStorage.setItem('activeStoreSlug', 'adorn'); }
+  }, []);
 
   async function loadUser() {
     try {
@@ -31,6 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('refreshToken', res.data.refreshToken);
     if (res.data.user?.retailer?.storeSlug) localStorage.setItem('activeStoreSlug', res.data.user.retailer.storeSlug);
     setUser(res.data.user);
+    router.push('/dashboard');
   };
 
   const logout = () => { localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); localStorage.removeItem('activeStoreSlug'); setUser(null); router.push('/login'); };
