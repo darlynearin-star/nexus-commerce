@@ -27,13 +27,14 @@ authRouter.post('/register', async (req, res, next) => {
       data: { email, passwordHash, firstName, lastName, role, emailVerified: true },
     });
 
-    if (role === 'CUSTOMER') {
-      await prisma.customer.create({ data: { userId: user.id } });
-    } else if (role === 'RETAILER') {
+    if (role === 'RETAILER') {
       await prisma.retailer.create({ data: { userId: user.id, storeName: `${firstName}'s Store`, storeSlug: `${firstName.toLowerCase()}-${Date.now().toString(36)}` } });
     } else if (role === 'DEVELOPER') {
       await prisma.developer.create({ data: { userId: user.id } });
     }
+
+    // All users get a customer profile (for purchasing)
+    await prisma.customer.create({ data: { userId: user.id } });
 
     const payload = { userId: user.id, email: user.email, role: user.role };
     const accessToken = signAccessToken(payload);
