@@ -3,13 +3,15 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
-import { TrendingUp, DollarSign, ShoppingCart, Users, Package, ArrowUp, ArrowDown } from 'lucide-react';
+import { TrendingUp, DollarSign, ShoppingCart, Users, Package, ArrowUp, ArrowDown, AlertTriangle, CheckCircle, Power, ExternalLink } from 'lucide-react';
 import ErrorBoundary from '@/lib/error-boundary';
+import Link from 'next/link';
 
 function DashboardContent() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<any>({});
+  const [store, setStore] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -17,8 +19,17 @@ function DashboardContent() {
     if (!user) { router.push('/login'); return; }
     const allowed = ['RETAILER', 'DEVELOPER', 'SUPER_DEVELOPER'];
     if (!allowed.includes(user.role)) { router.push('/login'); return; }
-    api.get('/analytics/summary').then((r: any) => setStats(r.data)).catch(() => setError('Failed to load analytics'));
+    Promise.all([
+      api.get('/analytics/summary'),
+      api.get('/stores/mine'),
+    ]).then(([s, st]: [any, any]) => {
+      setStats(s.data);
+      setStore(st.data);
+    }).catch(() => setError('Failed to load data'));
   }, [user, loading]);
+
+  const storeSlug = store?.slug || localStorage.getItem('activeStoreSlug');
+  const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
 
   if (loading || !user) return <div style={{ padding: '2rem' }}>{loading ? 'Loading...' : 'Redirecting...'}</div>;
   if (error) return <div style={{ padding: '2rem', color: 'var(--error)' }}>{error}</div>;
@@ -36,6 +47,25 @@ function DashboardContent() {
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Dashboard</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Welcome back, {user.firstName}! Here&apos;s your store overview.</p>
       </div>
+
+      {/* Store status banner */}
+      {store && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', borderRadius: '0.75rem', marginBottom: '1.5rem', background: store.isActive ? 'var(--bg-secondary)' : '#2e0505', border: `1px solid ${store.isActive ? 'var(--border)' : '#f87171'}` }}>
+          {store.isActive ? <CheckCircle size={20} style={{ color: 'var(--success)' }} /> : <AlertTriangle size={20} style={{ color: '#f87171' }} />}
+          <div style={{ flex: 1 }}>
+            <p style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{store.name} — <span style={{ color: store.isActive ? 'var(--success)' : '#f87171' }}>{store.isActive ? 'Active' : 'Paused'}</span></p>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{store.isActive ? 'Your store is live and accepting orders.' : 'Your store is paused. Customers cannot see it or place orders.'}</p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+            <Link href="/settings" className="btn btn-ghost btn-sm">Settings</Link>
+            {storeSlug && (
+              <a href={`${storefrontUrl}/store/${storeSlug}`} target="_blank" className="btn btn-ghost btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                View Store <ExternalLink size={12} />
+              </a>
+            )}
+          </div>
+        </div>
+      )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
         {cards.map((card, i) => (
           <div key={i} className="card">
