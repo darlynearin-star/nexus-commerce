@@ -90,6 +90,7 @@ app.use(cookieParser());
 app.use(morgan('dev'));
 
 // Rate limiting
+// TODO before production launch: revert max to 100 (was bumped to 300 for testing)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 300,

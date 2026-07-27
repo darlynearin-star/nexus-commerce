@@ -4,7 +4,11 @@ import { authenticate, requirePermission, AuthRequest } from '../middleware/auth
 import { Permission } from '@nexus/shared';
 import { logActivity } from '../utils/activity-log';
 
+// TODO before production launch: reduce this back to ~50-100
 export const storesRouter = Router();
+
+const CONTACT_MESSAGE = 'Adorn has reached its store limit. Please contact Darlyn at +256740157510 (call/WhatsApp) or email darlenzai01@gmail.com to request a store.';
+const MAX_STORES = 50;
 
 // Get current user's store
 storesRouter.get('/mine', authenticate, async (req: AuthRequest, res, next) => {
@@ -62,6 +66,10 @@ storesRouter.get('/check-slug/:slug', async (req, res, next) => {
 // Create a store (authenticated users)
 storesRouter.post('/', authenticate, async (req: AuthRequest, res, next) => {
   try {
+    const storeCount = await prisma.store.count();
+    if (storeCount >= MAX_STORES) {
+      return res.status(503).json({ success: false, error: CONTACT_MESSAGE });
+    }
     const { name, slug, template, colors, logoUrl } = req.body;
     const existingSlug = await prisma.store.findUnique({ where: { slug } });
     if (existingSlug) return res.status(409).json({ success: false, error: 'Store slug already taken' });
