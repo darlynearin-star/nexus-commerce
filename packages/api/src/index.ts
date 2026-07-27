@@ -31,6 +31,7 @@ import { announcementsRouter } from './routes/announcements';
 import { cacheRouter } from './routes/cache';
 import { backupsRouter } from './routes/backups';
 import { storeSettingsRouter } from './routes/store-settings';
+import { migrateRouter } from './routes/migrate';
 import { resolveStore } from './middleware/resolve-store';
 import { errorHandler } from './middleware/error-handler';
 import { checkKillSwitch } from './middleware/kill-switch';
@@ -115,6 +116,7 @@ app.use('/api/announcements', announcementsRouter);
 app.use('/api/cache', cacheRouter);
 app.use('/api/backups', backupsRouter);
 app.use('/api/store-settings', storeSettingsRouter);
+app.use('/api/migrate', migrateRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => {
