@@ -84,7 +84,7 @@ async function main() {
     data: {
       name: 'Adorn', slug: 'adorn', ownerId: adminUser.id,
       theme: { create: { template: 'elegance', colors: JSON.stringify({ primary: '#D4A843', secondary: '#A8822E', bg: '#0A0A0A', surface: '#141414', text: '#FAFAFA', accent: '#F0D48A' }) } },
-      settings: { create: { currency: 'UGX', taxRate: 18, location: 'Kampala, Uganda' } },
+      settings: { create: { currency: 'UGX', taxRate: 18, location: 'Kampala, Uganda', phone: '256700000000', whatsapp: '256700000000' } },
     },
   });
 
@@ -93,7 +93,7 @@ async function main() {
     data: {
       name: 'Luxe Vault', slug: 'luxe-vault', ownerId: retailerUser.id,
       theme: { create: { template: 'bold', colors: JSON.stringify({ primary: '#FF4433', secondary: '#CC3322', bg: '#0A0A0A', surface: '#1A1A1A', text: '#FAFAFA', accent: '#FF6655' }) } },
-      settings: { create: { currency: 'UGX', taxRate: 18, location: 'Kampala, Uganda' } },
+      settings: { create: { currency: 'UGX', taxRate: 18, location: 'Kampala, Uganda', phone: '256700000001', whatsapp: '256700000001' } },
     },
   });
 

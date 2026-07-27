@@ -108,9 +108,25 @@ export default function SettingsPage() {
             <div>
               <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>Location</label>
               <input className="input" value={settings.location || 'Kampala, Uganda'} onChange={e => setSettings((p: any) => ({ ...p, location: e.target.value }))} />
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: '1.5rem' }}>
+          <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Contact</h3>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>Customers will see these on their order receipt.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div>
+              <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>Phone Number</label>
+              <input className="input" value={settings.phone || ''} onChange={e => setSettings((p: any) => ({ ...p, phone: e.target.value }))} placeholder="2567XXXXXXXX" />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>WhatsApp Number</label>
+              <input className="input" value={settings.whatsapp || ''} onChange={e => setSettings((p: any) => ({ ...p, whatsapp: e.target.value }))} placeholder="2567XXXXXXXX" />
             </div>
           </div>
         </div>
+
+      </div>
 
 
       </div>
