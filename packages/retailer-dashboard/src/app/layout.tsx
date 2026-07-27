@@ -23,7 +23,7 @@ function Sidebar({ children }: { children: React.ReactNode }) {
     { href: '/orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
     { href: '/customers', label: 'Customers', icon: <Users size={18} /> },
     { href: '/marketing', label: 'Marketing', icon: <Megaphone size={18} /> },
-    { href: '/media', label: 'Media', icon: <Image size={18} /> },
+    { href: '/media', label: 'Products', icon: <Package size={18} /> },
     { href: '/reports', label: 'Reports', icon: <BarChart3 size={18} /> },
     { href: '/subscription', label: 'Subscription', icon: <CreditCard size={18} /> },
     { href: '/settings', label: 'Settings', icon: <Settings size={18} /> },

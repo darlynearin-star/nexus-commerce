@@ -142,6 +142,41 @@ export default function LandingPage() {
     );
   }
 
+  // Logged-in user without a store → create-store prompt
+  if (user && !hasStore) {
+    return (
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 640, margin: '0 auto', padding: '4rem 1rem', textAlign: 'center' }}>
+        <Store size={64} style={{ color: 'var(--primary)', margin: '0 auto 1.5rem' }} />
+        <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.75rem' }}>You don&apos;t have a store yet</h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '1.0625rem', lineHeight: 1.6, marginBottom: '2rem' }}>
+          Create your personalized online fashion store in minutes. Pick a template, set your colors, add your products — and start selling across Uganda. No coding needed.
+        </p>
+        <div className="card" style={{ textAlign: 'left', padding: '1.5rem', marginBottom: '2rem' }}>
+          <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>How it works</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {[
+              { step: '1', title: 'Sign up & pick a template', desc: 'Choose from Elegance, Minimal, Bold, or Nature. Customize every color.' },
+              { step: '2', title: 'Add your products', desc: 'Upload photos, set UGX prices, organize categories, and manage stock.' },
+              { step: '3', title: 'Share your store link', desc: 'Get a unique URL. Accept MTN MoMo & Airtel Money payments immediately.' },
+            ].map((s, i) => (
+              <div key={i} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--primary)', color: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8125rem', flexShrink: 0 }}>{s.step}</div>
+                <div>
+                  <p style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{s.title}</p>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{s.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <Link href="/create-store" className="btn btn-primary" style={{ fontSize: '1.125rem', padding: '0.875rem 2.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Store size={20} /> Create Your Store
+        </Link>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: '1rem' }}>14-day free trial · 3,000 UGX/week after · Cancel anytime</p>
+      </div>
+    );
+  }
+
   // Not logged in → marketing landing page
   return (
     <div style={{ position: 'relative', zIndex: 1 }}>
