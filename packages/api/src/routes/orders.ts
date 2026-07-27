@@ -68,10 +68,9 @@ ordersRouter.post('/', authenticate, async (req: StoreRequest, res, next) => {
       },
     });
 
-    const storeSettings = await prisma.storeSettings.findUnique({ where: { storeId: req.storeId! } });
     await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
     logActivity({ userId: (req as any).user!.userId, action: 'order:created', resource: 'order', resourceId: order.id, req: req as any });
-    res.status(201).json({ success: true, data: { ...order, storePhone: storeSettings?.phone || '', storeWhatsapp: storeSettings?.whatsapp || '' } });
+    res.status(201).json({ success: true, data: { ...order, storePhone: '', storeWhatsapp: '' } });
   } catch (error) { next(error); }
 });
 

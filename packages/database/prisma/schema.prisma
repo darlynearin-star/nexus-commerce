@@ -230,8 +230,8 @@ model StoreSettings {
   currency         String  @default("UGX")
   taxRate          Float   @default(18)
   location         String  @default("Kampala, Uganda")
-  phone            String  @default("")
-  whatsapp         String  @default("")
+  shippingRate     Float   @default(0)
+  shippingThreshold Float  @default(0)
 
   @@map("store_settings")
 }
@@ -242,7 +242,6 @@ model StoreTheme {
   store   Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
   template String @default("elegance")
   colors   Json   @default("{\"primary\":\"#D4A843\",\"secondary\":\"#A8822E\",\"bg\":\"#0A0A0A\",\"surface\":\"#141414\",\"text\":\"#FAFAFA\",\"accent\":\"#F0D48A\"}")
-  animation String @default("subtle")
 
   @@map("store_themes")
 }

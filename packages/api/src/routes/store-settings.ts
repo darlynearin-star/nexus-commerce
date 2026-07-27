@@ -19,7 +19,7 @@ storeSettingsRouter.get('/', async (req: StoreRequest, res, next) => {
 
 storeSettingsRouter.put('/', async (req: StoreRequest, res, next) => {
   try {
-    const allowed = ['currency', 'taxRate', 'location', 'phone', 'whatsapp'];
+    const allowed = ['currency', 'taxRate', 'location'];
     const update: any = {};
     for (const key of allowed) {
       if (req.body[key] !== undefined) update[key] = req.body[key];
