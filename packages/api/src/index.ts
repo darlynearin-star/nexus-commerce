@@ -38,6 +38,20 @@ import { checkKillSwitch } from './middleware/kill-switch';
 import prisma from '@nexus/database';
 import { logger } from './utils/logger';
 
+// Startup migration: sync DB columns that Prisma schema needs
+async function runMigrations() {
+  try {
+    await prisma.$executeRawUnsafe("ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS phone TEXT NOT NULL DEFAULT ''");
+    logger.info('Migration: added phone column to store_settings');
+    await prisma.$executeRawUnsafe("ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS whatsapp TEXT NOT NULL DEFAULT ''");
+    logger.info('Migration: added whatsapp column to store_settings');
+    await prisma.$executeRawUnsafe("ALTER TABLE store_themes ADD COLUMN IF NOT EXISTS animation TEXT NOT NULL DEFAULT 'subtle'");
+    logger.info('Migration: added animation column to store_themes');
+  } catch (e: any) {
+    logger.warn(`Migrations skipped: ${e.message}`);
+  }
+}
+
 const app = express();
 const PORT = process.env.PORT || 4000;
 
@@ -119,7 +133,7 @@ app.use('/api/backups', backupsRouter);
 app.use('/api/store-settings', storeSettingsRouter);
 // Health check
 app.get('/api/health', (_req, res) => {
-  res.json({ success: true, data: { status: 'ok', timestamp: new Date().toISOString() } });
+  res.json({ success: true, data: { status: 'ok', deploy: 'trigger-test', timestamp: new Date().toISOString() } });
 });
 
 // 404 handler

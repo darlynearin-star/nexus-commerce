@@ -53,7 +53,7 @@ storesRouter.get('/check-slug/:slug', async (req, res, next) => {
 // Create a store (authenticated users)
 storesRouter.post('/', authenticate, async (req: AuthRequest, res, next) => {
   try {
-    const { name, slug, template, colors, logoUrl, animation } = req.body;
+    const { name, slug, template, colors, logoUrl } = req.body;
     const existingSlug = await prisma.store.findUnique({ where: { slug } });
     if (existingSlug) return res.status(409).json({ success: false, error: 'Store slug already taken' });
 
