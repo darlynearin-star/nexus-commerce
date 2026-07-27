@@ -43,8 +43,6 @@ ordersRouter.post('/', authenticate, async (req: StoreRequest, res, next) => {
     if (!cart || cart.items.length === 0) return res.status(400).json({ success: false, error: 'Cart is empty' });
 
     const store = req.store;
-    const freeThreshold = store?.settings?.shippingThreshold || 150000;
-    const shippingRate = store?.settings?.shippingRate || 15000;
     const taxRate = (store?.settings?.taxRate || 18) / 100;
 
     const subtotal = cart.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
@@ -53,9 +51,13 @@ ordersRouter.post('/', authenticate, async (req: StoreRequest, res, next) => {
     const order = await prisma.order.create({
       data: {
         storeId: req.storeId!, orderNumber, customerId: customer.id,
-        subtotal, shippingCost: subtotal >= freeThreshold ? 0 : shippingRate,
+        subtotal, shippingCost: 0,
         taxAmount: subtotal * taxRate, discountAmount: cart.couponDiscount,
-        total: subtotal + (subtotal >= freeThreshold ? 0 : shippingRate) + subtotal * taxRate - cart.couponDiscount,
+        total: subtotal + subtotal * taxRate - cart.couponDiscount,
+        customerPhone: req.body.customerPhone || '',
+        shippingAddress: req.body.shippingAddress || '',
+        notes: req.body.notes || '',
+        paymentMethod: 'pay_on_delivery',
         items: {
           create: cart.items.map(item => ({
             productId: item.productId, productName: item.product.name, sku: item.product.sku,
@@ -66,9 +68,10 @@ ordersRouter.post('/', authenticate, async (req: StoreRequest, res, next) => {
       },
     });
 
+    const storeSettings = await prisma.storeSettings.findUnique({ where: { storeId: req.storeId! } });
     await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
     logActivity({ userId: (req as any).user!.userId, action: 'order:created', resource: 'order', resourceId: order.id, req: req as any });
-    res.status(201).json({ success: true, data: order });
+    res.status(201).json({ success: true, data: { ...order, storePhone: storeSettings?.phone || '', storeWhatsapp: storeSettings?.whatsapp || '' } });
   } catch (error) { next(error); }
 });
 

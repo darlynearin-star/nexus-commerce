@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
-import { TrendingUp, DollarSign, ShoppingCart, Users, Package, ArrowUp, ArrowDown, AlertTriangle, CheckCircle, Power, ExternalLink } from 'lucide-react';
+import { DollarSign, ShoppingCart, Users, Package, AlertTriangle, CheckCircle, Power, ExternalLink } from 'lucide-react';
 import ErrorBoundary from '@/lib/error-boundary';
 import Link from 'next/link';
 
@@ -35,10 +35,10 @@ function DashboardContent() {
   if (error) return <div style={{ padding: '2rem', color: 'var(--error)' }}>{error}</div>;
 
   const cards = [
-    { label: 'Total Revenue', value: `UGX ${(stats.totalRevenue || 0).toLocaleString()}`, icon: <DollarSign size={24} />, change: '+12.5%', positive: true },
-    { label: 'Total Orders', value: (stats.totalOrders || 0).toString(), icon: <ShoppingCart size={24} />, change: '+8.2%', positive: true },
-    { label: 'Total Customers', value: (stats.totalCustomers || 0).toString(), icon: <Users size={24} />, change: '+5.7%', positive: true },
-    { label: 'Total Products', value: (stats.totalProducts || 0).toString(), icon: <Package size={24} />, change: '+3.1%', positive: true },
+    { label: 'Total Revenue', value: `UGX ${(stats.totalRevenue || 0).toLocaleString()}`, icon: <DollarSign size={24} /> },
+    { label: 'Total Orders', value: (stats.totalOrders || 0).toString(), icon: <ShoppingCart size={24} /> },
+    { label: 'Total Customers', value: (stats.totalCustomers || 0).toString(), icon: <Users size={24} /> },
+    { label: 'Total Products', value: (stats.totalProducts || 0).toString(), icon: <Package size={24} /> },
   ];
 
   return (
@@ -73,9 +73,7 @@ function DashboardContent() {
               <div className="stat-card"><span className="label">{card.label}</span><span className="value">{card.value}</span></div>
               <div style={{ color: 'var(--primary)', opacity: 0.7 }}>{card.icon}</div>
             </div>
-            <div className="change" style={{ color: card.positive ? 'var(--success)' : 'var(--error)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              {card.positive ? <ArrowUp size={14} /> : <ArrowDown size={14} />} {card.change} vs last month
-            </div>
+
           </div>
         ))}
       </div>

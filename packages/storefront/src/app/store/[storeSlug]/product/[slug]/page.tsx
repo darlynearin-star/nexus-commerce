@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { storeApi } from '@/lib/store-api';
+import { useAuth } from '@/lib/auth';
 import Link from 'next/link';
 import { Star, ShoppingCart, Heart, ChevronRight } from 'lucide-react';
 import StarRating from '@/components/StarRating';
@@ -13,6 +14,7 @@ export default function StoreProductPage() {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!slug) return;
@@ -68,15 +70,21 @@ export default function StoreProductPage() {
               <span style={{ minWidth: '2.5rem', textAlign: 'center', fontWeight: 500 }}>{quantity}</span>
               <button className="btn btn-ghost btn-icon" onClick={() => setQuantity(quantity + 1)}>+</button>
             </div>
-            <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={async () => {
-              try {
-                await storeApi.post('/cart/add', { productId: product.id, quantity });
-                setAddedToCart(true);
-                setTimeout(() => setAddedToCart(false), 2000);
-              } catch (e: any) { console.error('Error:', e); }
-            }}>
-              {addedToCart ? '✓ Added!' : <><ShoppingCart size={16} /> Add to Cart</>}
-            </button>
+            {user ? (
+              <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={async () => {
+                try {
+                  await storeApi.post('/cart/add', { productId: product.id, quantity });
+                  setAddedToCart(true);
+                  setTimeout(() => setAddedToCart(false), 2000);
+                } catch (e: any) { console.error('Error:', e); }
+              }}>
+                {addedToCart ? '✓ Added!' : <><ShoppingCart size={16} /> Add to Cart</>}
+              </button>
+            ) : (
+              <Link href="/login" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
+                <ShoppingCart size={16} /> Sign In to Purchase
+              </Link>
+            )}
             <button className="btn btn-secondary btn-icon"><Heart size={16} /></button>
           </div>
 

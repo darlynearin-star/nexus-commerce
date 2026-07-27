@@ -107,9 +107,15 @@ export default function ProductPage() {
               <span style={{ padding: '0.5rem 1rem', minWidth: 40, textAlign: 'center' }}>{quantity}</span>
               <button className="btn btn-ghost btn-sm" onClick={() => setQuantity(quantity + 1)}>+</button>
             </div>
-            <button className="btn btn-primary" style={{ flex: 1, padding: '0.875rem', fontSize: '1rem' }} onClick={addToCart}>
-              {addedToCart ? <><Check size={20} /> Added!</> : <><ShoppingCart size={20} /> Add to Cart</>}
-            </button>
+            {user ? (
+              <button className="btn btn-primary" style={{ flex: 1, padding: '0.875rem', fontSize: '1rem' }} onClick={addToCart}>
+                {addedToCart ? <><Check size={20} /> Added!</> : <><ShoppingCart size={20} /> Add to Cart</>}
+              </button>
+            ) : (
+              <Link href="/login" className="btn btn-primary" style={{ flex: 1, padding: '0.875rem', fontSize: '1rem', justifyContent: 'center' }}>
+                <ShoppingCart size={20} /> Sign In to Purchase
+              </Link>
+            )}
             <button className="btn btn-secondary btn-icon"><Heart size={20} /></button>
             <button className="btn btn-secondary btn-icon"><Share2 size={20} /></button>
           </div>

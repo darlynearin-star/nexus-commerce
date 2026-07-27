@@ -2,6 +2,7 @@
 import { Heart } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import StarRating from './StarRating';
 
 const img = (id: string) => `https://picsum.photos/seed/${id}/400/400`;
@@ -20,6 +21,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, showAddToCart = true }: ProductCardProps) {
+  const { user } = useAuth();
   return (
     <Link href={`/product/${product.slug}`} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', textDecoration: 'none', color: 'inherit', position: 'relative' }}>
       <button
@@ -43,14 +45,21 @@ export default function ProductCard({ product, showAddToCart = true }: ProductCa
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary)' }}>UGX {product.price.toLocaleString()}</span>
       </div>
-      {showAddToCart && (
+      {showAddToCart && (user ? (
         <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={(e) => {
           e.preventDefault(); e.stopPropagation();
           api.post('/cart/add', { productId: product.id });
         }}>
           Add to Cart
         </button>
-      )}
+      ) : (
+        <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={(e) => {
+          e.preventDefault(); e.stopPropagation();
+          window.location.href = '/login';
+        }}>
+          Sign In to Purchase
+        </button>
+      ))}
     </Link>
   );
 }

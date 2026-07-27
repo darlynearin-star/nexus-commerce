@@ -31,19 +31,18 @@ cartRouter.get('/', optionalAuth, async (req: any, res, next) => {
   } catch (error) { next(error); }
 });
 
-cartRouter.post('/add', optionalAuth, async (req: any, res, next) => {
+cartRouter.post('/add', authenticate, async (req: any, res, next) => {
   try {
     const { productId, variantId, quantity = 1 } = req.body;
-    const sessionId = req.headers['x-session-id'] as string;
 
     let cart = await prisma.cart.findFirst({
-      where: req.user ? { customerId: req.user.userId, storeId: req.storeId! } : { sessionId, storeId: req.storeId! },
+      where: { customerId: req.user.userId, storeId: req.storeId! },
       orderBy: { updatedAt: 'desc' },
     });
 
     if (!cart) {
       cart = await prisma.cart.create({
-        data: { storeId: req.storeId!, ...(req.user ? { customerId: req.user.userId } : { sessionId }) },
+        data: { storeId: req.storeId!, customerId: req.user.userId },
       });
     }
 

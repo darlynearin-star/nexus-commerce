@@ -21,8 +21,8 @@ export default function MarketingPage() {
             </div>
           )}
         </div>
-        <div className="card"><h3 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Email Campaigns</h3><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Campaign management coming soon.</p></div>
-        <div className="card"><h3 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Abandoned Cart Recovery</h3><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Recovery automation coming soon.</p></div>
+        <div className="card"><h3 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Email Campaigns</h3><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Send promotional emails to your customers. <em>Coming soon.</em></p></div>
+        <div className="card"><h3 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Abandoned Cart Recovery</h3><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Automatically follow up with customers who left items in their cart. <em>Coming soon.</em></p></div>
       </div>
     </div>
   );

@@ -229,9 +229,9 @@ model StoreSettings {
   store            Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
   currency         String  @default("UGX")
   taxRate          Float   @default(18)
-  shippingThreshold Float  @default(150000)
   location         String  @default("Kampala, Uganda")
-  shippingRate     Float   @default(15000)
+  phone            String  @default("")
+  whatsapp         String  @default("")
 
   @@map("store_settings")
 }
@@ -427,9 +427,9 @@ model Order {
   couponId         String?
   total            Float
   currency         String      @default("UGX")
-  shippingAddressId String?
-  billingAddressId  String?
-  paymentMethod    String      @default("")
+  customerPhone    String      @default("")
+  shippingAddress  String      @default("")
+  paymentMethod    String      @default("pay_on_delivery")
   paymentStatus    PaymentStatus @default(PENDING)
   notes            String      @default("")
   trackingNumber   String?
