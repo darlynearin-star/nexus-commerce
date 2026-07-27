@@ -3,7 +3,7 @@ import { useEffect, useState, createContext, useContext } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 
-interface User { id: string; email: string; firstName: string; lastName: string; role: string; avatar?: string; }
+interface User { id: string; email: string; firstName: string; lastName: string; role: string; avatar?: string; retailer?: { storeName: string; storeSlug: string; subscription?: { status: string; trialEnd: string; trialStart: string; nextBillingDate?: string; weeklyAmount: number; currency: string; } }; developer?: any; customer?: any; }
 interface AuthContextType {
   user: User | null; loading: boolean; login: (email: string, password: string) => Promise<void>;
   register: (data: any) => Promise<void>; logout: () => void;
