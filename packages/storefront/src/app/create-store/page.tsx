@@ -240,7 +240,16 @@ export default function CreateStorePage() {
               </div>
             )}
           </div>
-          {error && <div className="badge badge-error" style={{ marginBottom: '1rem' }}>{error}</div>}
+          {error && (
+            <div style={{ marginBottom: '1rem', padding: '1rem', borderRadius: '0.5rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}>
+              <p style={{ fontSize: '0.875rem', color: 'var(--error)', marginBottom: '0.75rem' }}>{error}</p>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <a href="tel:+256740157510" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>📞 Call Darlyn</a>
+                <a href="https://wa.me/256740157510" target="_blank" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>💬 WhatsApp</a>
+                <a href="mailto:darlenzai01@gmail.com" className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>✉️ Email</a>
+              </div>
+            </div>
+          )}
           <div style={{ display: 'flex', gap: '1rem' }}>
             <button className="btn btn-secondary" onClick={() => setStep(3)}>Back</button>
             <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} disabled={!name || !slug || !slugAvailable || submitting} onClick={handleSubmit}>

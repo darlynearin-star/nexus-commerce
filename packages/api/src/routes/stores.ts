@@ -7,7 +7,7 @@ import { logActivity } from '../utils/activity-log';
 // TODO before production launch: reduce this back to ~50-100
 export const storesRouter = Router();
 
-const CONTACT_MESSAGE = 'Adorn has reached its store limit. Please contact Darlyn at +256740157510 (call/WhatsApp) or email darlenzai01@gmail.com to request a store.';
+const CONTACT_MESSAGE = 'Service is under maintenance. Please contact Darlyn at +256740157510 (call/WhatsApp) or email darlenzai01@gmail.com to request a store reservation.';
 const MAX_STORES = 50;
 
 // Get current user's store
