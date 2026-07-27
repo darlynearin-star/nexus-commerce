@@ -62,7 +62,7 @@ app.use((_req, res, next) => {
   next();
 });
 app.use(cors({
-  origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'],
+  origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'https://nexus-storefront-dusky.vercel.app', 'https://nexus-commerce-retailer-dashboard.vercel.app', 'https://nexus-commerce-developer-dashboard.vercel.app'],
   credentials: true,
 }));
 

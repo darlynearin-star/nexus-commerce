@@ -55,13 +55,13 @@ export default function Header() {
                       <Store size={16} /> Create Store
                     </Link>
                   )}
-                  <a href={retDashUrl + '/dashboard'} className="btn btn-ghost btn-sm" style={{ gap: '0.375rem' }}>
+                  <a href={retDashUrl + '/dashboard#token=' + encodeURIComponent(localStorage.getItem('accessToken') || '')} className="btn btn-ghost btn-sm" style={{ gap: '0.375rem' }}>
                     <LayoutDashboard size={16} /> Dashboard
                   </a>
                 </>
               )}
               {user.role === 'DEVELOPER' || user.role === 'SUPER_DEVELOPER' ? (
-                <a href={devDashUrl + '/dashboard'} className="btn btn-ghost btn-sm" style={{ gap: '0.375rem' }}>
+                <a href={devDashUrl + '/dashboard#token=' + encodeURIComponent(localStorage.getItem('accessToken') || '')} className="btn btn-ghost btn-sm" style={{ gap: '0.375rem' }}>
                   <LayoutDashboard size={16} /> Dashboard
                 </a>
               ) : null}
