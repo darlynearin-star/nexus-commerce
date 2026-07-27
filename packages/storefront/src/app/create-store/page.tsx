@@ -65,7 +65,7 @@ export default function CreateStorePage() {
     setSubmitting(true);
     setError('');
     try {
-      const res = await api.post('/stores', { name, slug, template: template.id, colors, logoUrl: logoUrl || undefined, animation });
+      const res = await api.post('/stores', { name, slug, template: template.id, colors, logoUrl: logoUrl || undefined });
       if (res.success) {
         localStorage.setItem('activeStoreSlug', slug);
         setStoreSlug(slug);
