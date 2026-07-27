@@ -144,19 +144,6 @@ app.use('/api/*', (_req, res) => {
 // Error handling
 app.use(errorHandler);
 
-async function runMigrations() {
-  try {
-    await prisma.$executeRawUnsafe("ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS phone TEXT NOT NULL DEFAULT ''");
-    logger.info('Migration: added phone column to store_settings');
-    await prisma.$executeRawUnsafe("ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS whatsapp TEXT NOT NULL DEFAULT ''");
-    logger.info('Migration: added whatsapp column to store_settings');
-    await prisma.$executeRawUnsafe("ALTER TABLE store_themes ADD COLUMN IF NOT EXISTS animation TEXT NOT NULL DEFAULT 'subtle'");
-    logger.info('Migration: added animation column to store_themes');
-  } catch (e: any) {
-    logger.warn(`Migrations skipped: ${e.message}`);
-  }
-}
-
 app.listen(PORT, async () => {
   logger.info(`Nexus Commerce API running on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
