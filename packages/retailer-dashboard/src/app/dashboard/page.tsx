@@ -19,12 +19,12 @@ function DashboardContent() {
     if (!user) { router.push('/login'); return; }
     const allowed = ['RETAILER', 'DEVELOPER', 'SUPER_DEVELOPER'];
     if (!allowed.includes(user.role)) { router.push('/login'); return; }
-    Promise.all([
-      api.get('/analytics/summary'),
+    Promise.allSettled([
+      api.get('/analytics/summary').catch(() => null),
       api.get('/stores/mine'),
-    ]).then(([s, st]: [any, any]) => {
-      setStats(s.data);
-      setStore(st.data);
+    ]).then(([s, st]: any) => {
+      setStats(s.value?.data || {});
+      setStore(st.value?.data || null);
     }).catch(() => setError('Failed to load data'));
   }, [user, loading]);
 

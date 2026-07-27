@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     const token = localStorage.getItem('accessToken');
     if (token) loadUser();
-    else { setLoading(false); if (!localStorage.getItem('activeStoreSlug')) localStorage.setItem('activeStoreSlug', 'adorn'); }
+    else setLoading(false);
   }, []);
 
   async function loadUser() {
