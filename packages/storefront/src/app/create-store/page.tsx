@@ -244,9 +244,15 @@ export default function CreateStorePage() {
             <div style={{ marginBottom: '1rem', padding: '1rem', borderRadius: '0.5rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}>
               <p style={{ fontSize: '0.875rem', color: 'var(--error)', marginBottom: '0.75rem' }}>{error}</p>
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <a href="tel:+256740157510" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>📞 Call Darlyn</a>
-                <a href="https://wa.me/256740157510" target="_blank" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>💬 WhatsApp</a>
-                <a href="mailto:darlenzai01@gmail.com" className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>✉️ Email</a>
+                {error.includes('store reservation') ? (
+                  <>
+                    <a href="tel:+256740157510" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>📞 Call</a>
+                    <a href="https://wa.me/256740157510" target="_blank" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>💬 WhatsApp</a>
+                    <a href="mailto:darlenzai01@gmail.com" className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>✉️ Email</a>
+                  </>
+                ) : (
+                  <a href="mailto:darlenzai01@gmail.com" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>✉️ Email Mr.Dev</a>
+                )}
               </div>
             </div>
           )}

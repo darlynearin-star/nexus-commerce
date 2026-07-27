@@ -54,7 +54,7 @@ function Sidebar({ children }: { children: React.ReactNode }) {
         <div style={{ padding: '0.5rem 0.75rem', borderTop: '1px solid var(--border)' }}>
           {!collapsed && (
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '0.25rem' }}>
-              Questions or errors?<br />
+              Questions or errors? Email Mr.Dev<br />
               <a href="mailto:darlenzai01@gmail.com" style={{ color: 'var(--primary)', textDecoration: 'none' }}>darlenzai01@gmail.com</a>
             </div>
           )}

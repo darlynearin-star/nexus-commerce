@@ -108,7 +108,7 @@ export default function LandingPage() {
               { icon: <Globe size={20} />, title: 'Share your store link', desc: `Your store is live at ${storefrontUrl}/store/${storeSlug}. Share it everywhere!` },
               { icon: <CreditCard size={20} />, title: 'Payment & subscription', desc: 'MTN MoMo and Airtel Money supported. 3,000 UGX/week after the free trial.' },
               { icon: <Users size={20} />, title: 'Grow your customers', desc: 'Track orders, view customer data, and build relationships through your dashboard.' },
-              { icon: <HelpCircle size={20} />, title: 'Need help?', desc: 'Email darlenzai01@gmail.com for support, questions, or bug reports.' },
+              { icon: <HelpCircle size={20} />, title: 'Need help?', desc: 'Email Mr.Dev at darlenzai01@gmail.com for support, questions, or bug reports.' },
             ].map((item, i) => (
               <div key={i} className="card" style={{ padding: '1.25rem' }}>
                 <div style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>{item.icon}</div>
