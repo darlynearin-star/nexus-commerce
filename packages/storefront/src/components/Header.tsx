@@ -34,7 +34,6 @@ export default function Header() {
 
         <nav style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }} className="desktop-nav">
           <Link href="/" className="btn btn-ghost btn-sm">Home</Link>
-          <Link href="/shop" className="btn btn-ghost btn-sm">Shop</Link>
           <Link href="/categories" className="btn btn-ghost btn-sm">Categories</Link>
         </nav>
 
@@ -92,7 +91,6 @@ export default function Header() {
         <div className="mobile-menu" style={{ padding: '1rem', borderTop: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <Link href="/" className="btn btn-ghost" onClick={() => setMobileMenu(false)}>Home</Link>
-            <Link href="/shop" className="btn btn-ghost" onClick={() => setMobileMenu(false)}>Shop</Link>
             <Link href="/categories" className="btn btn-ghost" onClick={() => setMobileMenu(false)}>Categories</Link>
             <Link href="/wishlist" className="btn btn-ghost" onClick={() => setMobileMenu(false)}>Wishlist</Link>
             <Link href="/cart" className="btn btn-ghost" onClick={() => setMobileMenu(false)}>Cart</Link>

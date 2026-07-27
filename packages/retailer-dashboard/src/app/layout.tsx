@@ -51,6 +51,14 @@ function Sidebar({ children }: { children: React.ReactNode }) {
             <Eye size={16} /> {!collapsed && <>View Store <ExternalLink size={12} /></>}
           </a>
         </div>
+        <div style={{ padding: '0.5rem 0.75rem', borderTop: '1px solid var(--border)' }}>
+          {!collapsed && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '0.25rem' }}>
+              Questions or errors?<br />
+              <a href="mailto:darlenzai01@gmail.com" style={{ color: 'var(--primary)', textDecoration: 'none' }}>darlenzai01@gmail.com</a>
+            </div>
+          )}
+        </div>
         <div style={{ padding: '0.75rem', borderTop: '1px solid var(--border)', marginTop: 'auto' }}>
           {!collapsed && user && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', padding: '0 0.5rem' }}>
