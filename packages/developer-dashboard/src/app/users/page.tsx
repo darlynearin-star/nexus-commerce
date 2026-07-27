@@ -30,6 +30,7 @@ export default function UsersPage() {
           <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>2FA</th><th>Sessions</th><th>Actions</th></tr></thead>
           <tbody>
             {users
+              .filter((u: any) => u.isActive)
               .filter((u: any) => !search || u.email?.includes(search) || u.firstName?.includes(search))
               .map((u: any) => (
               <tr key={u.id}>
