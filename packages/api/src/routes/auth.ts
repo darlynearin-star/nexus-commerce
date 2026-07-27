@@ -7,6 +7,22 @@ import { authenticate, AuthRequest } from '../middleware/auth';
 
 export const authRouter = Router();
 
+const DISPOSABLE_DOMAINS = new Set([
+  'mailinator.com','guerrillamail.com','10minutemail.com','tempmail.com',
+  'throwaway.email','yopmail.com','sharklasers.com','trashmail.com',
+  'temp-mail.org','fakeinbox.com','maildrop.cc','getnada.com',
+]);
+
+function validateEmail(email: string): string | null {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) return 'Invalid email format';
+  const domain = email.split('@')[1]?.toLowerCase();
+  if (!domain) return 'Invalid email domain';
+  if (domain.split('.').length < 2) return 'Email domain must include a TLD (e.g. .com, .ug)';
+  if (DISPOSABLE_DOMAINS.has(domain)) return 'Disposable email addresses are not allowed';
+  return null;
+}
+
 // Register
 authRouter.post('/register', async (req, res, next) => {
   try {
@@ -14,6 +30,13 @@ authRouter.post('/register', async (req, res, next) => {
     if (!email || !password || !firstName || !lastName) {
       return res.status(400).json({ success: false, error: 'All fields are required' });
     }
+
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
+    }
+
+    const emailError = validateEmail(email);
+    if (emailError) return res.status(400).json({ success: false, error: emailError });
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
