@@ -82,7 +82,7 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        <Link href="/shop" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Continue Shopping</Link>
+        <Link href="/store/adorn/shop" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Continue Shopping</Link>
       </div>
     );
   }

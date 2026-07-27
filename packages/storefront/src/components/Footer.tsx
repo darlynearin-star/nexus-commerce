@@ -26,7 +26,7 @@ export default function Footer() {
         </div>
         <div><h4 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Shop</h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-            <Link href="/shop" style={{ color: 'inherit', textDecoration: 'none' }}>All Products</Link>
+            <Link href="/store/adorn/shop" style={{ color: 'inherit', textDecoration: 'none' }}>Demo Shop</Link>
             <Link href="/categories" style={{ color: 'inherit', textDecoration: 'none' }}>Categories</Link>
           </div>
         </div>

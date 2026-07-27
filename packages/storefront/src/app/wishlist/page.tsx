@@ -24,7 +24,7 @@ export default function WishlistPage() {
           <Heart size={64} style={{ margin: '0 auto 1rem', opacity: 0.3, color: 'var(--primary)' }} />
           <h2 style={{ marginBottom: '0.5rem' }}>Your wishlist is empty</h2>
           <p style={{ color: 'var(--text-secondary)' }}>Save items you love to your wishlist</p>
-          <Link href="/shop" className="btn btn-primary" style={{ marginTop: '1rem' }}>Browse Products</Link>
+          <Link href="/store/adorn/shop" className="btn btn-primary" style={{ marginTop: '1rem' }}>Browse Products</Link>
         </div>
       ) : (
         <div className="product-grid">

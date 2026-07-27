@@ -43,7 +43,7 @@ export default function CartPage() {
           <ShoppingBag size={64} style={{ margin: '0 auto 1rem', color: 'var(--text-secondary)', opacity: 0.5 }} />
           <h2 style={{ marginBottom: '0.5rem' }}>Your cart is empty</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Looks like you haven&apos;t added anything yet.</p>
-          <Link href="/shop" className="btn btn-primary">Continue Shopping</Link>
+          <Link href="/store/adorn/shop" className="btn btn-primary">Continue Shopping</Link>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '2rem' }}>
@@ -85,7 +85,7 @@ export default function CartPage() {
               ) : (
                 <Link href="/login" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '1.5rem', padding: '0.75rem' }}>Sign In to Checkout</Link>
               )}
-              <Link href="/shop" className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem' }}><ArrowLeft size={16} /> Continue Shopping</Link>
+              <Link href="/store/adorn/shop" className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem' }}><ArrowLeft size={16} /> Continue Shopping</Link>
             </div>
           </div>
         </div>

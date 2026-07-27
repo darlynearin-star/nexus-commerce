@@ -45,9 +45,7 @@ export default function ProductPage() {
       <nav style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '2rem' }}>
         <Link href="/" style={{ color: 'inherit', textDecoration: 'none' }}>Home</Link>
         <ChevronRight size={14} />
-        <Link href="/shop" style={{ color: 'inherit', textDecoration: 'none' }}>Shop</Link>
-        <ChevronRight size={14} />
-        <Link href={`/shop?category=${product.category?.slug}`} style={{ color: 'inherit', textDecoration: 'none' }}>{product.category?.name}</Link>
+        <span style={{ color: 'var(--text-secondary)' }}>{product.category?.name || 'Products'}</span>
         <ChevronRight size={14} />
         <span style={{ color: 'var(--text)' }}>{product.name}</span>
       </nav>

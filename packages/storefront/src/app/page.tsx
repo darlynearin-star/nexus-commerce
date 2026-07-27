@@ -12,16 +12,26 @@ function calcDaysRemaining(trialEnd: string): number {
 }
 
 export default function LandingPage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
+
+  if (!mounted || loading) {
+    return (
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '4rem 1rem' }}>
+        <div className="skeleton" style={{ height: 60, width: '60%', marginBottom: '1rem' }} />
+        <div className="skeleton" style={{ height: 24, width: '40%', marginBottom: '2rem' }} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+          {[1,2,3].map(i => <div key={i} className="card"><div className="skeleton" style={{ height: 120 }} /></div>)}
+        </div>
+      </div>
+    );
+  }
 
   const isGuest = !user;
   const hasStore = !!user?.retailer?.storeSlug;
   const sub = user?.retailer?.subscription;
   const ctaHref = '/create-store';
-
-  if (!mounted) return null;
 
   // Logged-in user with a store → dashboard view
   if (user && hasStore) {
