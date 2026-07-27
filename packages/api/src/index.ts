@@ -133,7 +133,7 @@ app.use('/api/backups', backupsRouter);
 app.use('/api/store-settings', storeSettingsRouter);
 // Health check
 app.get('/api/health', (_req, res) => {
-  res.json({ success: true, data: { status: 'ok', deploy: 'trigger-test', timestamp: new Date().toISOString() } });
+  res.json({ success: true, data: { status: 'ok', timestamp: new Date().toISOString() } });
 });
 
 // 404 handler
