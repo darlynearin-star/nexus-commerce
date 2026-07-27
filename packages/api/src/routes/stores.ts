@@ -86,6 +86,13 @@ storesRouter.post('/', authenticate, async (req: AuthRequest, res, next) => {
       include: { settings: true, theme: true },
     });
 
+    // Sync Retailer record so landing page detects store ownership
+    await prisma.retailer.upsert({
+      where: { userId: req.user!.userId },
+      create: { userId: req.user!.userId, storeName: name, storeSlug: slug },
+      update: { storeName: name, storeSlug: slug },
+    });
+
     // Set extra fields via raw SQL (columns exist in DB but not in Prisma schema)
     const anim = req.body.animation || 'subtle';
     await prisma.$executeRaw`UPDATE store_themes SET animation = ${anim} WHERE "storeId" = ${store.id}`;
