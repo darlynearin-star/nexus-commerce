@@ -15,6 +15,13 @@ export default function AccountPage() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState({ orders: true, cart: true, notifications: true });
+  const [mobile, setMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setMobile(window.innerWidth < 768);
+    check(); window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   const isStoreOwner = !!(user as any)?.retailer;
   const retailer = (user as any)?.retailer;
@@ -54,53 +61,78 @@ export default function AccountPage() {
     { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
   ];
 
-  return (
-    <div className="container" style={{ padding: '2rem 0', display: 'grid', gridTemplateColumns: '240px 1fr', gap: '2rem' }}>
-      {/* Sidebar */}
-      <div>
-        <div className="card" style={{ marginBottom: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-            <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '0.875rem' }}>{user.firstName?.[0]}{user.lastName?.[0]}</div>
-            <div style={{ minWidth: 0 }}>
-              <p style={{ fontWeight: 600, fontSize: '0.9375rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.firstName} {user.lastName}</p>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.email}</p>
-            </div>
-          </div>
-          {isStoreOwner && (
-            <div style={{ marginBottom: '0.75rem', padding: '0.625rem', borderRadius: '0.5rem', background: 'var(--bg-secondary)', fontSize: '0.8125rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontWeight: 500, marginBottom: '0.25rem' }}>
-                <Store size={14} /> {retailer.storeName}
-              </div>
-              {storeSlug && (
-                <Link href={`/store/${storeSlug}`} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--primary)', fontSize: '0.75rem' }}>
-                  <ExternalLink size={12} /> View Store
-                </Link>
-              )}
-            </div>
-          )}
-          <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--error)' }} onClick={logout}><LogOut size={16} /> Sign Out</button>
-        </div>
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          {tabs.map(tab => (
-            <button key={tab.id} className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>{tab.icon} {tab.label}</span>
-              {tab.badge !== undefined && tab.badge > 0 && <span className="badge badge-primary" style={{ fontSize: '0.6875rem', padding: '0.125rem 0.5rem' }}>{tab.badge}</span>}
-            </button>
-          ))}
-        </nav>
-      </div>
+  const renderContent = () => (
+    <>
+      {activeTab === 'overview' && <OverviewTab user={user} orders={orders} isStoreOwner={isStoreOwner} retailer={retailer} subscription={subscription} tierName={tierName} tierProgress={tierProgress} />}
+      {activeTab === 'orders' && <OrdersTab orders={orders} loading={loading.orders} />}
+      {activeTab === 'cart' && !isStoreOwner && <CartTab cart={cart} loading={loading.cart} />}
+      {activeTab === 'cart' && isStoreOwner && <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem' }}>Use your <a href={`${process.env.NEXT_PUBLIC_RETAILER_DASHBOARD_URL || 'https://nexus-commerce-retailer-dashboard.vercel.app'}/dashboard#token=${encodeURIComponent(typeof window !== 'undefined' ? localStorage.getItem('accessToken') || '' : '')}`}>retailer dashboard</a> to manage your store.</p>}
+      {activeTab === 'mailbox' && isStoreOwner && <MailboxTab notifications={notifications} unreadCount={unreadCount} markAllRead={markAllRead} markRead={markRead} loading={loading.notifications} />}
+      {activeTab === 'settings' && <SettingsTab user={user} />}
+    </>
+  );
 
-      {/* Content */}
-      <div>
-        {activeTab === 'overview' && <OverviewTab user={user} orders={orders} isStoreOwner={isStoreOwner} retailer={retailer} subscription={subscription} tierName={tierName} tierProgress={tierProgress} />}
-        {activeTab === 'orders' && <OrdersTab orders={orders} loading={loading.orders} />}
-        {activeTab === 'cart' && !isStoreOwner && <CartTab cart={cart} loading={loading.cart} />}
-        {activeTab === 'cart' && isStoreOwner && <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem' }}>Use your <a href={`${process.env.NEXT_PUBLIC_RETAILER_DASHBOARD_URL || 'https://nexus-commerce-retailer-dashboard.vercel.app'}/dashboard#token=${encodeURIComponent(typeof window !== 'undefined' ? localStorage.getItem('accessToken') || '' : '')}`}>retailer dashboard</a> to manage your store.</p>}
-        {activeTab === 'mailbox' && isStoreOwner && <MailboxTab notifications={notifications} unreadCount={unreadCount} markAllRead={markAllRead} markRead={markRead} loading={loading.notifications} />}
-        {activeTab === 'settings' && <SettingsTab user={user} />}
-      </div>
+  return (
+    <div className="container" style={{ padding: '2rem 0' }}>
+      {mobile ? (
+        <>
+          <div className="card" style={{ padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '0.8125rem', flexShrink: 0 }}>{user.firstName?.[0]}{user.lastName?.[0]}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{user.firstName} {user.lastName}</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{user.email}</p>
+            </div>
+            <button className="btn btn-ghost btn-sm" style={{ color: 'var(--error)', flexShrink: 0 }} onClick={logout}><LogOut size={16} /></button>
+          </div>
+          <nav style={{ display: 'flex', gap: '0.375rem', overflowX: 'auto', paddingBottom: '0.5rem', marginBottom: '1.5rem', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {tabs.map(tab => (
+              <button key={tab.id} className={`btn ${activeTab === tab.id ? 'btn-primary' : 'btn-ghost'}`} style={{ whiteSpace: 'nowrap', flexShrink: 0, fontSize: '0.8125rem' }} onClick={() => setActiveTab(tab.id)}>
+                {tab.icon} {tab.label}
+                {tab.badge !== undefined && tab.badge > 0 && <span className="badge badge-primary" style={{ fontSize: '0.625rem', padding: '0 0.375rem', marginLeft: '0.25rem' }}>{tab.badge}</span>}
+              </button>
+            ))}
+          </nav>
+          {renderContent()}
+        </>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: '2rem' }}>
+          <div>
+            <div className="card" style={{ marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '0.875rem' }}>{user.firstName?.[0]}{user.lastName?.[0]}</div>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontWeight: 600, fontSize: '0.9375rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.firstName} {user.lastName}</p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.email}</p>
+                </div>
+              </div>
+              {isStoreOwner && (
+                <div style={{ marginBottom: '0.75rem', padding: '0.625rem', borderRadius: '0.5rem', background: 'var(--bg-secondary)', fontSize: '0.8125rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontWeight: 500, marginBottom: '0.25rem' }}>
+                    <Store size={14} /> {retailer.storeName}
+                  </div>
+                  {storeSlug && (
+                    <Link href={`/store/${storeSlug}`} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--primary)', fontSize: '0.75rem' }}>
+                      <ExternalLink size={12} /> View Store
+                    </Link>
+                  )}
+                </div>
+              )}
+              <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--error)' }} onClick={logout}><LogOut size={16} /> Sign Out</button>
+            </div>
+            <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              {tabs.map(tab => (
+                <button key={tab.id} className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
+                  onClick={() => setActiveTab(tab.id)}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>{tab.icon} {tab.label}</span>
+                  {tab.badge !== undefined && tab.badge > 0 && <span className="badge badge-primary" style={{ fontSize: '0.6875rem', padding: '0.125rem 0.5rem' }}>{tab.badge}</span>}
+                </button>
+              ))}
+            </nav>
+          </div>
+          <div>{renderContent()}</div>
+        </div>
+      )}
     </div>
   );
 }
