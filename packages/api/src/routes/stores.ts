@@ -53,7 +53,7 @@ storesRouter.get('/check-slug/:slug', async (req, res, next) => {
 // Create a store (authenticated users)
 storesRouter.post('/', authenticate, async (req: AuthRequest, res, next) => {
   try {
-    const { name, slug, template, colors, logoUrl } = req.body;
+    const { name, slug, template, colors, logoUrl, animation } = req.body;
     const existingSlug = await prisma.store.findUnique({ where: { slug } });
     if (existingSlug) return res.status(409).json({ success: false, error: 'Store slug already taken' });
 
@@ -63,7 +63,7 @@ storesRouter.post('/', authenticate, async (req: AuthRequest, res, next) => {
     const store = await prisma.store.create({
       data: {
         name, slug, logoUrl: logoUrl || null, ownerId: req.user!.userId,
-        theme: { create: { template: template || 'elegance', colors: JSON.stringify(colors || { primary: '#D4A843', secondary: '#A8822E', bg: '#0A0A0A', surface: '#141414', text: '#FAFAFA', accent: '#F0D48A' }) } },
+        theme: { create: { template: template || 'elegance', colors: JSON.stringify(colors || { primary: '#D4A843', secondary: '#A8822E', bg: '#0A0A0A', surface: '#141414', text: '#FAFAFA', accent: '#F0D48A' }), animation: animation || 'subtle' } },
         settings: { create: { currency: 'UGX', taxRate: 18, location: 'Kampala, Uganda', phone: '', whatsapp: '' } },
       },
       include: { settings: true, theme: true },
@@ -94,7 +94,7 @@ storesRouter.put('/:id', authenticate, async (req: AuthRequest, res, next) => {
       data: {
         ...updateData,
         ...(settings ? { settings: { upsert: { create: settings, update: settings } } } : {}),
-        ...(theme ? { theme: { upsert: { create: { template: theme.template, colors: JSON.stringify(theme.colors) }, update: { template: theme.template, colors: JSON.stringify(theme.colors) } } } } : {}),
+        ...(theme ? { theme: { upsert: { create: { template: theme.template || 'elegance', colors: JSON.stringify(theme.colors || {}), animation: theme.animation || 'subtle' }, update: { template: theme.template, ...(theme.colors ? { colors: JSON.stringify(theme.colors) } : {}), ...(theme.animation ? { animation: theme.animation } : {}) } } } } : {}),
       },
       include: { settings: true, theme: true },
     });

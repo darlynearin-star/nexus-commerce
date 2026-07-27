@@ -85,6 +85,37 @@ analyticsRouter.get('/revenue', async (req: StoreRequest, res, next) => {
   } catch (error) { next(error); }
 });
 
+analyticsRouter.get('/product-stats', async (req: StoreRequest, res, next) => {
+  try {
+    const products = await prisma.product.findMany({
+      where: { storeId: req.storeId! },
+      include: { category: true, _count: { select: { cartItems: true, orderItems: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const orderItems = await prisma.orderItem.groupBy({
+      by: ['productId'],
+      where: { product: { storeId: req.storeId! }, order: { paymentStatus: 'PAID' } },
+      _sum: { totalPrice: true, quantity: true },
+    });
+
+    const revenueMap = new Map(orderItems.map(o => [o.productId, { revenue: o._sum.totalPrice || 0, unitsSold: o._sum.quantity || 0 }]));
+
+    const data = products.map(p => ({
+      id: p.id, name: p.name, slug: p.slug, sku: p.sku, brand: p.brand,
+      price: p.price, stock: p.stock, status: p.status,
+      category: p.category?.name || '',
+      createdAt: p.createdAt,
+      cartDemand: p._count.cartItems,
+      orderCount: p._count.orderItems,
+      unitsSold: revenueMap.get(p.id)?.unitsSold || 0,
+      revenue: revenueMap.get(p.id)?.revenue || 0,
+    }));
+
+    res.json({ success: true, data });
+  } catch (error) { next(error); }
+});
+
 function getWeekKey(d: Date): string {
   const start = new Date(d);
   start.setDate(start.getDate() - start.getDay());
