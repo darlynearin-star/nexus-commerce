@@ -67,6 +67,8 @@ enum NotificationType {
   REVIEW_REMINDER
   ADMIN_ANNOUNCEMENT
   SECURITY_ALERT
+  NEW_ORDER_ALERT
+  TIER_WARNING
 }
 
 model User {

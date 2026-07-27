@@ -69,6 +69,11 @@ ordersRouter.post('/', authenticate, async (req: StoreRequest, res, next) => {
     });
 
     const [contact] = await prisma.$queryRaw`SELECT phone, whatsapp FROM store_settings WHERE "storeId" = ${req.storeId!}` as any;
+    // Notify store owner of new order
+    const itemSummary = cart.items.map(i => `${i.product.name} x${i.quantity}`).join(', ');
+    await prisma.notification.create({
+      data: { userId: req.store!.ownerId, type: 'NEW_ORDER_ALERT', channel: 'IN_APP', title: `New Order ${orderNumber}`, message: `${(req as any).user!.firstName} placed an order: ${itemSummary}`, data: JSON.stringify({ orderId: order.id, total: order.total }) },
+    }).catch(() => {});
     await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
     logActivity({ userId: (req as any).user!.userId, action: 'order:created', resource: 'order', resourceId: order.id, req: req as any });
     res.status(201).json({ success: true, data: { ...order, storePhone: contact?.phone || '', storeWhatsapp: contact?.whatsapp || '' } });
