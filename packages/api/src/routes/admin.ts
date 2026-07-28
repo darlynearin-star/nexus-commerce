@@ -56,6 +56,29 @@ adminRouter.delete('/users/:id', authenticate, requirePermission(Permission.MANA
   } catch (error) { next(error); }
 });
 
+adminRouter.delete('/stores/:id', authenticate, requirePermission(Permission.MANAGE_SYSTEM), async (req: AuthRequest, res, next) => {
+  try {
+    const store = await prisma.store.findUnique({ where: { id: req.params.id } });
+    if (!store) return res.status(404).json({ success: false, error: 'Store not found' });
+
+    const orderIds = (await prisma.order.findMany({ where: { storeId: store.id }, select: { id: true } })).map(o => o.id);
+    await prisma.orderItem.deleteMany({ where: { orderId: { in: orderIds } } });
+    await prisma.payment.deleteMany({ where: { orderId: { in: orderIds } } });
+    await prisma.order.deleteMany({ where: { storeId: store.id } });
+
+    const cartIds = (await prisma.cart.findMany({ where: { storeId: store.id }, select: { id: true } })).map(c => c.id);
+    await prisma.cartItem.deleteMany({ where: { cartId: { in: cartIds } } });
+    await prisma.cart.deleteMany({ where: { storeId: store.id } });
+
+    await prisma.retailer.deleteMany({ where: { storeSlug: store.slug } });
+
+    await prisma.store.delete({ where: { id: store.id } });
+
+    logActivity({ userId: req.user!.userId, action: 'store:deleted', resource: 'store', resourceId: store.id, details: { name: store.name, slug: store.slug }, req: req as any });
+    res.json({ success: true, message: `Store "${store.name}" (${store.slug}) deleted` });
+  } catch (error) { next(error); }
+});
+
 adminRouter.post('/repair/store-ownership', authenticate, requirePermission(Permission.MANAGE_USERS), async (req: AuthRequest, res, next) => {
   try {
     const { userId, storeSlug } = req.body;
