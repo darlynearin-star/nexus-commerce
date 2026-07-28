@@ -48,12 +48,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = await api.post<any>('/auth/login', { email, password });
     localStorage.setItem('accessToken', res.data.accessToken);
     localStorage.setItem('refreshToken', res.data.refreshToken);
-    setUser(res.data.user);
-    if (res.data.user?.retailer?.storeSlug) {
-      localStorage.setItem('activeStoreSlug', res.data.user.retailer.storeSlug);
+    try {
+      const me = await api.get<any>('/auth/me');
+      setUser(me.data);
+      if (me.data.retailer?.storeSlug) {
+        localStorage.setItem('activeStoreSlug', me.data.retailer.storeSlug);
+      }
+    } catch {
+      setUser(res.data.user);
+    }
+    const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
+    if (res.data.user?.role === 'RETAILER') {
       router.push('/dashboard');
     } else {
-      const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
       window.location.href = `${storefrontUrl}/?noStore=1#token=${encodeURIComponent(res.data.accessToken)}`;
     }
   };

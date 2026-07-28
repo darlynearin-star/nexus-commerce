@@ -22,9 +22,13 @@ function DashboardContent() {
     Promise.allSettled([
       api.get('/analytics/summary').catch(() => null),
       api.get('/stores/mine'),
-    ]).then(([s, st]: any) => {
+    ]).then(async ([s, st]: any) => {
       setStats(s.value?.data || {});
-      setStore(st.value?.data || null);
+      const storeData = st.value?.data || null;
+      setStore(storeData);
+      if (storeData?.slug) {
+        localStorage.setItem('activeStoreSlug', storeData.slug);
+      }
     }).catch(() => setError('Failed to load data'));
   }, [user, loading]);
 
