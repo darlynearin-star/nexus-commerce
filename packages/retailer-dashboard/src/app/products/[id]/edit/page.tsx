@@ -56,10 +56,16 @@ export default function EditProductPage() {
   useEffect(() => {
     const id = params?.id as string;
     if (!id) return;
-    Promise.all([
+    const slug = localStorage.getItem('activeStoreSlug');
+    const ensureSlug = slug ? Promise.resolve(slug) : api.get('/stores/mine').then((res: any) => {
+      const s = res.data?.slug;
+      if (s) localStorage.setItem('activeStoreSlug', s);
+      return s;
+    }).catch(() => null);
+    ensureSlug.then(() => Promise.all([
       api.get('/categories'),
       api.get(`/products/detail/${id}`),
-    ]).then(([catRes, prodRes]: any[]) => {
+    ])).then(([catRes, prodRes]: any[]) => {
       const tree = buildTree(catRes.data || []);
       setCategories(flattenTree(tree));
       const p = prodRes.data;

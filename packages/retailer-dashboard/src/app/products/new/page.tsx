@@ -50,15 +50,17 @@ export default function NewProductPage() {
 
   useEffect(() => {
     const slug = localStorage.getItem('activeStoreSlug');
-    if (!slug) {
-      api.get('/stores/mine').then((res: any) => {
-        if (res.data?.slug) localStorage.setItem('activeStoreSlug', res.data.slug);
+    const ensureSlug = slug ? Promise.resolve(slug) : api.get('/stores/mine').then((res: any) => {
+      const s = res.data?.slug;
+      if (s) localStorage.setItem('activeStoreSlug', s);
+      return s;
+    }).catch(() => null);
+    ensureSlug.then(() => {
+      api.get('/categories').then((res: any) => {
+        const tree = buildTree(res.data || []);
+        setCategories(flattenTree(tree));
       }).catch(() => {});
-    }
-    api.get('/categories').then((res: any) => {
-      const tree = buildTree(res.data || []);
-      setCategories(flattenTree(tree));
-    }).catch(() => {});
+    });
   }, []);
 
   const update = (field: string, value: any) => setForm((p: any) => ({ ...p, [field]: value }));
