@@ -29,7 +29,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser({ id: payload.userId, email: payload.email, role: payload.role, firstName: '', lastName: '', avatar: undefined });
       }
       setLoading(false);
-      loadUser();
       return;
     }
     const token = localStorage.getItem('accessToken');
@@ -38,22 +37,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (payload) {
         setUser({ id: payload.userId, email: payload.email, role: payload.role, firstName: '', lastName: '', avatar: undefined });
       }
-      setLoading(false);
-      loadUser();
-    } else setLoading(false);
-  }, []);
-
-  async function loadUser() {
-    try {
-      const res = await api.get<any>('/auth/me');
-      setUser(res.data);
-      if (res.data.retailer?.storeSlug) localStorage.setItem('activeStoreSlug', res.data.retailer.storeSlug);
-    } catch (e: any) {
-      if (e?.status === 401) { localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); setUser(null); }
-    } finally {
-      setLoading(false);
     }
-  }
+    setLoading(false);
+  }, []);
 
   const login = async (email: string, password: string) => {
     const res = await api.post<any>('/auth/login', { email, password });
@@ -62,15 +48,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const payload = decodeJwt(res.data.accessToken);
     if (payload) {
       setUser({ id: payload.userId, email: payload.email, role: payload.role, firstName: '', lastName: '', avatar: undefined });
-    }
-    try {
-      const me = await api.get<any>('/auth/me');
-      setUser(me.data);
-      if (me.data.retailer?.storeSlug) {
-        localStorage.setItem('activeStoreSlug', me.data.retailer.storeSlug);
-      }
-    } catch {
-      // full user fetch failed; JWT-based user is already set
     }
     const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
     if (res.data.user?.role === 'RETAILER') {
