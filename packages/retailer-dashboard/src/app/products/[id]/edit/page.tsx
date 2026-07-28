@@ -52,6 +52,8 @@ export default function EditProductPage() {
   const [features, setFeatures] = useState<string[]>(['']);
   const [specs, setSpecs] = useState<{ key: string; value: string }[]>([{ key: '', value: '' }]);
   const [variants, setVariants] = useState<Variant[]>([]);
+  const [catSearch, setCatSearch] = useState('');
+  const [catOpen, setCatOpen] = useState(false);
 
   useEffect(() => {
     const id = params?.id as string;
@@ -66,9 +68,11 @@ export default function EditProductPage() {
       api.get('/categories'),
       api.get(`/products/detail/${id}`),
     ])).then(([catRes, prodRes]: any[]) => {
-      const tree = buildTree(catRes.data || []);
-      setCategories(flattenTree(tree));
+      const flatCats = flattenTree(buildTree(catRes.data || []));
+      setCategories(flatCats);
       const p = prodRes.data;
+      const initialCat = flatCats.find(c => c.id === p.categoryId);
+      if (initialCat) setCatSearch(initialCat.label);
       setShortCode(p.shortCode || '');
       setStoreSlug(p.store?.slug || localStorage.getItem('activeStoreSlug') || '');
       setForm({
@@ -225,12 +229,20 @@ export default function EditProductPage() {
             </div>
             <div>
               <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Category *</label>
-              <select className="input" value={form.categoryId} onChange={e => update('categoryId', e.target.value)}>
-                <option value="">Select category...</option>
-                {categories.map(c => (
-                  <option key={c.id} value={c.id}>{'  '.repeat(c.depth)}{c.label}</option>
-                ))}
-              </select>
+              <div style={{ position: 'relative' }}>
+                <input className="input" placeholder="Search categories..." value={catSearch} onChange={e => { setCatSearch(e.target.value); setCatOpen(true); }} onFocus={() => setCatOpen(true)} />
+                {catOpen && (
+                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, maxHeight: 240, overflowY: 'auto', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '0 0 0.5rem 0.5rem', zIndex: 10 }}>
+                    {categories.filter(c => c.label.toLowerCase().includes(catSearch.toLowerCase())).map(c => (
+                      <div key={c.id} onClick={() => { update('categoryId', c.id); setCatSearch(c.label); setCatOpen(false); }} style={{ padding: '0.5rem 0.75rem', cursor: 'pointer', fontSize: '0.8125rem', paddingLeft: `${0.75 + c.depth * 1}rem`, background: form.categoryId === c.id ? 'var(--primary)' : 'transparent', color: form.categoryId === c.id ? '#fff' : 'var(--text)' }}>
+                        {c.label}
+                      </div>
+                    ))}
+                    {categories.filter(c => c.label.toLowerCase().includes(catSearch.toLowerCase())).length === 0 && <div style={{ padding: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.8125rem' }}>No categories match</div>}
+                  </div>
+                )}
+              </div>
+              {form.categoryId && <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{categories.find(c => c.id === form.categoryId)?.label}</span>}
             </div>
             <div>
               <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Description</label>

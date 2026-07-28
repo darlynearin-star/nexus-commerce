@@ -157,25 +157,25 @@ app.use(errorHandler);
 async function seedCategories() {
   try {
     const storeCount = await prisma.store.count();
-    if (storeCount === 0) { logger.info('Seed: no stores exist, skipping category seed'); return; }
+    if (storeCount === 0) { logger.info('Seed: no stores exist, skipping'); return; }
     const catCount = await prisma.category.count();
-    if (catCount > 0) { logger.info(`Seed: ${catCount} categories already exist, skipping`); return; }
+    if (catCount > 0) { logger.info(`Seed: ${catCount} categories exist, skipping`); return; }
     const stores = await prisma.store.findMany({ select: { id: true } });
-    const slugCount: Record<string, number> = {};
-    const cats: { storeId: string; name: string; slug: string; parentId: string | null }[] = [];
-    function walk(tree: any[], parentId: string | null, storeId: string) {
+    const usedSlugs = new Set<string>();
+    async function createTree(tree: any[], parentId: string | null, storeId: string) {
       for (const node of tree) {
         let slug = node.slug;
-        if (slugCount[slug] !== undefined) { slugCount[slug]++; slug = `${slug}-${slugCount[slug]}`; }
-        else slugCount[slug] = 0;
-        const id = `${storeId}-${slug}`;
-        cats.push({ storeId, name: node.name, slug, parentId });
-        if (node.children) walk(node.children, id, storeId);
+        if (usedSlugs.has(slug)) { let n = 1; while (usedSlugs.has(`${slug}-${n}`)) n++; slug = `${slug}-${n}`; }
+        usedSlugs.add(slug);
+        const created = await prisma.category.create({
+          data: { storeId, name: node.name, slug, description: '', parentId },
+        });
+        if (node.children) await createTree(node.children, created.id, storeId);
       }
     }
-    for (const store of stores) walk(jijiCategories, null, store.id);
-    await prisma.category.createMany({ data: cats });
-    logger.info(`Seed: created ${cats.length} Jiji categories for ${stores.length} store(s)`);
+    for (const store of stores) await createTree(jijiCategories, null, store.id);
+    const total = await prisma.category.count();
+    logger.info(`Seed: ${total} Jiji categories for ${stores.length} store(s)`);
   } catch (e: any) {
     logger.warn(`Seed skipped: ${e.message}`);
   }
