@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { ArrowLeft, Plus, X, Upload } from 'lucide-react';
+import CategoryPicker from '@/components/CategoryPicker';
 
 interface Category { id: string; name: string; slug: string; parentId: string | null; children?: Category[]; }
 interface Variant { _key: string; name: string; sku: string; price: number; stock: number; options: { name: string; value: string }[]; image: string; }
@@ -52,7 +53,7 @@ export default function EditProductPage() {
   const [features, setFeatures] = useState<string[]>(['']);
   const [specs, setSpecs] = useState<{ key: string; value: string }[]>([{ key: '', value: '' }]);
   const [variants, setVariants] = useState<Variant[]>([]);
-  const [catSearch, setCatSearch] = useState('');
+
 
   useEffect(() => {
     const id = params?.id as string;
@@ -228,13 +229,7 @@ export default function EditProductPage() {
             </div>
             <div>
               <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Category *</label>
-              <input className="input" placeholder="Filter categories..." value={catSearch} onChange={e => setCatSearch(e.target.value)} style={{ marginBottom: '0.375rem' }} />
-              <select className="input" size={6} value={form.categoryId} onChange={e => update('categoryId', e.target.value)} style={{ height: 'auto' }}>
-                <option value="">Select category...</option>
-                {categories.filter(c => !catSearch || c.label.toLowerCase().includes(catSearch.toLowerCase())).map(c => (
-                  <option key={c.id} value={c.id}>{'  '.repeat(c.depth)}{c.label}</option>
-                ))}
-              </select>
+              <CategoryPicker categories={categories} selectedId={form.categoryId} onChange={id => update('categoryId', id)} />
             </div>
             <div>
               <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Description</label>
