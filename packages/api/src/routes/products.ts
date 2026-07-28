@@ -5,6 +5,8 @@ import { authenticate, optionalAuth, requirePermission, AuthRequest } from '../m
 import { Permission } from '@nexus/shared';
 import { logActivity } from '../utils/activity-log';
 import { StoreRequest, requireStore } from '../middleware/resolve-store';
+import { validate } from '../middleware/validate';
+import { createProductSchema, updateProductSchema, createVariantSchema, updateVariantSchema, bulkVariantsSchema } from '../validation/product';
 
 export const productsRouter = Router();
 productsRouter.use(requireStore);
@@ -89,7 +91,7 @@ productsRouter.get('/new/list', async (req: StoreRequest, res, next) => {
   } catch (error) { next(error); }
 });
 
-productsRouter.post('/', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), async (req: StoreRequest, res, next) => {
+productsRouter.post('/', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), validate(createProductSchema), async (req: StoreRequest, res, next) => {
   try {
     const { name, slug, brand, sku, description, specifications, features, price, compareAtPrice, costPerItem, stock, lowStockThreshold, trackInventory, allowBackorder, status, categoryId, tags, seoTitle, seoDescription, returnPolicy, warranty, weight, weightUnit, shippingClass, estimatedDays, freeShipping, isFeatured, isNew } = req.body;
     const product = await prisma.product.create({
@@ -100,7 +102,7 @@ productsRouter.post('/', authenticate, requirePermission(Permission.MANAGE_PRODU
   } catch (error) { next(error); }
 });
 
-productsRouter.put('/:id', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), async (req: StoreRequest, res, next) => {
+productsRouter.put('/:id', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), validate(updateProductSchema), async (req: StoreRequest, res, next) => {
   try {
     const { name, slug, brand, sku, description, specifications, features, price, compareAtPrice, costPerItem, stock, lowStockThreshold, trackInventory, allowBackorder, status, categoryId, tags, seoTitle, seoDescription, returnPolicy, warranty, weight, weightUnit, shippingClass, estimatedDays, freeShipping, isFeatured, isNew } = req.body;
     const data: any = {};
@@ -158,7 +160,7 @@ productsRouter.get('/detail/:id', authenticate, requirePermission(Permission.MAN
 });
 
 // Variant CRUD
-productsRouter.post('/:id/variants', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), async (req: StoreRequest, res, next) => {
+productsRouter.post('/:id/variants', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), validate(createVariantSchema), async (req: StoreRequest, res, next) => {
   try {
     const product = await prisma.product.findFirst({ where: { id: req.params.id, storeId: req.storeId! } });
     if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
@@ -170,7 +172,7 @@ productsRouter.post('/:id/variants', authenticate, requirePermission(Permission.
   } catch (error) { next(error); }
 });
 
-productsRouter.put('/:productId/variants/:id', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), async (req: StoreRequest, res, next) => {
+productsRouter.put('/:productId/variants/:id', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), validate(updateVariantSchema), async (req: StoreRequest, res, next) => {
   try {
     const variant = await prisma.productVariant.findFirst({
       where: { id: req.params.id, product: { storeId: req.storeId! } },
@@ -197,7 +199,7 @@ productsRouter.delete('/:productId/variants/:id', authenticate, requirePermissio
 });
 
 // Bulk replace variants for a product
-productsRouter.put('/:id/variants', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), async (req: StoreRequest, res, next) => {
+productsRouter.put('/:id/variants', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), validate(bulkVariantsSchema), async (req: StoreRequest, res, next) => {
   try {
     const product = await prisma.product.findFirst({ where: { id: req.params.id, storeId: req.storeId! } });
     if (!product) return res.status(404).json({ success: false, error: 'Product not found' });

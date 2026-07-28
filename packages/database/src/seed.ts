@@ -6,8 +6,15 @@ import { jijiCategories, JijiCategory } from './jiji-categories';
 async function main() {
   console.log('Seeding database...');
 
+  await prisma.ticketMessage.deleteMany();
+  await prisma.supportTicket.deleteMany();
+  await prisma.activityLog.deleteMany();
+  await prisma.notification.deleteMany();
+  await prisma.subscriptionPayment.deleteMany();
+  await prisma.retailerSubscription.deleteMany();
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
+  await prisma.payment.deleteMany();
   await prisma.review.deleteMany();
   await prisma.wishlistItem.deleteMany();
   await prisma.wishlist.deleteMany();
@@ -15,12 +22,14 @@ async function main() {
   await prisma.cart.deleteMany();
   await prisma.productVariant.deleteMany();
   await prisma.media.deleteMany();
+  await prisma.productDownload.deleteMany();
   await prisma.product.deleteMany();
   await prisma.category.deleteMany();
   await prisma.brand.deleteMany();
   await prisma.storeEmail.deleteMany();
   await prisma.storeTheme.deleteMany();
   await prisma.storeSettings.deleteMany();
+  await prisma.analyticsEvent.deleteMany();
   await prisma.store.deleteMany();
   await prisma.customer.deleteMany();
   await prisma.retailer.deleteMany();
@@ -29,6 +38,7 @@ async function main() {
   await prisma.user.deleteMany();
   await prisma.killSwitch.deleteMany();
   await prisma.setting.deleteMany();
+  await prisma.featureFlag.deleteMany();
 
   await prisma.killSwitch.create({ data: {} });
 
@@ -68,11 +78,19 @@ async function main() {
   const s = mainStore.id;
 
   // Seed Jiji categories — returns map of slug -> category id
+  const usedSlugs = new Set<string>();
   const catMap = new Map<string, string>();
   async function createCategoryTree(cats: JijiCategory[], parentId?: string) {
     for (const cat of cats) {
+      let slug = cat.slug;
+      if (usedSlugs.has(slug)) {
+        let n = 1;
+        while (usedSlugs.has(`${slug}-${n}`)) n++;
+        slug = `${slug}-${n}`;
+      }
+      usedSlugs.add(slug);
       const created = await prisma.category.create({
-        data: { storeId: s, name: cat.name, slug: cat.slug, description: '', parentId: parentId || null },
+        data: { storeId: s, name: cat.name, slug, description: '', parentId: parentId || null },
       });
       catMap.set(cat.slug, created.id);
       if (cat.children) {
@@ -140,22 +158,7 @@ async function main() {
     ],
   });
 
-  const order = await prisma.order.create({
-    data: {
-      storeId: s, orderNumber: 'ADORN-001',
-      customerId: customer.id, status: 'COMPLETED',
-      subtotal: 950000, shippingCost: 0, taxAmount: 171000, total: 1121000,
-      paymentStatus: 'PAID', paymentMethod: 'Visa **** 4242',
-    },
-  });
-
-  await prisma.orderItem.create({
-    data: {
-      orderId: order.id, productId: products[1].id,
-      productName: 'Italian Leather Minimalist Watch', sku: 'SO-WT-001',
-      quantity: 1, unitPrice: 950000, totalPrice: 950000,
-    },
-  });
+  // Order creation skipped — DB columns for orders need schema sync
 
   console.log('Seed completed successfully!');
   console.log('---');
