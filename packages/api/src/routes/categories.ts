@@ -33,11 +33,7 @@ categoriesRouter.delete('/:id', authenticate, async (req: StoreRequest, res, nex
 categoriesRouter.get('/', async (req: StoreRequest, res, next) => {
   try {
     const categories = await prisma.category.findMany({
-      where: { parentId: null, storeId: req.storeId! },
-      include: {
-        children: { include: { _count: { select: { products: { where: { status: 'PUBLISHED', storeId: req.storeId! } } } } } },
-        _count: { select: { products: { where: { status: 'PUBLISHED', storeId: req.storeId! } } } },
-      },
+      where: { storeId: req.storeId! },
       orderBy: { name: 'asc' },
     });
     res.json({ success: true, data: categories });
