@@ -8,6 +8,10 @@ interface AuthContextType { user: User | null; loading: boolean; login: (email: 
 const AuthContext = createContext<AuthContextType>({} as any);
 export const useAuth = () => useContext(AuthContext);
 
+function decodeJwt(token: string): any {
+  try { return JSON.parse(atob(token.split('.')[1])); } catch { return null; }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -20,27 +24,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (tokenParam) {
       localStorage.setItem('accessToken', tokenParam);
       window.history.replaceState({}, '', window.location.pathname);
+      const payload = decodeJwt(tokenParam);
+      if (payload) {
+        setUser({ id: payload.userId, email: payload.email, role: payload.role, firstName: '', lastName: '', avatar: undefined });
+      }
+      setLoading(false);
       loadUser();
       return;
     }
     const token = localStorage.getItem('accessToken');
-    if (token) loadUser();
-    else setLoading(false);
+    if (token) {
+      const payload = decodeJwt(token);
+      if (payload) {
+        setUser({ id: payload.userId, email: payload.email, role: payload.role, firstName: '', lastName: '', avatar: undefined });
+      }
+      setLoading(false);
+      loadUser();
+    } else setLoading(false);
   }, []);
 
-  async function loadUser(retries = 0) {
+  async function loadUser() {
     try {
       const res = await api.get<any>('/auth/me');
       setUser(res.data);
       if (res.data.retailer?.storeSlug) localStorage.setItem('activeStoreSlug', res.data.retailer.storeSlug);
-      setLoading(false);
     } catch (e: any) {
-      if (e?.status === 401) { localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); setLoading(false); return; }
-      if (retries < 4) {
-        setTimeout(() => loadUser(retries + 1), [5000, 15000, 25000, 35000][retries]);
-      } else {
-        setLoading(false);
-      }
+      if (e?.status === 401) { localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); setUser(null); }
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -48,6 +59,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = await api.post<any>('/auth/login', { email, password });
     localStorage.setItem('accessToken', res.data.accessToken);
     localStorage.setItem('refreshToken', res.data.refreshToken);
+    const payload = decodeJwt(res.data.accessToken);
+    if (payload) {
+      setUser({ id: payload.userId, email: payload.email, role: payload.role, firstName: '', lastName: '', avatar: undefined });
+    }
     try {
       const me = await api.get<any>('/auth/me');
       setUser(me.data);
@@ -55,11 +70,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('activeStoreSlug', me.data.retailer.storeSlug);
       }
     } catch {
-      setUser(res.data.user);
+      // full user fetch failed; JWT-based user is already set
     }
     const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
     if (res.data.user?.role === 'RETAILER') {
-      router.push('/dashboard');
+      window.location.href = '/dashboard';
     } else {
       window.location.href = `${storefrontUrl}/?noStore=1#token=${encodeURIComponent(res.data.accessToken)}`;
     }
