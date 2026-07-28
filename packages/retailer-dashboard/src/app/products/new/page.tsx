@@ -36,7 +36,6 @@ export default function NewProductPage() {
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [catSearch, setCatSearch] = useState('');
-  const [catOpen, setCatOpen] = useState(false);
 
   const [form, setForm] = useState<any>({
     name: '', brand: '', sku: '', description: '', price: 0, compareAtPrice: '', costPerItem: '',
@@ -188,20 +187,13 @@ export default function NewProductPage() {
             </div>
             <div>
               <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Category *</label>
-              <div style={{ position: 'relative' }}>
-                <input className="input" placeholder="Search categories..." value={catSearch} onChange={e => { setCatSearch(e.target.value); setCatOpen(true); }} onFocus={() => setCatOpen(true)} />
-                {catOpen && (
-                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, maxHeight: 240, overflowY: 'auto', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '0 0 0.5rem 0.5rem', zIndex: 10 }}>
-                    {categories.filter(c => c.label.toLowerCase().includes(catSearch.toLowerCase())).map(c => (
-                      <div key={c.id} onClick={() => { update('categoryId', c.id); setCatSearch(c.label); setCatOpen(false); }} style={{ padding: '0.5rem 0.75rem', cursor: 'pointer', fontSize: '0.8125rem', paddingLeft: `${0.75 + c.depth * 1}rem`, background: form.categoryId === c.id ? 'var(--primary)' : 'transparent', color: form.categoryId === c.id ? '#fff' : 'var(--text)' }}>
-                        {c.label}
-                      </div>
-                    ))}
-                    {categories.filter(c => c.label.toLowerCase().includes(catSearch.toLowerCase())).length === 0 && <div style={{ padding: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.8125rem' }}>No categories match</div>}
-                  </div>
-                )}
-              </div>
-              {form.categoryId && <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{categories.find(c => c.id === form.categoryId)?.label}</span>}
+              <input className="input" placeholder="Filter categories..." value={catSearch} onChange={e => setCatSearch(e.target.value)} style={{ marginBottom: '0.375rem' }} />
+              <select className="input" size={6} value={form.categoryId} onChange={e => update('categoryId', e.target.value)} style={{ height: 'auto' }}>
+                <option value="">Select category...</option>
+                {categories.filter(c => !catSearch || c.label.toLowerCase().includes(catSearch.toLowerCase())).map(c => (
+                  <option key={c.id} value={c.id}>{'  '.repeat(c.depth)}{c.label}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Description</label>
