@@ -8,7 +8,7 @@ import { authRouter } from './routes/auth';
 import { productsRouter } from './routes/products';
 import { ordersRouter } from './routes/orders';
 import { customersRouter } from './routes/customers';
-import { categoriesRouter } from './routes/categories';
+import { categoriesRouter, seedStoreCategories } from './routes/categories';
 import { cartRouter } from './routes/cart';
 import { wishlistRouter } from './routes/wishlist';
 import { reviewsRouter } from './routes/reviews';
@@ -115,6 +115,15 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api/products', resolveStore, productsRouter);
 app.use('/api/orders', resolveStore, ordersRouter);
 app.use('/api/categories', resolveStore, categoriesRouter);
+app.get('/api/reseed-categories/:slug', async (req, res, next) => {
+  try {
+    const store = await prisma.store.findUnique({ where: { slug: req.params.slug } });
+    if (!store) return res.status(404).json({ success: false, error: 'Store not found' });
+    await prisma.category.deleteMany({ where: { storeId: store.id } });
+    const count = await seedStoreCategories(store.id);
+    res.json({ success: true, data: { deleted: true, created: count } });
+  } catch (e: any) { res.status(500).json({ success: false, error: e.message }); }
+});
 app.use('/api/cart', resolveStore, cartRouter);
 app.use('/api/wishlist', resolveStore, wishlistRouter);
 app.use('/api/reviews', resolveStore, reviewsRouter);

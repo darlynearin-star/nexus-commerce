@@ -8,7 +8,7 @@ import { jijiCategories } from '../../database/src/jiji-categories';
 export const categoriesRouter = Router();
 categoriesRouter.use(requireStore);
 
-async function seedStoreCategories(storeId: string): Promise<number> {
+export async function seedStoreCategories(storeId: string): Promise<number> {
   const existing = await prisma.category.count({ where: { storeId } });
   if (existing > 0) return 0;
   let created = 0;
@@ -55,6 +55,10 @@ categoriesRouter.delete('/:id', authenticate, async (req: StoreRequest, res, nex
 categoriesRouter.get('/', async (req: StoreRequest, res, next) => {
   try {
     const storeId = req.storeId!;
+    const forceReseed = req.query.force === '1';
+    if (forceReseed) {
+      await prisma.category.deleteMany({ where: { storeId } });
+    }
     let categories = await prisma.category.findMany({ where: { storeId }, orderBy: { name: 'asc' } });
     if (categories.length === 0) {
       const seeded = await seedStoreCategories(storeId);
