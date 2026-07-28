@@ -22,7 +22,12 @@ productsRouter.get('/', optionalAuth, async (req: StoreRequest, res, next) => {
     const brand = req.query.brand as string;
     const status = req.query.status as string;
 
-    const where: any = { status: 'PUBLISHED', storeId: req.storeId! };
+    const where: any = { storeId: req.storeId! };
+    if (!(req as any).user) {
+      where.status = 'PUBLISHED';
+    } else if (status) {
+      where.status = status;
+    }
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -34,7 +39,6 @@ productsRouter.get('/', optionalAuth, async (req: StoreRequest, res, next) => {
     if (brand) where.brand = brand;
     if (!isNaN(minPrice)) where.price = { ...where.price, gte: minPrice };
     if (!isNaN(maxPrice)) where.price = { ...where.price, lte: maxPrice };
-    if (status && (req as any).user) where.status = status;
 
     const [products, total] = await Promise.all([
       prisma.product.findMany({
@@ -139,6 +143,78 @@ productsRouter.delete('/:id', authenticate, requirePermission(Permission.MANAGE_
     await prisma.product.delete({ where: { id: req.params.id } });
     logActivity({ userId: (req as any).user!.userId, action: 'product:deleted', resource: 'product', resourceId: req.params.id, req: req as any });
     res.json({ success: true, message: 'Product deleted' });
+  } catch (error) { next(error); }
+});
+
+productsRouter.get('/detail/:id', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), async (req: StoreRequest, res, next) => {
+  try {
+    const product = await prisma.product.findFirst({
+      where: { id: req.params.id, storeId: req.storeId! },
+      include: { category: true, variants: true, downloads: true },
+    });
+    if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
+    res.json({ success: true, data: product });
+  } catch (error) { next(error); }
+});
+
+// Variant CRUD
+productsRouter.post('/:id/variants', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), async (req: StoreRequest, res, next) => {
+  try {
+    const product = await prisma.product.findFirst({ where: { id: req.params.id, storeId: req.storeId! } });
+    if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
+    const { name, sku, price, stock, options, image } = req.body;
+    const variant = await prisma.productVariant.create({
+      data: { productId: req.params.id, name, sku, price: price || 0, stock: stock ?? 0, options: options || [], image: image || '' },
+    });
+    res.status(201).json({ success: true, data: variant });
+  } catch (error) { next(error); }
+});
+
+productsRouter.put('/:productId/variants/:id', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), async (req: StoreRequest, res, next) => {
+  try {
+    const variant = await prisma.productVariant.findFirst({
+      where: { id: req.params.id, product: { storeId: req.storeId! } },
+    });
+    if (!variant) return res.status(404).json({ success: false, error: 'Variant not found' });
+    const { name, sku, price, stock, options, image } = req.body;
+    const updated = await prisma.productVariant.update({
+      where: { id: req.params.id },
+      data: { ...(name !== undefined && { name }), ...(sku !== undefined && { sku }), ...(price !== undefined && { price }), ...(stock !== undefined && { stock }), ...(options !== undefined && { options }), ...(image !== undefined && { image }) },
+    });
+    res.json({ success: true, data: updated });
+  } catch (error) { next(error); }
+});
+
+productsRouter.delete('/:productId/variants/:id', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), async (req: StoreRequest, res, next) => {
+  try {
+    const variant = await prisma.productVariant.findFirst({
+      where: { id: req.params.id, product: { storeId: req.storeId! } },
+    });
+    if (!variant) return res.status(404).json({ success: false, error: 'Variant not found' });
+    await prisma.productVariant.delete({ where: { id: req.params.id } });
+    res.json({ success: true, message: 'Variant deleted' });
+  } catch (error) { next(error); }
+});
+
+// Bulk replace variants for a product
+productsRouter.put('/:id/variants', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), async (req: StoreRequest, res, next) => {
+  try {
+    const product = await prisma.product.findFirst({ where: { id: req.params.id, storeId: req.storeId! } });
+    if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
+    const { variants } = req.body;
+    if (!Array.isArray(variants)) return res.status(400).json({ success: false, error: 'variants must be an array' });
+    await prisma.productVariant.deleteMany({ where: { productId: req.params.id } });
+    if (variants.length > 0) {
+      await prisma.productVariant.createMany({
+        data: variants.map((v: any) => ({
+          productId: req.params.id, name: v.name, sku: v.sku, price: v.price ?? 0, stock: v.stock ?? 0, options: v.options || [], image: v.image || '',
+        })),
+      });
+    }
+    const updated = await prisma.product.findFirst({
+      where: { id: req.params.id }, include: { variants: true },
+    });
+    res.json({ success: true, data: updated });
   } catch (error) { next(error); }
 });
 

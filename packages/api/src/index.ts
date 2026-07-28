@@ -31,6 +31,7 @@ import { announcementsRouter } from './routes/announcements';
 import { cacheRouter } from './routes/cache';
 import { backupsRouter } from './routes/backups';
 import { storeSettingsRouter } from './routes/store-settings';
+import { uploadRouter } from './routes/upload';
 
 import { resolveStore } from './middleware/resolve-store';
 import { errorHandler } from './middleware/error-handler';
@@ -103,6 +104,9 @@ app.use('/api', limiter);
 // Kill switch check (applied to all /api routes)
 app.use('/api', checkKillSwitch);
 
+// Serve uploaded files
+app.use('/uploads', express.static('uploads'));
+
 // Store-scoped routes (require x-store-slug header)
 app.use('/api/products', resolveStore, productsRouter);
 app.use('/api/orders', resolveStore, ordersRouter);
@@ -112,6 +116,7 @@ app.use('/api/wishlist', resolveStore, wishlistRouter);
 app.use('/api/reviews', resolveStore, reviewsRouter);
 app.use('/api/coupons', resolveStore, couponsRouter);
 app.use('/api/media', resolveStore, mediaRouter);
+app.use('/api/upload', resolveStore, uploadRouter);
 app.use('/api/analytics', resolveStore, analyticsRouter);
 app.use('/api/search', resolveStore, searchRouter);
 // Global routes (no store context needed)
