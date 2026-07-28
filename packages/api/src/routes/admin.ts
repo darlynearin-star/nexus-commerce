@@ -124,24 +124,26 @@ adminRouter.post('/repair/all-store-ownerships', authenticate, requirePermission
 
 adminRouter.post('/cleanup', authenticate, requirePermission(Permission.MANAGE_SYSTEM), async (req: AuthRequest, res, next) => {
   try {
-    const adminEmail = 'admin@nexuscommerce.com';
+    const keepEmails = ['admin@nexuscommerce.com', 'retailer@nexuscommerce.com'];
+    const keepStoreSlugs = ['adorn'];
 
     const allStores = await prisma.store.findMany({ select: { id: true, name: true, slug: true } });
+    let storesDeleted = 0;
     for (const store of allStores) {
+      if (keepStoreSlugs.includes(store.slug)) continue;
       const orderIds = (await prisma.order.findMany({ where: { storeId: store.id }, select: { id: true } })).map(o => o.id);
       await prisma.orderItem.deleteMany({ where: { orderId: { in: orderIds } } });
       await prisma.payment.deleteMany({ where: { orderId: { in: orderIds } } });
       await prisma.order.deleteMany({ where: { storeId: store.id } });
-
       const cartIds = (await prisma.cart.findMany({ where: { storeId: store.id }, select: { id: true } })).map(c => c.id);
       await prisma.cartItem.deleteMany({ where: { cartId: { in: cartIds } } });
       await prisma.cart.deleteMany({ where: { storeId: store.id } });
-
       await prisma.retailer.deleteMany({ where: { storeSlug: store.slug } });
       await prisma.store.delete({ where: { id: store.id } });
+      storesDeleted++;
     }
 
-    const usersToDelete = await prisma.user.findMany({ where: { NOT: { email: adminEmail } }, select: { id: true, email: true } });
+    const usersToDelete = await prisma.user.findMany({ where: { NOT: { email: { in: keepEmails } } }, select: { id: true, email: true } });
     for (const u of usersToDelete) {
       await prisma.session.deleteMany({ where: { userId: u.id } });
       await prisma.notification.deleteMany({ where: { userId: u.id } });
@@ -151,11 +153,7 @@ adminRouter.post('/cleanup', authenticate, requirePermission(Permission.MANAGE_S
       await prisma.user.delete({ where: { id: u.id } });
     }
 
-    await prisma.setting.deleteMany();
-    await prisma.killSwitch.deleteMany();
-    await prisma.killSwitch.create({ data: {} });
-
-    logActivity({ userId: req.user!.userId, action: 'system:cleanup', resource: 'system', resourceId: '', details: { storesDeleted: allStores.length, usersDeleted: usersToDelete.length }, req: req as any });
-    res.json({ success: true, message: `Cleanup complete: ${allStores.length} stores deleted, ${usersToDelete.length} users deleted` });
+    logActivity({ userId: req.user!.userId, action: 'system:cleanup', resource: 'system', resourceId: '', details: { storesDeleted, usersDeleted: usersToDelete.length }, req: req as any });
+    res.json({ success: true, message: `Cleanup complete: ${storesDeleted} stores deleted, ${usersToDelete.length} users deleted` });
   } catch (error) { next(error); }
 });
