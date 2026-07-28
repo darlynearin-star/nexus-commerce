@@ -72,7 +72,6 @@ export default function EditProductPage() {
       setCategories(flatCats);
       const p = prodRes.data;
       const initialCat = flatCats.find(c => c.id === p.categoryId);
-      if (initialCat) setCatSearch(initialCat.label);
       setShortCode(p.shortCode || '');
       setStoreSlug(p.store?.slug || localStorage.getItem('activeStoreSlug') || '');
       setForm({
