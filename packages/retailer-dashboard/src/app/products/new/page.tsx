@@ -188,7 +188,7 @@ export default function NewProductPage() {
             <div>
               <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Category *</label>
               <input className="input" placeholder="Filter categories..." value={catSearch} onChange={e => setCatSearch(e.target.value)} style={{ marginBottom: '0.375rem' }} />
-              <select className="input" size={6} value={form.categoryId} onChange={e => update('categoryId', e.target.value)} style={{ height: 'auto' }}>
+              <select className="input" value={form.categoryId} onChange={e => update('categoryId', e.target.value)} style={{ height: 'auto', minHeight: 200 }}>
                 <option value="">Select category...</option>
                 {categories.filter(c => !catSearch || c.label.toLowerCase().includes(catSearch.toLowerCase())).map(c => (
                   <option key={c.id} value={c.id}>{'  '.repeat(c.depth)}{c.label}</option>
