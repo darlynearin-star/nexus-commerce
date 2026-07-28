@@ -32,9 +32,8 @@ import { cacheRouter } from './routes/cache';
 import { backupsRouter } from './routes/backups';
 import { storeSettingsRouter } from './routes/store-settings';
 import { uploadRouter } from './routes/upload';
-import seedRouter from './routes/seed';
 
-import { resolveStore, requireStore } from './middleware/resolve-store';
+import { resolveStore } from './middleware/resolve-store';
 import { errorHandler } from './middleware/error-handler';
 import { checkKillSwitch } from './middleware/kill-switch';
 import prisma from '@nexus/database';
@@ -142,7 +141,6 @@ app.use('/api/announcements', announcementsRouter);
 app.use('/api/cache', cacheRouter);
 app.use('/api/backups', backupsRouter);
 app.use('/api/store-settings', storeSettingsRouter);
-app.use('/api/seed', requireStore, seedRouter);
 // Health check
 app.get('/api/health', (_req, res) => {
   res.json({ success: true, data: { status: 'ok', timestamp: new Date().toISOString() } });
