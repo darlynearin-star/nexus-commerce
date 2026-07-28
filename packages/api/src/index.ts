@@ -38,6 +38,7 @@ import { errorHandler } from './middleware/error-handler';
 import { checkKillSwitch } from './middleware/kill-switch';
 import prisma from '@nexus/database';
 import { logger } from './utils/logger';
+import { jijiCategories } from '@nexus/database';
 
 // Startup migration: sync DB columns that Prisma schema needs
 async function runMigrations() {
@@ -153,10 +154,38 @@ app.use('/api/*', (_req, res) => {
 // Error handling
 app.use(errorHandler);
 
+async function seedCategories() {
+  try {
+    const storeCount = await prisma.store.count();
+    if (storeCount === 0) { logger.info('Seed: no stores exist, skipping category seed'); return; }
+    const catCount = await prisma.category.count();
+    if (catCount > 0) { logger.info(`Seed: ${catCount} categories already exist, skipping`); return; }
+    const stores = await prisma.store.findMany({ select: { id: true } });
+    const slugCount: Record<string, number> = {};
+    const cats: { storeId: string; name: string; slug: string; parentId: string | null }[] = [];
+    function walk(tree: any[], parentId: string | null, storeId: string) {
+      for (const node of tree) {
+        let slug = node.slug;
+        if (slugCount[slug] !== undefined) { slugCount[slug]++; slug = `${slug}-${slugCount[slug]}`; }
+        else slugCount[slug] = 0;
+        const id = `${storeId}-${slug}`;
+        cats.push({ storeId, name: node.name, slug, parentId });
+        if (node.children) walk(node.children, id, storeId);
+      }
+    }
+    for (const store of stores) walk(jijiCategories, null, store.id);
+    await prisma.category.createMany({ data: cats });
+    logger.info(`Seed: created ${cats.length} Jiji categories for ${stores.length} store(s)`);
+  } catch (e: any) {
+    logger.warn(`Seed skipped: ${e.message}`);
+  }
+}
+
 app.listen(PORT, async () => {
   logger.info(`Nexus Commerce API running on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
   await runMigrations();
+  await seedCategories();
 });
 
 export default app;
