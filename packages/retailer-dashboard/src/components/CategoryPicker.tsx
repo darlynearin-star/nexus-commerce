@@ -60,18 +60,18 @@ export default function CategoryPicker({ categories, selectedId, onChange }: { c
       </button>
 
       {open && <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-        <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, maxHeight: '80vh', background: 'var(--card-bg)', borderRadius: '1rem 1rem 0 0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, maxHeight: '80vh', background: 'var(--bg-card)', borderRadius: '1rem 1rem 0 0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)' }}>
             <Search size={18} style={{ opacity: 0.4 }} />
-            <input ref={inputRef} value={search} onChange={e => setSearch(e.target.value)} placeholder="Search categories..."
-              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '1rem', color: 'inherit' }} />
+              <input ref={inputRef} value={search} onChange={e => setSearch(e.target.value)} placeholder="Search categories..."
+                style={{ flex: 1, border: 'none', outline: 'none', background: 'var(--bg)', padding: '0.375rem 0.5rem', borderRadius: '0.375rem', fontSize: '1rem', color: 'inherit' }} />
             <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-secondary)' }}><X size={20} /></button>
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem 0' }}>
             {filtered.length === 0 && <p style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>No categories found</p>}
             {filtered.map(c => (
               <button key={c.id} type="button" onClick={() => { onChange(c.id); setOpen(false); setSearch(''); }}
-                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '0.625rem 1rem', paddingLeft: `${1 + c.depth * 1.25}rem`, border: 'none', background: c.id === selectedId ? 'var(--accent)' : 'transparent', color: c.id === selectedId ? 'var(--accent-text)' : 'inherit', cursor: 'pointer', fontSize: '0.875rem', borderBottom: '1px solid var(--border)' }}>
+                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '0.625rem 1rem', paddingLeft: `${1 + c.depth * 1.25}rem`, border: 'none', background: c.id === selectedId ? 'var(--primary)' : 'transparent', color: c.id === selectedId ? 'white' : 'inherit', cursor: 'pointer', fontSize: '0.875rem', borderBottom: '1px solid var(--border)' }}>
                 {c.label}
               </button>
             ))}
