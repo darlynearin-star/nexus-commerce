@@ -28,14 +28,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     else setLoading(false);
   }, []);
 
-  async function loadUser() {
+  async function loadUser(retries = 0) {
     try {
       const res = await api.get<any>('/auth/me');
       setUser(res.data);
       if (res.data.retailer?.storeSlug) localStorage.setItem('activeStoreSlug', res.data.retailer.storeSlug);
+      setLoading(false);
     } catch (e: any) {
-      if (e?.status === 401) { localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); }
-    } finally { setLoading(false); }
+      if (e?.status === 401) { localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); setLoading(false); return; }
+      if (retries < 4) {
+        setTimeout(() => loadUser(retries + 1), [5000, 15000, 25000, 35000][retries]);
+      } else {
+        setLoading(false);
+      }
+    }
   }
 
   const login = async (email: string, password: string) => {

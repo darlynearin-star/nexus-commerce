@@ -18,16 +18,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => { loadUser(); }, []);
 
-  async function loadUser() {
+  async function loadUser(retries = 0) {
     try {
       if (localStorage.getItem('accessToken')) {
         const res = await api.get<any>('/auth/me');
         setUser(res.data);
       }
-    } catch (e: any) {
-      if (e?.status === 401) { localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); }
-    } finally {
       setLoading(false);
+    } catch (e: any) {
+      if (e?.status === 401) { localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); setLoading(false); return; }
+      if (retries < 4) {
+        setTimeout(() => loadUser(retries + 1), [5000, 15000, 25000, 35000][retries]);
+      } else {
+        setLoading(false);
+      }
     }
   }
 
