@@ -144,7 +144,7 @@ export default function NewProductPage() {
         await api.post('/media', { url: imgUrl, thumbnailUrl: imgUrl, alt: form.name, folder: 'products', productId });
         await api.put(`/products/${productId}`, { images: images });
       }
-      router.push('/products');
+      router.push(`/products/${productId}/edit`);
     } catch (e: any) {
       setErrors([e.message || 'Failed to save product']);
     } finally { setSaving(false); }

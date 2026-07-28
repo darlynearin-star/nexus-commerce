@@ -48,6 +48,9 @@ async function runMigrations() {
     logger.info('Migration: added whatsapp column to store_settings');
     await prisma.$executeRawUnsafe("ALTER TABLE store_themes ADD COLUMN IF NOT EXISTS animation TEXT NOT NULL DEFAULT 'subtle'");
     logger.info('Migration: added animation column to store_themes');
+    await prisma.$executeRawUnsafe("ALTER TABLE products ADD COLUMN IF NOT EXISTS \"shortCode\" TEXT");
+    await prisma.$executeRawUnsafe("CREATE UNIQUE INDEX IF NOT EXISTS products_shortcode_idx ON products(\"shortCode\") WHERE \"shortCode\" IS NOT NULL");
+    logger.info('Migration: added shortCode column to products');
   } catch (e: any) {
     logger.warn(`Migrations skipped: ${e.message}`);
   }

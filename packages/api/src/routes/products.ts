@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import crypto from 'crypto';
 import prisma from '@nexus/database';
 import { ProductStatus } from '@nexus/shared';
 import { authenticate, optionalAuth, requirePermission, AuthRequest } from '../middleware/auth';
@@ -8,7 +9,28 @@ import { StoreRequest, requireStore } from '../middleware/resolve-store';
 import { validate } from '../middleware/validate';
 import { createProductSchema, updateProductSchema, createVariantSchema, updateVariantSchema, bulkVariantsSchema } from '../validation/product';
 
+function generateShortCode(): string {
+  return crypto.randomBytes(5).toString('base64url').slice(0, 8);
+}
+
 export const productsRouter = Router();
+
+// Short-link redirect: no store context needed
+const STOREFRONT_URL = process.env.STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
+productsRouter.get('/s/:code', async (req: StoreRequest, res, next) => {
+  try {
+    const product = await prisma.product.findFirst({ where: { shortCode: req.params.code }, include: { store: true } });
+    if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
+    const productUrl = `/store/${product.store.slug}/product/${product.slug}`;
+    const fullUrl = `${STOREFRONT_URL}${productUrl}`;
+    const accept = req.headers.accept || '';
+    if (accept.includes('text/html')) {
+      return res.redirect(302, fullUrl);
+    }
+    return res.json({ success: true, data: { url: productUrl, fullUrl, storeSlug: product.store.slug, productSlug: product.slug } });
+  } catch (error) { next(error); }
+});
+
 productsRouter.use(requireStore);
 
 productsRouter.get('/', optionalAuth, async (req: StoreRequest, res, next) => {
@@ -94,8 +116,9 @@ productsRouter.get('/new/list', async (req: StoreRequest, res, next) => {
 productsRouter.post('/', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), validate(createProductSchema), async (req: StoreRequest, res, next) => {
   try {
     const { name, slug, brand, sku, description, specifications, features, price, compareAtPrice, costPerItem, stock, lowStockThreshold, trackInventory, allowBackorder, status, categoryId, tags, seoTitle, seoDescription, returnPolicy, warranty, weight, weightUnit, shippingClass, estimatedDays, freeShipping, isFeatured, isNew } = req.body;
+    const shortCode = generateShortCode();
     const product = await prisma.product.create({
-      data: { name, slug, brand: brand || '', sku, description: description || '', specifications: specifications || {}, features: features || [], price, compareAtPrice: compareAtPrice || null, costPerItem: costPerItem || null, stock: stock ?? 0, lowStockThreshold: lowStockThreshold ?? 10, trackInventory: trackInventory ?? true, allowBackorder: allowBackorder ?? false, status: status || 'DRAFT', categoryId, tags: tags || [], seoTitle: seoTitle || '', seoDescription: seoDescription || '', returnPolicy: returnPolicy || '', warranty: warranty || '', weight: weight ?? 0, weightUnit: weightUnit || 'kg', shippingClass: shippingClass || 'standard', estimatedDays: estimatedDays || '5-7 business days', freeShipping: freeShipping ?? false, isFeatured: isFeatured ?? false, isNew: isNew ?? false, storeId: req.storeId! },
+      data: { name, slug, brand: brand || '', sku, description: description || '', shortCode, specifications: specifications || {}, features: features || [], price, compareAtPrice: compareAtPrice || null, costPerItem: costPerItem || null, stock: stock ?? 0, lowStockThreshold: lowStockThreshold ?? 10, trackInventory: trackInventory ?? true, allowBackorder: allowBackorder ?? false, status: status || 'DRAFT', categoryId, tags: tags || [], seoTitle: seoTitle || '', seoDescription: seoDescription || '', returnPolicy: returnPolicy || '', warranty: warranty || '', weight: weight ?? 0, weightUnit: weightUnit || 'kg', shippingClass: shippingClass || 'standard', estimatedDays: estimatedDays || '5-7 business days', freeShipping: freeShipping ?? false, isFeatured: isFeatured ?? false, isNew: isNew ?? false, storeId: req.storeId! },
     });
     logActivity({ userId: (req as any).user!.userId, action: 'product:created', resource: 'product', resourceId: product.id, req: req as any });
     res.status(201).json({ success: true, data: product });

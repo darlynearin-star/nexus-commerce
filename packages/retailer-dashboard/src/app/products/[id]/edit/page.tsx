@@ -35,6 +35,9 @@ export default function EditProductPage() {
   const [categories, setCategories] = useState<{ id: string; label: string; depth: number }[]>([]);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [shortCode, setShortCode] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [storeSlug, setStoreSlug] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
@@ -60,6 +63,8 @@ export default function EditProductPage() {
       const tree = buildTree(catRes.data || []);
       setCategories(flattenTree(tree));
       const p = prodRes.data;
+      setShortCode(p.shortCode || '');
+      setStoreSlug(p.store?.slug || localStorage.getItem('activeStoreSlug') || '');
       setForm({
         name: p.name || '', brand: p.brand || '', sku: p.sku || '', description: p.description || '',
         price: p.price || 0, compareAtPrice: p.compareAtPrice || '', costPerItem: p.costPerItem || '',
@@ -168,6 +173,32 @@ export default function EditProductPage() {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        {/* Share Link */}
+        {shortCode && (
+          <div className="card" style={{ padding: '1.25rem 1.5rem' }}>
+            <h3 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Share Link</h3>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+              Share this link anywhere — WhatsApp, SMS, social media — and it sends customers straight to this product.
+            </p>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <input
+                className="input"
+                readOnly
+                value={`https://nexus-storefront-dusky.vercel.app/api/s/${shortCode}`}
+                style={{ flex: 1, fontSize: '0.8125rem', userSelect: 'all' }}
+                onClick={e => (e.target as HTMLInputElement).select()}
+              />
+              <button className="btn btn-secondary" onClick={() => {
+                navigator.clipboard.writeText(`https://nexus-storefront-dusky.vercel.app/api/s/${shortCode}`);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}>
+                {copied ? 'Copied!' : 'Copy Link'}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Basic Info */}
         <div className="card" style={{ padding: '1.5rem' }}>
           <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Basic Information</h3>

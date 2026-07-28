@@ -326,6 +326,7 @@ model Product {
   freeShipping     Boolean       @default(false)
   isFeatured       Boolean       @default(false)
   isNew            Boolean       @default(false)
+  shortCode        String?       @unique
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
