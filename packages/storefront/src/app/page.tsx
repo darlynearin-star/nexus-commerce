@@ -2,7 +2,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { Store, Palette, Globe, Smartphone, Gift, CreditCard, ArrowRight, CheckCircle, Sparkles, Zap, Layout, Users, DollarSign, Clock, AlertTriangle, ExternalLink, ShoppingBag, BookOpen, HelpCircle, Shield } from 'lucide-react';
+import { api } from '@/lib/api';
+import { Store, Palette, Globe, Smartphone, Gift, CreditCard, ArrowRight, CheckCircle, Sparkles, Zap, Layout, Users, DollarSign, Clock, AlertTriangle, ExternalLink, ShoppingBag, BookOpen, HelpCircle, Shield, EyeOff } from 'lucide-react';
+
+const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
+const dashboardUrl = process.env.NEXT_PUBLIC_RETAILER_DASHBOARD_URL || 'https://nexus-commerce-retailer-dashboard.vercel.app';
 
 function calcDaysRemaining(trialEnd: string): number {
   const end = new Date(trialEnd);
@@ -11,12 +15,31 @@ function calcDaysRemaining(trialEnd: string): number {
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 }
 
+function getStoreStatus(store: any): { label: string; color: string; icon: any; message: string } {
+  if (store.isActive) {
+    return { label: 'Active', color: 'var(--success)', icon: <CheckCircle size={16} />, message: 'Your store is live and accepting orders.' };
+  }
+  return { label: 'Disabled', color: 'var(--error)', icon: <EyeOff size={16} />, message: 'Your store has been disabled. Please contact Mr.Dev at darlenzai01@gmail.com for assistance.' };
+}
+
 export default function LandingPage() {
   const { user, loading } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const [store, setStore] = useState<any | null>(undefined);
+  const [storeLoading, setStoreLoading] = useState(false);
+
   useEffect(() => { setMounted(true); }, []);
 
-  if (!mounted || loading) {
+  useEffect(() => {
+    if (user && mounted) {
+      setStoreLoading(true);
+      api.get('/stores/mine').then((r: any) => setStore(r.data)).catch(() => setStore(null)).finally(() => setStoreLoading(false));
+    } else if (!user && mounted) {
+      setStore(undefined);
+    }
+  }, [user, mounted]);
+
+  if (!mounted || loading || storeLoading) {
     return (
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '4rem 1rem' }}>
         <div className="skeleton" style={{ height: 60, width: '60%', marginBottom: '1rem' }} />
@@ -29,70 +52,38 @@ export default function LandingPage() {
   }
 
   const isGuest = !user;
-  const hasStore = !!user?.retailer?.storeSlug;
+  const hasStore = !!store;
   const sub = user?.retailer?.subscription;
-  const ctaHref = '/create-store';
 
   // Logged-in user with a store → dashboard view
   if (user && hasStore) {
-    const daysLeft = sub ? calcDaysRemaining(sub.trialEnd) : 14;
-    const isTrial = !sub || sub.status === 'TRIAL';
-    const isActive = sub?.status === 'ACTIVE';
-    const storeSlug = user.retailer!.storeSlug;
-    const storeName = user.retailer!.storeName;
-    const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
-    const dashboardUrl = process.env.NEXT_PUBLIC_RETAILER_DASHBOARD_URL || 'https://nexus-commerce-retailer-dashboard.vercel.app';
+    const status = getStoreStatus(store);
+    const storeSlug = store.slug;
+    const storeName = store.name;
 
     return (
       <div style={{ position: 'relative', zIndex: 1, maxWidth: 900, margin: '0 auto', padding: '2rem 1rem 4rem' }}>
 
-        {/* Tier progress */}
+        {/* Store status bar */}
         <section style={{ marginBottom: '2.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', padding: '1.5rem', border: '1px solid var(--border)', borderRadius: '1rem', background: 'var(--glow)' }}>
-            <div>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Your Plan</p>
-              {isTrial && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Clock size={20} style={{ color: 'var(--primary)' }} />
-                  <div>
-                    <p style={{ fontWeight: 600 }}>14-Day Free Trial</p>
-                    <p style={{ fontSize: '0.875rem', color: daysLeft <= 3 ? 'var(--error)' : 'var(--text-secondary)' }}>
-                      {daysLeft > 0 ? `${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining` : 'Expired'}
-                    </p>
-                  </div>
-                </div>
-              )}
-              {isActive && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Shield size={20} style={{ color: 'var(--primary)' }} />
-                  <div>
-                    <p style={{ fontWeight: 600 }}>Active — 3,000 UGX/week</p>
-                    {sub?.nextBillingDate && (
-                      <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                        Next billing: {new Date(sub.nextBillingDate).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-              {sub?.status === 'CANCELLED' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <AlertTriangle size={20} style={{ color: 'var(--error)' }} />
-                  <div>
-                    <p style={{ fontWeight: 600, color: 'var(--error)' }}>Cancelled</p>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Reactivate in your dashboard</p>
-                  </div>
-                </div>
-              )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ color: status.color }}>{status.icon}</div>
+              <div>
+                <p style={{ fontWeight: 600, fontSize: '1rem' }}>{storeName}</p>
+                <p style={{ fontSize: '0.875rem', color: status.color }}>{status.label} — {status.message}</p>
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <a href={`${storefrontUrl}/store/${storeSlug}`} target="_blank" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                <ShoppingBag size={18} /> Visit My Store <ExternalLink size={14} />
-              </a>
-              <a href={`${dashboardUrl}/dashboard#token=${encodeURIComponent(typeof window !== 'undefined' ? localStorage.getItem('accessToken') || '' : '')}`} className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Layout size={18} /> Dashboard
-              </a>
-            </div>
+            {store.isActive && (
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <a href={`${storefrontUrl}/store/${storeSlug}`} target="_blank" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <ShoppingBag size={18} /> Visit My Store <ExternalLink size={14} />
+                </a>
+                <a href={`${dashboardUrl}/dashboard#token=${encodeURIComponent(typeof window !== 'undefined' ? localStorage.getItem('accessToken') || '' : '')}`} className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Layout size={18} /> Dashboard
+                </a>
+              </div>
+            )}
           </div>
         </section>
 
