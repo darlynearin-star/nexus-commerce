@@ -32,13 +32,14 @@ import { cacheRouter } from './routes/cache';
 import { backupsRouter } from './routes/backups';
 import { storeSettingsRouter } from './routes/store-settings';
 import { uploadRouter } from './routes/upload';
+import seedRouter from './routes/seed';
 
-import { resolveStore } from './middleware/resolve-store';
+import { resolveStore, requireStore } from './middleware/resolve-store';
 import { errorHandler } from './middleware/error-handler';
 import { checkKillSwitch } from './middleware/kill-switch';
 import prisma from '@nexus/database';
 import { logger } from './utils/logger';
-import { jijiCategories } from '@nexus/database';
+import type { JijiCategory } from '@nexus/database';
 
 // Startup migration: sync DB columns that Prisma schema needs
 async function runMigrations() {
@@ -141,6 +142,7 @@ app.use('/api/announcements', announcementsRouter);
 app.use('/api/cache', cacheRouter);
 app.use('/api/backups', backupsRouter);
 app.use('/api/store-settings', storeSettingsRouter);
+app.use('/api/seed', requireStore, seedRouter);
 // Health check
 app.get('/api/health', (_req, res) => {
   res.json({ success: true, data: { status: 'ok', timestamp: new Date().toISOString() } });
@@ -154,38 +156,10 @@ app.use('/api/*', (_req, res) => {
 // Error handling
 app.use(errorHandler);
 
-async function seedCategories() {
-  try {
-    const storeCount = await prisma.store.count();
-    if (storeCount === 0) { logger.info('Seed: no stores exist, skipping'); return; }
-    const catCount = await prisma.category.count();
-    if (catCount > 0) { logger.info(`Seed: ${catCount} categories exist, skipping`); return; }
-    const stores = await prisma.store.findMany({ select: { id: true } });
-    const usedSlugs = new Set<string>();
-    async function createTree(tree: any[], parentId: string | null, storeId: string) {
-      for (const node of tree) {
-        let slug = node.slug;
-        if (usedSlugs.has(slug)) { let n = 1; while (usedSlugs.has(`${slug}-${n}`)) n++; slug = `${slug}-${n}`; }
-        usedSlugs.add(slug);
-        const created = await prisma.category.create({
-          data: { storeId, name: node.name, slug, description: '', parentId },
-        });
-        if (node.children) await createTree(node.children, created.id, storeId);
-      }
-    }
-    for (const store of stores) await createTree(jijiCategories, null, store.id);
-    const total = await prisma.category.count();
-    logger.info(`Seed: ${total} Jiji categories for ${stores.length} store(s)`);
-  } catch (e: any) {
-    logger.warn(`Seed skipped: ${e.message}`);
-  }
-}
-
 app.listen(PORT, async () => {
   logger.info(`Nexus Commerce API running on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
   await runMigrations();
-  await seedCategories();
 });
 
 export default app;
