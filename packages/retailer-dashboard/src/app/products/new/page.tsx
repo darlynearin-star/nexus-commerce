@@ -139,6 +139,7 @@ export default function NewProductPage() {
         lowStockThreshold: parseInt(form.lowStockThreshold) || 10,
         features: cleanedFeatures,
         specifications: cleanedSpecs,
+        images,
         weight: 0, weightUnit: 'kg', shippingClass: 'standard', estimatedDays: '', freeShipping: true,
       };
       const res = await api.post('/products', payload);
@@ -147,7 +148,6 @@ export default function NewProductPage() {
       if (cleanedVariants.length > 0) {
         await api.put(`/products/${productId}/variants`, { variants: cleanedVariants });
       }
-      await api.put(`/products/${productId}`, { images });
       router.push(`/products/${productId}/edit`);
     } catch (e: any) {
       setErrors([e.message || 'Failed to save product']);
