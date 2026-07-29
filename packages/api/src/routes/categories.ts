@@ -267,8 +267,8 @@ const jijiCategories = [
       { name: 'Travel & Tourism CVs', slug: 'travel-tourism-cvs' },
       { name: 'Other CVs', slug: 'other-cvs' },
     ]},
-  ],
-};
+  ]},
+];
 
 export const categoriesRouter = Router();
 categoriesRouter.use(requireStore);
