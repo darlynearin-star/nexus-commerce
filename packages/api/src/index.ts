@@ -54,6 +54,8 @@ async function runMigrations() {
     logger.info('Migration: added shortCode column to products');
     await prisma.$executeRawUnsafe("ALTER TABLE products ADD COLUMN IF NOT EXISTS images TEXT[] DEFAULT '{}'");
     logger.info('Migration: added images column to products');
+    await prisma.$executeRawUnsafe('DO $$ BEGIN ALTER TABLE products ALTER COLUMN "categoryId" DROP NOT NULL; EXCEPTION WHEN others THEN NULL; END $$');
+    logger.info('Migration: made categoryId nullable on products');
   } catch (e: any) {
     logger.warn(`Migrations skipped: ${e.message}`);
   }
