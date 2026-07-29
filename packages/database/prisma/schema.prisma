@@ -313,7 +313,7 @@ model Product {
   allowBackorder   Boolean       @default(false)
   status           ProductStatus @default(DRAFT)
   categoryId       String?
-  category         Category      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  category         Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   tags             String[]
   seoTitle         String        @default("")
   seoDescription   String        @default("")
