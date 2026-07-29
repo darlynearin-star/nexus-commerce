@@ -85,6 +85,19 @@ productsRouter.get('/', optionalAuth, async (req: StoreRequest, res, next) => {
     if (brand) where.brand = brand;
     if (!isNaN(minPrice)) where.price = { ...where.price, gte: minPrice };
     if (!isNaN(maxPrice)) where.price = { ...where.price, lte: maxPrice };
+    const specFilters: any[] = [];
+    for (const key of Object.keys(req.query)) {
+      if (key.startsWith('spec_')) {
+        const specKey = key.slice(5);
+        const val = req.query[key] as string;
+        if (val) {
+          specFilters.push({ specifications: { path: [specKey], equals: val } });
+        }
+      }
+    }
+    if (specFilters.length > 0) {
+      where.AND = [...(where.AND || []), ...specFilters];
+    }
 
     const [products, total] = await Promise.all([
       prisma.product.findMany({

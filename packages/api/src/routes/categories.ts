@@ -3,6 +3,7 @@ import prisma from '@nexus/database';
 import { authenticate } from '../middleware/auth';
 import { StoreRequest, requireStore } from '../middleware/resolve-store';
 import { logger } from '../utils/logger';
+import { getAttributesForCategory } from '../config/category-attributes';
 
 const jijiCategories = [
   { name: 'Vehicles', slug: 'vehicles', children: [
@@ -342,6 +343,15 @@ categoriesRouter.get('/', async (req: StoreRequest, res, next) => {
       if (seeded > 0) categories = await prisma.category.findMany({ where: { storeId }, orderBy: { name: 'asc' } });
     }
     res.json({ success: true, data: categories });
+  } catch (error) { next(error); }
+});
+
+categoriesRouter.get('/:slug/attributes', async (req: StoreRequest, res, next) => {
+  try {
+    const category = await prisma.category.findFirst({ where: { slug: req.params.slug, storeId: req.storeId! } });
+    if (!category) return res.status(404).json({ success: false, error: 'Category not found' });
+    const attrs = getAttributesForCategory(req.params.slug);
+    res.json({ success: true, data: attrs });
   } catch (error) { next(error); }
 });
 
