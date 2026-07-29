@@ -40,7 +40,8 @@ uploadRouter.post('/', authenticate, requirePermission(Permission.MANAGE_MEDIA),
   try {
     if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
     const { originalname, filename, size, mimetype } = req.file;
-    const url = `/uploads/${req.storeId}/${filename}`;
+    const baseUrl = process.env.RENDER_EXTERNAL_URL || `${req.protocol}://${req.get('host')}`;
+    const url = `${baseUrl}/uploads/${req.storeId}/${filename}`;
     const media = await prisma.media.create({
       data: {
         storeId: req.storeId!,

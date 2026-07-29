@@ -114,6 +114,7 @@ export default function EditProductPage() {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (images.length >= 10) { setErrors(['Maximum 10 images allowed']); return; }
     setUploading(true);
     try {
       const formData = new FormData();
@@ -121,7 +122,8 @@ export default function EditProductPage() {
       const res = await fetch('/api/upload', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}`, 'x-store-slug': localStorage.getItem('activeStoreSlug') || '' }, body: formData });
       const data = await res.json();
       if (data.success) setImages(p => [...p, data.data.url]);
-    } catch { } finally { setUploading(false); }
+      else setErrors([data.error || 'Upload failed']);
+    } catch { setErrors(['Upload failed']); } finally { setUploading(false); }
   };
 
   const removeImage = (url: string) => setImages(p => p.filter(i => i !== url));
@@ -158,11 +160,8 @@ export default function EditProductPage() {
         features: cleanedFeatures, specifications: cleanedSpecs,
         weight: 0, weightUnit: 'kg', shippingClass: 'standard', estimatedDays: '', freeShipping: true,
       };
-      await api.put(`/products/${id}`, payload);
+      await api.put(`/products/${id}`, { ...payload, images });
       await api.put(`/products/${id}/variants`, { variants: cleanedVariants });
-      for (const imgUrl of images) {
-        await api.post('/media', { url: imgUrl, thumbnailUrl: imgUrl, alt: form.name, folder: 'products', productId: id });
-      }
       router.push('/products');
     } catch (e: any) { setErrors([e.message || 'Failed to save product']); } finally { setSaving(false); }
   };
@@ -259,18 +258,24 @@ export default function EditProductPage() {
 
         {/* Images */}
         <div className="card" style={{ padding: '1.5rem' }}>
-          <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Images</h3>
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+          <h3 style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Images <span style={{ fontWeight: 400, color: 'var(--text-secondary)', fontSize: '0.8125rem' }}>{images.length}/10</span></h3>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+            <strong>Image 1</strong> = Main/featured image on storefront. <strong>Images 2-4</strong> = shown in product gallery. <strong>Images 5+</strong> = hidden until tapped. JPG/PNG/WebP only.
+          </p>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
             {images.map((url, i) => (
-              <div key={i} style={{ width: 100, height: 100, borderRadius: '0.5rem', overflow: 'hidden', position: 'relative', background: 'var(--bg)' }}>
-                <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div key={i} style={{ width: 100, height: 130, borderRadius: '0.5rem', overflow: 'hidden', position: 'relative', background: 'var(--bg)' }}>
+                <img src={url} alt="" style={{ width: '100%', height: 100, objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.innerHTML = '<div style=\"padding:1rem;text-align:center;color:var(--error);font-size:0.75rem\">Broken</div>'; }} />
+                <div style={{ fontSize: '0.625rem', textAlign: 'center', padding: '0.125rem 0', color: 'var(--text-secondary)' }}>{i === 0 ? 'Main' : `Image ${i + 1}`}</div>
                 <button style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white' }} onClick={() => removeImage(url)}><X size={12} /></button>
               </div>
             ))}
-            <label style={{ width: 100, height: 100, borderRadius: '0.5rem', border: '2px dashed var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.75rem', gap: '0.25rem' }}>
-              <Upload size={20} />{uploading ? 'Uploading...' : 'Upload'}
-              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleUpload} disabled={uploading} />
-            </label>
+            {images.length < 10 && (
+              <label style={{ width: 100, height: 100, borderRadius: '0.5rem', border: '2px dashed var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.75rem', gap: '0.25rem' }}>
+                <Upload size={20} />{uploading ? 'Uploading...' : 'Upload'}
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleUpload} disabled={uploading} />
+              </label>
+            )}
           </div>
         </div>
 

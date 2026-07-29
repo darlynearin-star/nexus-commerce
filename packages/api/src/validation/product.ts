@@ -29,6 +29,7 @@ export const createProductSchema = z.object({
   shippingClass: z.string().default('standard'),
   estimatedDays: z.string().default(''),
   freeShipping: z.boolean().default(false),
+  images: z.array(z.string()).default([]),
   isFeatured: z.boolean().default(false),
   isNew: z.boolean().default(false),
 });
