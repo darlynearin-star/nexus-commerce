@@ -52,6 +52,8 @@ async function runMigrations() {
     await prisma.$executeRawUnsafe("ALTER TABLE products ADD COLUMN IF NOT EXISTS \"shortCode\" TEXT");
     await prisma.$executeRawUnsafe("CREATE UNIQUE INDEX IF NOT EXISTS products_shortcode_idx ON products(\"shortCode\") WHERE \"shortCode\" IS NOT NULL");
     logger.info('Migration: added shortCode column to products');
+    await prisma.$executeRawUnsafe("ALTER TABLE products ADD COLUMN IF NOT EXISTS images TEXT[] DEFAULT '{}'");
+    logger.info('Migration: added images column to products');
   } catch (e: any) {
     logger.warn(`Migrations skipped: ${e.message}`);
   }

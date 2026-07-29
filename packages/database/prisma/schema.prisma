@@ -324,6 +324,7 @@ model Product {
   shippingClass    String        @default("standard")
   estimatedDays    String        @default("5-7 business days")
   freeShipping     Boolean       @default(false)
+  images           String[]
   isFeatured       Boolean       @default(false)
   isNew            Boolean       @default(false)
   shortCode        String?       @unique
