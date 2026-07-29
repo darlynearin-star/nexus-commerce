@@ -60,7 +60,7 @@ export default function SettingsPage() {
 
   if (loading) return <div style={{ padding: '2rem', color: 'var(--text-secondary)' }}>Loading settings...</div>;
 
-  const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'http://localhost:3000';
+  const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
   const storeSlug = localStorage.getItem('activeStoreSlug');
 
   return (

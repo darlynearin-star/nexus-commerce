@@ -41,6 +41,7 @@ productsRouter.get('/', optionalAuth, async (req: StoreRequest, res, next) => {
     const order = (req.query.order as string) === 'asc' ? 'asc' : 'desc';
     const search = req.query.search as string;
     const category = req.query.category as string;
+    const parent = req.query.parent as string;
     const minPrice = parseFloat(req.query.minPrice as string);
     const maxPrice = parseFloat(req.query.maxPrice as string);
     const brand = req.query.brand as string;
@@ -60,6 +61,27 @@ productsRouter.get('/', optionalAuth, async (req: StoreRequest, res, next) => {
       ];
     }
     if (category) where.category = { slug: category };
+    if (parent) {
+      const parentCat = await prisma.category.findFirst({ where: { slug: parent, storeId: req.storeId! } });
+      if (parentCat) {
+        const allCats = await prisma.category.findMany({ where: { storeId: req.storeId! } });
+        const childMap = new Map<string, string[]>();
+        for (const c of allCats) {
+          if (c.parentId) {
+            if (!childMap.has(c.parentId)) childMap.set(c.parentId, []);
+            childMap.get(c.parentId)!.push(c.id);
+          }
+        }
+        const descendantIds: string[] = [parentCat.id];
+        const queue = [parentCat.id];
+        while (queue.length > 0) {
+          const id = queue.shift()!;
+          const kids = childMap.get(id) || [];
+          for (const kid of kids) { descendantIds.push(kid); queue.push(kid); }
+        }
+        where.categoryId = { in: descendantIds };
+      }
+    }
     if (brand) where.brand = brand;
     if (!isNaN(minPrice)) where.price = { ...where.price, gte: minPrice };
     if (!isNaN(maxPrice)) where.price = { ...where.price, lte: maxPrice };
