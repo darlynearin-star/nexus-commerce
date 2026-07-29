@@ -15,10 +15,13 @@ export default function ProductPage() {
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [mainImg, setMainImg] = useState('');
 
   useEffect(() => {
     api.get(`/products/${slug}`).then((res: any) => {
       setProduct(res.data);
+      const imgs = res.data.images?.length > 0 ? res.data.images : [`https://picsum.photos/seed/${res.data.id}/600/600`];
+      setMainImg(imgs[0]);
       if (res.data.variants?.length) setSelectedVariant(res.data.variants[0]);
     }).finally(() => setLoading(false));
   }, [slug]);
@@ -50,18 +53,20 @@ export default function ProductPage() {
         <span style={{ color: 'var(--text)' }}>{product.name}</span>
       </nav>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
         {/* Image Gallery */}
         <div>
-          <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: '0.75rem', overflow: 'hidden', marginBottom: '1rem' }}>
-            <img src={`https://picsum.photos/seed/${product.id}/600/600`} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: '0.75rem', overflow: 'hidden', marginBottom: '0.75rem' }}>
+            <img src={mainImg} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {[1,2,3,4].map(i => (
-              <img key={i} src={`https://picsum.photos/seed/${product.id}-${i}/160/160`} alt="" loading="lazy"
-                style={{ width: 80, height: 80, borderRadius: '0.5rem', objectFit: 'cover', cursor: 'pointer', border: i === 1 ? '2px solid var(--primary)' : '2px solid transparent' }} />
+          {(() => { const imgs = product.images?.length > 0 ? product.images : [1,2,3,4].map(i => `https://picsum.photos/seed/${product.id}-${i}/160/160`); return (
+          <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
+            {imgs.map((url: string, i: number) => (
+              <img key={i} src={url} alt="" onClick={() => setMainImg(url)} loading="lazy"
+                style={{ width: 64, height: 64, borderRadius: '0.5rem', objectFit: 'cover', cursor: 'pointer', flexShrink: 0, border: mainImg === url ? '2px solid var(--primary)' : '2px solid transparent' }} />
             ))}
           </div>
+          );})()}
         </div>
 
         {/* Product Info */}
@@ -99,7 +104,7 @@ export default function ProductPage() {
           )}
 
           {/* Quantity & Add to Cart */}
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', marginBottom: '2rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border)', borderRadius: '0.5rem' }}>
               <button className="btn btn-ghost btn-sm" onClick={() => setQuantity(Math.max(1, quantity - 1))}>-</button>
               <span style={{ padding: '0.5rem 1rem', minWidth: 40, textAlign: 'center' }}>{quantity}</span>
@@ -189,15 +194,15 @@ export default function ProductPage() {
       {product.related?.length > 0 && (
         <div style={{ marginTop: '3rem' }}>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Related Products</h2>
-          <div className="product-grid">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1rem' }}>
             {product.related.map((p: any) => (
               <Link key={p.id} href={`/product/${p.slug}`} className="card" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: '0.5rem', overflow: 'hidden', marginBottom: '0.75rem' }}>
-                  <img src={`https://picsum.photos/seed/${p.id}/300/300`} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={p.images?.[0] || `https://picsum.photos/seed/${p.id}/300/300`} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{p.brand}</p>
-                <p style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{p.name}</p>
-                <p style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary)' }}>UGX {p.price.toLocaleString()}</p>
+                <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{p.name}</p>
+                <p style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.9375rem' }}>UGX {p.price.toLocaleString()}</p>
               </Link>
             ))}
           </div>

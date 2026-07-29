@@ -5,11 +5,7 @@ import { storeApi } from '@/lib/store-api';
 import { useStore } from '@/lib/store-context';
 import ProductCard from '@/components/ProductCard';
 import { ArrowRight } from 'lucide-react';
-
-const categoryIcons: Record<string, string> = {
-  jewelry: '💍', watches: '⌚', 'bags-wallets': '👜',
-  clothing: '👗', shoes: '👞', accessories: '🧣',
-};
+import { categoryIcon } from '@/lib/category-icons';
 
 export default function StoreHomePage() {
   const { store } = useStore();
@@ -51,7 +47,7 @@ export default function StoreHomePage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1rem' }}>
               {categories.map((cat: any) => (
                 <Link key={cat.id} href={`/store/${store?.slug}/shop?category=${cat.slug}`} className="card" style={{ textDecoration: 'none', color: 'inherit', textAlign: 'center', padding: '1.5rem 1rem' }}>
-                  <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{categoryIcons[cat.slug] || '🛍️'}</div>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{categoryIcon(cat.slug, cat.name)}</div>
                   <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{cat.name}</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{cat._count?.products || 0} items</div>
                 </Link>
