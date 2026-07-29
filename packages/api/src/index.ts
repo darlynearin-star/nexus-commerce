@@ -121,7 +121,7 @@ app.get('/api/reseed-categories/:slug', async (req, res, next) => {
   try {
     const store = await prisma.store.findUnique({ where: { slug: req.params.slug } });
     if (!store) return res.status(404).json({ success: false, error: 'Store not found' });
-    await prisma.product.updateMany({ where: { storeId: store.id, categoryId: { not: null } }, data: { categoryId: null } });
+    await prisma.$executeRawUnsafe(`UPDATE "products" SET "categoryId" = NULL WHERE "storeId" = $1`, store.id);
     await prisma.category.deleteMany({ where: { storeId: store.id } });
     const count = await seedStoreCategories(store.id);
     res.json({ success: true, data: { deleted: true, created: count } });
