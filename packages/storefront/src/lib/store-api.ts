@@ -19,7 +19,7 @@ function getSlugFromUrl(): string | null {
 
 async function storeApiClient<T = any>(endpoint: string, options: RequestInit = {}) {
   const headers: Record<string, string> = { ...(options.headers as Record<string, string>) };
-  const slug = _storeSlug || localStorage.getItem('activeStoreSlug') || getSlugFromUrl();
+  const slug = _storeSlug || (typeof window !== 'undefined' ? (localStorage.getItem('activeStoreSlug') || getSlugFromUrl()) : null);
   if (slug) headers['x-store-slug'] = slug;
   return apiClient<T>(endpoint, { ...options, headers });
 }
