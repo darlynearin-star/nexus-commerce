@@ -46,13 +46,14 @@ cartRouter.post('/add', authenticate, async (req: any, res, next) => {
       });
     }
 
-    const existingItem = await prisma.cartItem.findUnique({
-      where: { cartId_productId_variantId: { cartId: cart.id, productId, variantId: variantId || '' } },
+    const vId = variantId || null;
+    const existingItem = await prisma.cartItem.findFirst({
+      where: { cartId: cart.id, productId, variantId: vId },
     });
     if (existingItem) {
       await prisma.cartItem.update({ where: { id: existingItem.id }, data: { quantity: existingItem.quantity + quantity } });
     } else {
-      await prisma.cartItem.create({ data: { cartId: cart.id, productId, variantId: variantId || null, quantity } });
+      await prisma.cartItem.create({ data: { cartId: cart.id, productId, variantId: vId, quantity } });
     }
 
     const updatedCart = await prisma.cart.findUnique({ where: { id: cart.id }, include: { items: { include: { product: true } } } });

@@ -116,10 +116,12 @@ productsRouter.get('/', optionalAuth, async (req: StoreRequest, res, next) => {
   } catch (error) { next(error); }
 });
 
-productsRouter.get('/:slug', optionalAuth, async (req: StoreRequest, res, next) => {
+productsRouter.get('/:slug', optionalAuth, async (req: AuthRequest, res, next) => {
   try {
+    const where: any = { slug: req.params.slug, storeId: req.storeId! };
+    if (!req.user) where.status = 'PUBLISHED';
     const product = await prisma.product.findFirst({
-      where: { slug: req.params.slug, storeId: req.storeId! },
+      where,
       include: { category: true, variants: true, downloads: true, reviews: { where: { isApproved: true }, orderBy: { createdAt: 'desc' }, take: 20 } },
     });
     if (!product) return res.status(404).json({ success: false, error: 'Product not found' });

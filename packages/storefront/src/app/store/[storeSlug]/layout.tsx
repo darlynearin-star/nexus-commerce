@@ -22,7 +22,7 @@ function StoreInner({ children }: { children: React.ReactNode }) {
       if (c.text) root.style.setProperty('--text', c.text);
       if (c.accent) root.style.setProperty('--primary-light', c.accent);
     }
-    if (store?.slug) setStoreSlug(store.slug);
+    if (store?.slug) { setStoreSlug(store.slug); localStorage.setItem('activeStoreSlug', store.slug); }
   }, [store]);
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'var(--text-secondary)' }}>Loading store...</div>;

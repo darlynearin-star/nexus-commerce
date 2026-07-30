@@ -13,7 +13,8 @@ export function getStoreSlug() {
 
 async function storeApiClient<T = any>(endpoint: string, options: RequestInit = {}) {
   const headers: Record<string, string> = { ...(options.headers as Record<string, string>) };
-  if (_storeSlug) headers['x-store-slug'] = _storeSlug;
+  const slug = _storeSlug || (typeof window !== 'undefined' ? localStorage.getItem('activeStoreSlug') : null);
+  if (slug) headers['x-store-slug'] = slug;
   return apiClient<T>(endpoint, { ...options, headers });
 }
 

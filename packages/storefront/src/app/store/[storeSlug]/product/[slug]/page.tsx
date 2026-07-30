@@ -14,6 +14,7 @@ export default function StoreProductPage() {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [cartError, setCartError] = useState('');
   const [mainImg, setMainImg] = useState('');
   const { user } = useAuth();
 
@@ -41,7 +42,7 @@ export default function StoreProductPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
         <div>
           <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: '0.75rem', overflow: 'hidden', marginBottom: '0.75rem' }}>
-            <img src={mainImg} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${product.id}/600/600`; }} />
+            <img src={mainImg} alt={product.name} fetchpriority="high" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${product.id}/600/600`; }} />
           </div>
           {imgs.length > 1 && (
             <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
@@ -82,10 +83,11 @@ export default function StoreProductPage() {
             {user ? (
               <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', minWidth: 160 }} onClick={async () => {
                 try {
+                  setCartError('');
                   await storeApi.post('/cart/add', { productId: product.id, quantity });
                   setAddedToCart(true);
                   setTimeout(() => setAddedToCart(false), 2000);
-                } catch (e: any) { console.error('Error:', e); }
+                } catch (e: any) { setCartError(e.message || 'Cart error'); }
               }}>
                 {addedToCart ? '✓ Added!' : <><ShoppingCart size={16} /> Add to Cart</>}
               </button>
@@ -96,6 +98,7 @@ export default function StoreProductPage() {
             )}
             <button className="btn btn-secondary btn-icon"><Heart size={16} /></button>
           </div>
+          {cartError && <p style={{ color: 'var(--error)', fontSize: '0.8125rem', marginTop: '-0.75rem' }}>{cartError}</p>}
 
           {product.specifications && Object.keys(product.specifications).length > 0 && (
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
