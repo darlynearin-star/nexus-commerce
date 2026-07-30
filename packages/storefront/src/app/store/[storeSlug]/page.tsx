@@ -12,7 +12,7 @@ export default function StoreHomePage() {
   const [featured, setFeatured] = useState<any[]>([]);
   const [newArrivals, setNewArrivals] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-  const storeSlug = store?.slug || (typeof window !== 'undefined' ? localStorage.getItem('activeStoreSlug') : '');
+  const storeSlug: string = store?.slug || (typeof window !== 'undefined' ? (localStorage.getItem('activeStoreSlug') || '') : '');
 
   useEffect(() => {
     storeApi.get('/products/featured/list').then((r: any) => setFeatured(r.data || [])).catch((e: any) => console.error('API error:', e));
