@@ -188,7 +188,7 @@ productsRouter.put('/:id', authenticate, requirePermission(Permission.MANAGE_PRO
     if (weight !== undefined) data.weight = weight;
     if (weightUnit !== undefined) data.weightUnit = weightUnit;
     if (shippingClass !== undefined) data.shippingClass = shippingClass;
-    if (estimatedDays !== undefined) data.estimatedDays = estimatedDays;
+    if (estimatedDays !== undefined) data.estimatedDays = estimatedDays || '5-7 business days';
     if (freeShipping !== undefined) data.freeShipping = freeShipping;
     if (images !== undefined) data.images = images;
     if (isFeatured !== undefined) data.isFeatured = isFeatured;

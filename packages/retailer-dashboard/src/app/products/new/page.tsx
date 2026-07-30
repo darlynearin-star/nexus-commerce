@@ -104,11 +104,9 @@ export default function NewProductPage() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch('/api/upload', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}`, 'x-store-slug': localStorage.getItem('activeStoreSlug') || '' }, body: formData });
-      const data = await res.json();
-      if (data.success) setImages(p => [...p, data.data.url]);
-      else setErrors([data.error || 'Upload failed']);
-    } catch { setErrors(['Upload failed']); } finally { setUploading(false); }
+      const data = await api.upload('/upload', formData);
+      setImages(p => [...p, data.data.url]);
+    } catch (e: any) { setErrors([e.message || 'Upload failed']); } finally { setUploading(false); }
   };
   const removeImage = (url: string) => setImages(p => p.filter(i => i !== url));
 

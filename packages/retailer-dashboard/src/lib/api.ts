@@ -65,4 +65,28 @@ export const api = {
   post: <T = any>(endpoint: string, data?: any) => apiClient<T>(endpoint, { method: 'POST', body: JSON.stringify(data) }),
   put: <T = any>(endpoint: string, data?: any) => apiClient<T>(endpoint, { method: 'PUT', body: JSON.stringify(data) }),
   delete: <T = any>(endpoint: string) => apiClient<T>(endpoint, { method: 'DELETE' }),
+  upload: async <T = any>(endpoint: string, formData: FormData): Promise<T> => {
+    const url = `${API_BASE}/api${endpoint}`;
+    const token = getToken();
+    const storeSlug = typeof window !== 'undefined' ? localStorage.getItem('activeStoreSlug') : null;
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (storeSlug) headers['x-store-slug'] = storeSlug;
+    const res = await fetch(url, { method: 'POST', headers, body: formData });
+    if (res.status === 401 && getRefreshToken()) {
+      const refreshRes = await fetch(`${API_BASE}/api/auth/refresh`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: getRefreshToken() }),
+      });
+      if (refreshRes.ok) {
+        const refreshData = await refreshRes.json();
+        localStorage.setItem('accessToken', refreshData.data.accessToken);
+        headers['Authorization'] = `Bearer ${refreshData.data.accessToken}`;
+        const retryRes = await fetch(url, { method: 'POST', headers, body: formData });
+        if (!retryRes.ok) throw new ApiError(retryRes.status, (await retryRes.json().catch(() => ({ error: 'Upload failed' }))).error);
+        return retryRes.json();
+      }
+    }
+    if (!res.ok) throw new ApiError(res.status, (await res.json().catch(() => ({ error: 'Upload failed' }))).error);
+    return res.json();
+  },
 };

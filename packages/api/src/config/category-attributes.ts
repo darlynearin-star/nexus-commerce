@@ -363,7 +363,7 @@ export const categoryAttributes: Record<string, AttributeDef[]> = {
   // Animals & Pets
   'fish-aquariums': [attr('type', 'Type', 'select', { options: brandOpts(['Tropical Fish', 'Goldfish', 'Aquarium Tank', 'Filter', 'Heater', 'Decor', 'Food', 'Other']) })],
   birds: [attr('type', 'Bird Type', 'select', { options: brandOpts(['Parrot', 'Cockatiel', 'Lovebird', 'Canary', 'Finch', 'Pigeon', 'Chicken', 'Duck', 'Other']) }), attr('age', 'Age', 'select', { options: brandOpts(['Baby', 'Young', 'Adult']) })],
-  'pet-accessories-supplies': [attr('type', 'Accessory Type', 'select', { options: brandOpts(['Collar', 'Leash', 'Bed', 'Cage', 'Bowl', 'Toye', 'Grooming Tool', 'Carrier', 'Other']) }), attr('pet_type', 'Pet Type', 'select', { options: brandOpts(['Dog', 'Cat', 'Bird', 'Fish', 'Rabbit', 'Other']) })],
+  'pet-accessories-supplies': [attr('type', 'Accessory Type', 'select', { options: brandOpts(['Collar', 'Leash', 'Bed', 'Cage', 'Bowl', 'Toy', 'Grooming Tool', 'Carrier', 'Other']) }), attr('pet_type', 'Pet Type', 'select', { options: brandOpts(['Dog', 'Cat', 'Bird', 'Fish', 'Rabbit', 'Other']) })],
   'pet-food-treats': [attr('type', 'Food Type', 'select', { options: brandOpts(['Dry Food', 'Wet Food', 'Treats', 'Bones', 'Supplements']) }), attr('pet_type', 'Pet Type', 'select', { options: brandOpts(['Dog', 'Cat', 'Bird', 'Fish', 'Rabbit', 'Other']) })],
   'other-pets': [attr('type', 'Pet Type', 'text', { placeholder: 'e.g. Rabbit, Guinea pig' })],
   // Jobs - common template for all job sub-categories
