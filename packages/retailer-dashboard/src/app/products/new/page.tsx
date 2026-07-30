@@ -101,6 +101,7 @@ export default function NewProductPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (images.length >= 10) { setErrors(['Maximum 10 images allowed']); return; }
+    if (file.size > 5 * 1024 * 1024) { setErrors(['File too large — max 5MB']); return; }
     setUploading(true);
     try {
       const formData = new FormData();
@@ -162,15 +163,31 @@ export default function NewProductPage() {
         </select>
       );
     }
+    if (attr.type === 'multiselect' && attr.options) {
+      const selected = val ? val.split(',') : [];
+      return (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+          {attr.options.map(o => {
+            const checked = selected.includes(o.value);
+            return (
+              <label key={o.value} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8125rem', cursor: 'pointer', padding: '0.25rem 0.375rem', background: checked ? 'var(--primary)' : 'var(--bg)', color: checked ? 'white' : 'inherit', borderRadius: '0.25rem', border: '1px solid', borderColor: checked ? 'var(--primary)' : 'var(--border)' }}>
+                <input type="checkbox" checked={checked} style={{ display: 'none' }} onChange={() => { const next = checked ? selected.filter(v => v !== o.value) : [...selected, o.value]; setAttr(attr.key, next.join(',')); }} /> {o.label}
+              </label>
+            );
+          })}
+        </div>
+      );
+    }
     if (attr.type === 'boolean') {
       return (
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer' }}>
             <input type="radio" name={`attr_${attr.key}`} checked={val === 'yes'} onChange={() => setAttr(attr.key, 'yes')} /> Yes
           </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer' }}>
             <input type="radio" name={`attr_${attr.key}`} checked={val === 'no'} onChange={() => setAttr(attr.key, 'no')} /> No
           </label>
+          {val && <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-secondary)', textDecoration: 'underline', padding: 0 }} onClick={() => setAttr(attr.key, '')}>Clear</button>}
         </div>
       );
     }

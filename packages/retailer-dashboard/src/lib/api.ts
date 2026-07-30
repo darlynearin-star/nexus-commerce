@@ -1,5 +1,5 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
-const UPLOAD_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://nexus-api-69q5.onrender.com';
+const UPLOAD_BASE = process.env.NEXT_PUBLIC_UPLOAD_URL || 'https://nexus-api-69q5.onrender.com';
 
 interface FetchOptions extends RequestInit {
   params?: Record<string, string | number | undefined>;

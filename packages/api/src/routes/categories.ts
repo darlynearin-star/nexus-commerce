@@ -330,9 +330,11 @@ categoriesRouter.delete('/:id', authenticate, async (req: StoreRequest, res, nex
 
 export async function syncStoreCategories(storeId: string): Promise<number> {
   let created = 0;
+  let fixed = 0;
   const existing = await prisma.category.findMany({ where: { storeId }, select: { slug: true, id: true, parentId: true } });
   const existingSlugs = new Set(existing.map(c => c.slug));
   const slugToId = new Map(existing.map(c => [c.slug, c.id]));
+  const slugToParent = new Map(existing.map(c => [c.slug, c.parentId]));
   async function walkTree(tree: any[], parentId: string | null) {
     for (const node of tree) {
       if (!existingSlugs.has(node.slug)) {
@@ -341,12 +343,18 @@ export async function syncStoreCategories(storeId: string): Promise<number> {
         slugToId.set(node.slug, cat.id);
         if (node.children) await walkTree(node.children, cat.id);
       } else {
-        if (node.children) await walkTree(node.children, slugToId.get(node.slug) || null);
+        const dbId = slugToId.get(node.slug);
+        if (dbId && slugToParent.get(node.slug) !== parentId) {
+          await prisma.category.update({ where: { id: dbId }, data: { parentId } });
+          slugToParent.set(node.slug, parentId);
+          fixed++;
+        }
+        if (node.children) await walkTree(node.children, dbId);
       }
     }
   }
   await walkTree(jijiCategories, null);
-  if (created > 0) logger.info(`Synced ${created} new categories for store ${storeId}`);
+  if (created > 0 || fixed > 0) logger.info(`Synced categories for store ${storeId}: ${created} created, ${fixed} fixed`);
   return created;
 }
 

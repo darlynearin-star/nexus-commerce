@@ -36,7 +36,7 @@ const upload = multer({
 export const uploadRouter = Router();
 uploadRouter.use(requireStore);
 
-uploadRouter.post('/', authenticate, requirePermission(Permission.MANAGE_MEDIA), upload.single('file'), async (req: StoreRequest, res, next) => {
+uploadRouter.post(['/', ''], authenticate, requirePermission(Permission.MANAGE_MEDIA), upload.single('file'), async (req: StoreRequest, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
     const { originalname, filename, size, mimetype } = req.file;
@@ -58,7 +58,7 @@ uploadRouter.post('/', authenticate, requirePermission(Permission.MANAGE_MEDIA),
   } catch (error) { next(error); }
 });
 
-uploadRouter.post('/url', authenticate, requirePermission(Permission.MANAGE_MEDIA), async (req: StoreRequest, res, next) => {
+uploadRouter.post(['/url', 'url'], authenticate, requirePermission(Permission.MANAGE_MEDIA), async (req: StoreRequest, res, next) => {
   try {
     const { url, alt, folder, productId } = req.body;
     if (!url) return res.status(400).json({ success: false, error: 'URL is required' });

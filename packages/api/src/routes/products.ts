@@ -90,8 +90,12 @@ productsRouter.get('/', optionalAuth, async (req: StoreRequest, res, next) => {
       if (key.startsWith('spec_')) {
         const specKey = key.slice(5);
         const val = req.query[key] as string;
-        if (val) {
-          specFilters.push({ specifications: { path: [specKey], equals: val } });
+        if (!val) continue;
+        const values = val.split(',').map(v => v.trim()).filter(Boolean);
+        if (values.length > 1) {
+          specFilters.push({ OR: values.map(v => ({ specifications: { path: [specKey], equals: v } })) });
+        } else {
+          specFilters.push({ specifications: { path: [specKey], equals: values[0] || val } });
         }
       }
     }

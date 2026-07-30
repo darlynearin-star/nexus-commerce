@@ -68,14 +68,15 @@ const PORT = process.env.PORT || 4000;
 // Security
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:', 'blob:', 'https://picsum.photos', 'https://res.cloudinary.com'],
-      connectSrc: ["'self'"],
+      imgSrc: ["'self'", 'data:', 'blob:', 'https://picsum.photos', 'https://res.cloudinary.com', 'https://nexus-api-69q5.onrender.com'],
+      connectSrc: ["'self'", 'https://nexus-api-69q5.onrender.com'],
     },
   },
 }));

@@ -117,6 +117,7 @@ export default function EditProductPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (images.length >= 10) { setErrors(['Maximum 10 images allowed']); return; }
+    if (file.size > 5 * 1024 * 1024) { setErrors(['File too large — max 5MB']); return; }
     setUploading(true);
     try {
       const formData = new FormData();
