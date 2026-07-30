@@ -41,13 +41,13 @@ export default function StoreProductPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
         <div>
           <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: '0.75rem', overflow: 'hidden', marginBottom: '0.75rem' }}>
-            <img src={mainImg} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={mainImg} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${product.id}/600/600`; }} />
           </div>
           {imgs.length > 1 && (
             <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
               {imgs.map((url: string, i: number) => (
                 <img key={i} src={url} alt="" onClick={() => setMainImg(url)} loading="lazy"
-                  style={{ width: 64, height: 64, borderRadius: '0.5rem', objectFit: 'cover', cursor: 'pointer', flexShrink: 0, border: mainImg === url ? '2px solid var(--primary)' : '2px solid transparent' }} />
+                  style={{ width: 64, height: 64, borderRadius: '0.5rem', objectFit: 'cover', cursor: 'pointer', flexShrink: 0, border: mainImg === url ? '2px solid var(--primary)' : '2px solid transparent' }} onError={e => { (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${product.id}-${i}/600/600`; }} />
               ))}
             </div>
           )}
@@ -120,7 +120,7 @@ export default function StoreProductPage() {
             {product.related.map((p: any) => (
               <Link key={p.id} href={`/store/${storeSlug}/product/${p.slug}`} className="card" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: '0.5rem', overflow: 'hidden', marginBottom: '0.75rem' }}>
-                  <img src={p.images?.[0] || `https://picsum.photos/seed/${p.id}/300/300`} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={p.images?.[0] || `https://picsum.photos/seed/${p.id}/300/300`} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${p.id}/300/300`; }} />
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>{p.brand}</p>
                 <p style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.25rem' }}>{p.name}</p>
