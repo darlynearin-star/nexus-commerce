@@ -1,4 +1,5 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
+const UPLOAD_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://nexus-api-69q5.onrender.com';
 
 interface FetchOptions extends RequestInit {
   params?: Record<string, string | number | undefined>;
@@ -66,7 +67,7 @@ export const api = {
   put: <T = any>(endpoint: string, data?: any) => apiClient<T>(endpoint, { method: 'PUT', body: JSON.stringify(data) }),
   delete: <T = any>(endpoint: string) => apiClient<T>(endpoint, { method: 'DELETE' }),
   upload: async <T = any>(endpoint: string, formData: FormData): Promise<T> => {
-    const url = `${API_BASE}/api${endpoint}`;
+    const url = `${UPLOAD_BASE}/api${endpoint}`;
     const token = getToken();
     const storeSlug = typeof window !== 'undefined' ? localStorage.getItem('activeStoreSlug') : null;
     const headers: Record<string, string> = {};
@@ -74,7 +75,7 @@ export const api = {
     if (storeSlug) headers['x-store-slug'] = storeSlug;
     const res = await fetch(url, { method: 'POST', headers, body: formData });
     if (res.status === 401 && getRefreshToken()) {
-      const refreshRes = await fetch(`${API_BASE}/api/auth/refresh`, {
+      const refreshRes = await fetch(`${UPLOAD_BASE}/api/auth/refresh`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: getRefreshToken() }),
       });
       if (refreshRes.ok) {

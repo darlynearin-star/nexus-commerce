@@ -195,8 +195,6 @@ const jijiCategories = [
   { name: 'Babies & Kids', slug: 'babies-kids', children: [
     { name: 'Toys & Games', slug: 'toys-games' },
     { name: "Children's Furniture", slug: 'childrens-furniture' },
-    { name: "Children's Clothing", slug: 'childrens-clothing' },
-    { name: "Children's Shoes", slug: 'childrens-shoes' },
     { name: 'Baby Gear & Accessories', slug: 'baby-gear-accessories' },
     { name: 'Diapers & Baby Care', slug: 'diapers-baby-care' },
     { name: 'Feeding & Nursing', slug: 'feeding-nursing' },

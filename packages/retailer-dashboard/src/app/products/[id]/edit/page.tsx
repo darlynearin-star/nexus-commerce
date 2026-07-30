@@ -78,7 +78,7 @@ export default function EditProductPage() {
       setShortCode(p.shortCode || '');
       setStoreSlug(p.store?.slug || localStorage.getItem('activeStoreSlug') || '');
       setForm({
-        name: p.name || '', brand: p.brand || '', sku: p.sku || '', description: p.description || '',
+        name: p.name || '', brand: p.brand || '', sku: p.sku || '', slug: p.slug || '', description: p.description || '',
         price: p.price || 0, compareAtPrice: p.compareAtPrice || '', costPerItem: p.costPerItem || '',
         stock: p.stock || 0, lowStockThreshold: p.lowStockThreshold ?? 10,
         trackInventory: p.trackInventory ?? true, allowBackorder: p.allowBackorder ?? false,
@@ -193,12 +193,12 @@ export default function EditProductPage() {
               <input
                 className="input"
                 readOnly
-                value={`https://nexus-storefront-dusky.vercel.app/api/s/${shortCode}`}
+                value={`https://nexus-storefront-dusky.vercel.app/store/${storeSlug}/product/${form.slug}`}
                 style={{ flex: 1, fontSize: '0.8125rem', userSelect: 'all' }}
                 onClick={e => (e.target as HTMLInputElement).select()}
               />
               <button className="btn btn-secondary" onClick={() => {
-                navigator.clipboard.writeText(`https://nexus-storefront-dusky.vercel.app/api/s/${shortCode}`);
+                navigator.clipboard.writeText(`https://nexus-storefront-dusky.vercel.app/store/${storeSlug}/product/${form.slug}`);
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
               }}>
