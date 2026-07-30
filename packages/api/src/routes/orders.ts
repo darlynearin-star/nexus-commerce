@@ -61,7 +61,7 @@ ordersRouter.post('/', authenticate, async (req: StoreRequest, res, next) => {
         items: {
           create: cart.items.map(item => ({
             productId: item.productId, productName: item.product.name, sku: item.product.sku,
-            variantId: item.variantId, quantity: item.quantity,
+            variantId: item.variantId || null, quantity: item.quantity,
             unitPrice: item.product.price, totalPrice: item.product.price * item.quantity,
           })),
         },
