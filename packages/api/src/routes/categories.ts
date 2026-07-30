@@ -330,6 +330,28 @@ categoriesRouter.delete('/:id', authenticate, async (req: StoreRequest, res, nex
   } catch (error) { next(error); }
 });
 
+export async function syncStoreCategories(storeId: string): Promise<number> {
+  let created = 0;
+  const existing = await prisma.category.findMany({ where: { storeId }, select: { slug: true, id: true, parentId: true } });
+  const existingSlugs = new Set(existing.map(c => c.slug));
+  const slugToId = new Map(existing.map(c => [c.slug, c.id]));
+  async function walkTree(tree: any[], parentId: string | null) {
+    for (const node of tree) {
+      if (!existingSlugs.has(node.slug)) {
+        const cat = await prisma.category.create({ data: { storeId, name: node.name, slug: node.slug, description: '', parentId } });
+        created++;
+        slugToId.set(node.slug, cat.id);
+        if (node.children) await walkTree(node.children, cat.id);
+      } else {
+        if (node.children) await walkTree(node.children, slugToId.get(node.slug) || null);
+      }
+    }
+  }
+  await walkTree(jijiCategories, null);
+  if (created > 0) logger.info(`Synced ${created} new categories for store ${storeId}`);
+  return created;
+}
+
 categoriesRouter.get('/', async (req: StoreRequest, res, next) => {
   try {
     const storeId = req.storeId!;
@@ -337,10 +359,15 @@ categoriesRouter.get('/', async (req: StoreRequest, res, next) => {
     if (forceReseed) {
       await prisma.category.deleteMany({ where: { storeId } });
     }
-    let categories = await prisma.category.findMany({ where: { storeId }, orderBy: { name: 'asc' } });
+    const sortBy = req.query.sortBy as string | undefined;
+    const orderBy: any = sortBy === 'productCount' ? { products: { _count: 'desc' } } : { name: 'asc' };
+    let categories = await prisma.category.findMany({ where: { storeId }, include: { _count: { select: { products: true } } }, orderBy });
     if (categories.length === 0) {
       const seeded = await seedStoreCategories(storeId);
-      if (seeded > 0) categories = await prisma.category.findMany({ where: { storeId }, orderBy: { name: 'asc' } });
+      if (seeded > 0) categories = await prisma.category.findMany({ where: { storeId }, include: { _count: { select: { products: true } } }, orderBy });
+    } else {
+      await syncStoreCategories(storeId);
+      categories = await prisma.category.findMany({ where: { storeId }, include: { _count: { select: { products: true } } }, orderBy });
     }
     res.json({ success: true, data: categories });
   } catch (error) { next(error); }
