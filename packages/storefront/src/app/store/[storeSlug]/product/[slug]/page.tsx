@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { storeApi } from '@/lib/store-api';
 import { useAuth } from '@/lib/auth';
 import Link from 'next/link';
-import { Star, ShoppingCart, Heart, ChevronRight } from 'lucide-react';
+import { Star, ShoppingCart, Heart, ChevronRight, Info } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 
 export default function StoreProductPage() {
@@ -97,6 +97,11 @@ export default function StoreProductPage() {
             <button className="btn btn-secondary btn-icon"><Heart size={16} /></button>
           </div>
           {cartError && <p style={{ color: 'var(--error)', fontSize: '0.8125rem', marginTop: '-0.75rem' }}>{cartError}</p>}
+
+          <div className="pay-note-prod" style={{ display: 'flex', gap: '0.625rem', alignItems: 'flex-start', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-secondary)', fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '1rem' }}>
+            <Info size={14} style={{ marginTop: '0.125rem', flexShrink: 0 }} />
+            <span>Pay on delivery. Delivery fees are to be discussed and negotiated with the person in charge of the goods and services.</span>
+          </div>
 
           {product.specifications && Object.keys(product.specifications).length > 0 && (
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>

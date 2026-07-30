@@ -1,13 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+import { storeApi } from '@/lib/store-api';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
-import { CheckCircle, Phone, MapPin, FileText } from 'lucide-react';
+import { CheckCircle, Phone, MapPin, FileText, Info } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CheckoutPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [cart, setCart] = useState<any>({ items: [], subtotal: 0, total: 0 });
   const [submitting, setSubmitting] = useState(false);
@@ -16,20 +16,27 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
   const [order, setOrder] = useState<any>(null);
+  const [cartLoading, setCartLoading] = useState(true);
 
-  useEffect(() => { if (!user) { router.push('/login'); return; } loadCart(); }, [user]);
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) { router.push('/login'); return; }
+    loadCart();
+  }, [user, authLoading]);
 
   const loadCart = async () => {
+    setCartLoading(true);
     try {
-      const r: any = await api.get('/cart');
+      const r: any = await storeApi.get('/cart');
       setCart(r.data || { items: [], subtotal: 0, total: 0 });
     } catch (e: any) { console.error('Failed to load cart:', e); }
+    finally { setCartLoading(false); }
   };
 
   const placeOrder = async () => {
     setSubmitting(true); setMessage('');
     try {
-      const res: any = await api.post('/orders', { customerPhone: phone, shippingAddress: address, notes });
+      const res: any = await storeApi.post('/orders', { customerPhone: phone, shippingAddress: address, notes });
       if (!res.success) { setMessage(res.error || 'Failed to create order'); setSubmitting(false); return; }
       setOrder(res.data);
     } catch (e: any) { setMessage(e?.message || 'Checkout failed'); } finally { setSubmitting(false); }
@@ -37,15 +44,16 @@ export default function CheckoutPage() {
 
   if (order) {
     const total = order.total || 0;
+    const storeSlug = typeof window !== 'undefined' ? localStorage.getItem('activeStoreSlug') || 'shop' : 'shop';
     return (
-      <div className="container" style={{ padding: '2rem 0', maxWidth: 600 }}>
+      <div className="container" style={{ padding: 'clamp(1rem, 3vw, 2rem) 1rem', maxWidth: 600 }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <CheckCircle size={64} style={{ color: 'var(--success)', margin: '0 auto 1rem' }} />
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '0.5rem' }}>Order Placed!</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Your order has been placed successfully. Pay on delivery.</p>
+          <h1 style={{ fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', fontWeight: 700, marginBottom: '0.5rem' }}>Order Placed!</h1>
+          <p style={{ color: 'var(--text-secondary)' }}>Your order has been placed. Pay on delivery after confirming with the seller.</p>
         </div>
 
-        <div className="card" style={{ padding: '1.5rem', marginBottom: '1rem' }}>
+        <div className="card" style={{ padding: 'clamp(1rem, 3vw, 1.5rem)', marginBottom: '1rem' }}>
           <h3 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Order #{order.orderNumber}</h3>
           {order.items?.map((item: any, i: number) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', padding: '0.5rem 0', borderBottom: i < order.items.length - 1 ? '1px solid var(--border)' : 'none' }}>
@@ -59,7 +67,7 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        <div className="card" style={{ padding: '1.5rem', marginBottom: '1rem' }}>
+        <div className="card" style={{ padding: 'clamp(1rem, 3vw, 1.5rem)', marginBottom: '1rem' }}>
           <h3 style={{ fontWeight: 600, marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <MapPin size={16} /> Delivery Details
           </h3>
@@ -82,68 +90,93 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        <Link href="/store/adorn/shop" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Continue Shopping</Link>
+        <Link href={`/store/${storeSlug}/shop`} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Continue Shopping</Link>
       </div>
     );
   }
 
   return (
-    <div className="container" style={{ padding: '2rem 0', maxWidth: 800 }}>
-      <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '2rem' }}>Checkout</h1>
+    <div className="container" style={{ padding: 'clamp(1rem, 3vw, 2rem) 1rem', maxWidth: 800 }}>
+      <h1 style={{ fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', fontWeight: 700, marginBottom: '1.5rem' }}>Checkout</h1>
       {message && (
-        <div style={{ padding: '0.75rem 1rem', borderRadius: '0.5rem', marginBottom: '1rem', background: message.includes('failed') ? '#2e0505' : '#052e16', color: message.includes('failed') ? '#f87171' : '#4ade80' }}>
+        <div style={{ padding: '0.75rem 1rem', borderRadius: '0.5rem', marginBottom: '1rem', background: message.includes('failed') ? 'var(--bg-secondary)' : 'var(--bg-secondary)', color: message.includes('failed') ? 'var(--error)' : 'var(--success)' }}>
           {message}
         </div>
       )}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-        <div>
-          <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Delivery Information</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>First Name</label><input className="input" value={user?.firstName || ''} disabled /></div>
-              <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Last Name</label><input className="input" value={user?.lastName || ''} disabled /></div>
+      {authLoading || cartLoading ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>Loading...</div>
+      ) : (
+        <div className="checkout-grid">
+          <div>
+            <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Delivery Information</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="checkout-name-fields">
+                <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>First Name</label><input className="input" value={user?.firstName || ''} disabled /></div>
+                <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Last Name</label><input className="input" value={user?.lastName || ''} disabled /></div>
+              </div>
+              <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Email</label><input className="input" value={user?.email || ''} disabled /></div>
+              <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Phone Number</label><input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="2567XXXXXXXX" required /></div>
+              <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Delivery Address</label><input className="input" value={address} onChange={e => setAddress(e.target.value)} placeholder="Street, area, landmark" /></div>
+              <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Delivery Notes (optional)</label><textarea className="input" style={{ minHeight: 80 }} value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Call when arriving, leave with guard..." /></div>
             </div>
-            <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Email</label><input className="input" value={user?.email || ''} disabled /></div>
-            <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Phone Number</label><input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="2567XXXXXXXX" required /></div>
-            <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Delivery Address</label><input className="input" value={address} onChange={e => setAddress(e.target.value)} placeholder="Street, area, landmark" /></div>
-            <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Delivery Notes (optional)</label><textarea className="input" style={{ minHeight: 80 }} value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Call when arriving, leave with guard..." /></div>
-          </div>
 
-          <div style={{ padding: '1rem', borderRadius: '0.5rem', background: 'var(--bg-secondary)', margin: '1.5rem 0', fontSize: '0.875rem' }}>
-            <p style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Pay on Delivery</p>
-            <p style={{ color: 'var(--text-secondary)' }}>No online payment needed. Pay UGX {(cart.total || 0).toLocaleString()} in cash when your order arrives.</p>
-          </div>
+            <div className="pay-note-checkout" style={{ marginTop: '1.5rem' }}>
+              <Info size={16} />
+              <div>
+                <strong>Pay on Delivery</strong>
+                <p>No online payment needed. Delivery fees are to be discussed and negotiated directly with the seller.</p>
+              </div>
+            </div>
 
-          <button className="btn btn-primary" style={{ justifyContent: 'center', padding: '0.875rem', fontSize: '1rem', width: '100%' }} disabled={submitting || cart.items.length === 0 || !phone} onClick={placeOrder}>
-            {submitting ? 'Placing Order...' : `Place Order — Pay UGX ${(cart.total || 0).toLocaleString()} on Delivery`}
-          </button>
-        </div>
-        <div>
-          <div className="card" style={{ position: 'sticky', top: 80 }}>
-            <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Order Summary</h3>
-            {cart.items?.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {cart.items.map((item: any, i: number) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
-                    <span>{item.product?.name} x{item.quantity}</span>
-                    <span>UGX {(item.product?.price * item.quantity).toLocaleString()}</span>
-                  </div>
-                ))}
-                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                    <span>Subtotal</span><span>UGX {(cart.subtotal || 0).toLocaleString()}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', fontWeight: 700, marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border)' }}>
-                    <span>Total</span><span>UGX {(cart.total || 0).toLocaleString()}</span>
+            <button className="btn btn-primary checkout-btn" disabled={submitting || cart.items.length === 0 || !phone} onClick={placeOrder}>
+              {submitting ? 'Placing Order...' : `Place Order — Pay UGX ${(cart.total || 0).toLocaleString()} on Delivery`}
+            </button>
+          </div>
+          <div>
+            <div className="card checkout-summary">
+              <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Order Summary</h3>
+              {cart.items?.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.9375rem' }}>
+                  {cart.items.map((item: any, i: number) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                      <span>{item.product?.name} x{item.quantity}</span>
+                      <span>UGX {(item.product?.price * item.quantity).toLocaleString()}</span>
+                    </div>
+                  ))}
+                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span><span>UGX {(cart.subtotal || 0).toLocaleString()}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', fontWeight: 700, marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border)' }}>
+                      <span>Total</span><span>UGX {(cart.total || 0).toLocaleString()}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem 0' }}>Your cart is empty</p>
-            )}
+              ) : (
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem 0' }}>Your cart is empty</p>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
+      <style>{`
+        .checkout-grid { display: grid; gap: 1.5rem; }
+        .checkout-summary { position: sticky; top: 80px; }
+        .pay-note-checkout { display: flex; gap: 0.75rem; align-items: flex-start; padding: 1rem; border-radius: 0.5rem; background: var(--bg-secondary); font-size: 0.875rem; }
+        .checkout-btn { justify-content: center; padding: 0.875rem; font-size: 1rem; width: 100%; margin-top: 1rem; }
+        .checkout-name-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        @media (min-width: 769px) {
+          .checkout-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
+        }
+        @media (max-width: 768px) {
+          .checkout-grid { grid-template-columns: 1fr; }
+          .checkout-summary { position: static; }
+          .checkout-name-fields { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 380px) {
+          .checkout-btn { font-size: 0.875rem; padding: 0.75rem; }
+        }
+      `}</style>
     </div>
   );
 }

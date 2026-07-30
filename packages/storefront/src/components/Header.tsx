@@ -30,7 +30,7 @@ export default function Header() {
     <>
       <header className="glass" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
         <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64, gap: '1rem' }}>
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary)', textDecoration: 'none' }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary)', textDecoration: 'none', flexShrink: 0 }}>
             <Gem size={28} />
             <span className={isDark ? 'gold-shimmer' : ''}>Adorn</span>
           </Link>
@@ -40,13 +40,13 @@ export default function Header() {
             <Link href="/categories" className="btn btn-ghost btn-sm">Categories</Link>
           </nav>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flex: 1, justifyContent: 'flex-end', minWidth: 0 }}>
             <button className="btn btn-ghost btn-icon" onClick={() => setSearchOpen(!searchOpen)}><Search size={20} /></button>
             <Link href="/wishlist" className="btn btn-ghost btn-icon desktop-only"><Heart size={20} /></Link>
             <Link href="/cart" className="btn btn-ghost btn-icon desktop-only"><ShoppingCart size={20} /></Link>
             {user ? (
               <Link href="/account" className="btn btn-ghost btn-sm desktop-only" style={{ gap: '0.375rem' }}>
-                <User size={18} /> {user.firstName}
+                <User size={18} /> <span className="user-name-header">{user.firstName}</span>
               </Link>
             ) : (
               <Link href="/login" className="btn btn-primary btn-sm">Sign In</Link>
@@ -133,6 +133,7 @@ export default function Header() {
       <style>{`
         @media (max-width: 768px) { .desktop-only { display: none !important; } .desktop-nav { display: none !important; } }
         @media (min-width: 769px) { .mobile-sidebar, .sidebar-overlay { display: none !important; } }
+        @media (max-width: 480px) { .user-name-header { display: none; } }
         .mobile-sidebar { position: fixed; top: 0; right: -280px; width: 280px; height: 100vh; background: var(--surface); border-left: 1px solid var(--border); z-index: 200; transition: right 0.25s ease; overflow-y: auto; }
         .mobile-sidebar.open { right: 0; }
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 199; display: none; }

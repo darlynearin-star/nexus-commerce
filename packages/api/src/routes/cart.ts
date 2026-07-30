@@ -41,12 +41,7 @@ cartRouter.get('/', optionalAuth, async (req: any, res, next) => {
     if (!cart) return res.json({ success: true, data: { items: [], subtotal: 0, taxAmount: 0, shippingCost: 0, total: 0 } });
 
     const subtotal = cart.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-    const store = req.store;
-    const freeThreshold = store?.settings?.shippingThreshold || 150000;
-    const shippingRate = store?.settings?.shippingRate || 15000;
-    const taxRate = (store?.settings?.taxRate || 18) / 100;
-    const shippingCost = subtotal >= freeThreshold ? 0 : shippingRate;
-    res.json({ success: true, data: { ...cart, subtotal, taxAmount: subtotal * taxRate, shippingCost, total: subtotal + shippingCost + subtotal * taxRate - cart.couponDiscount } });
+    res.json({ success: true, data: { ...cart, subtotal, taxAmount: 0, shippingCost: 0, total: subtotal - (cart.couponDiscount || 0) } });
   } catch (error) { next(error); }
 });
 

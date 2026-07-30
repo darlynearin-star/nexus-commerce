@@ -73,14 +73,14 @@ export default function AccountPage() {
   );
 
   return (
-    <div className="container" style={{ padding: '2rem 0' }}>
+    <div className="container" style={{ padding: 'clamp(1rem, 3vw, 2rem) 0.75rem' }}>
       {mobile ? (
         <>
           <div className="card" style={{ padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
             <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '0.8125rem', flexShrink: 0 }}>{user.firstName?.[0]}{user.lastName?.[0]}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{user.firstName} {user.lastName}</p>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{user.email}</p>
+              <p style={{ fontWeight: 600, fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.firstName} {user.lastName}</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
             </div>
             <button className="btn btn-ghost btn-sm" style={{ color: 'var(--error)', flexShrink: 0 }} onClick={logout}><LogOut size={16} /></button>
           </div>
@@ -130,9 +130,15 @@ export default function AccountPage() {
               ))}
             </nav>
           </div>
-          <div>{renderContent()}</div>
+          <div className="account-content">{renderContent()}</div>
         </div>
       )}
+      <style>{`
+        .account-content { min-width: 0; }
+        @media (max-width: 768px) {
+          .account-content { padding: 0; }
+        }
+      `}</style>
     </div>
   );
 }
@@ -189,7 +195,7 @@ function OverviewTab({ user, orders, isStoreOwner, retailer, subscription, tierN
 
 function OrdersTab({ orders, loading }: any) {
   return (
-    <div>
+    <div className="orders-tab">
       <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>Order History</h2>
       {loading ? (
         <p style={{ color: 'var(--text-secondary)' }}>Loading orders...</p>
@@ -203,13 +209,13 @@ function OrdersTab({ orders, loading }: any) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {orders.map((o: any) => (
-            <div key={o.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem' }}>
-              <div>
+            <div key={o.id} className="card order-card">
+              <div className="order-card-left">
                 <p style={{ fontWeight: 600, marginBottom: '0.125rem' }}>{o.orderNumber}</p>
                 <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                 {o.items?.length > 0 && <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{o.items.map((i: any) => i.productName).join(', ')}</p>}
               </div>
-              <div style={{ textAlign: 'right' }}>
+              <div className="order-card-right">
                 <p style={{ fontWeight: 700, fontSize: '0.9375rem', marginBottom: '0.25rem' }}>UGX {o.total?.toLocaleString()}</p>
                 <span className={`badge badge-${o.status === 'COMPLETED' ? 'success' : o.status === 'PROCESSING' ? 'warning' : o.status === 'CANCELLED' ? 'error' : 'info'}`} style={{ fontSize: '0.6875rem' }}>{o.status || 'PENDING'}</span>
               </div>
@@ -217,6 +223,15 @@ function OrdersTab({ orders, loading }: any) {
           ))}
         </div>
       )}
+      <style>{`
+        .order-card { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; }
+        .order-card-left { min-width: 0; flex: 1; }
+        .order-card-right { text-align: right; flex-shrink: 0; margin-left: 0.75rem; }
+        @media (max-width: 480px) {
+          .order-card { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+          .order-card-right { text-align: left; margin-left: 0; }
+        }
+      `}</style>
     </div>
   );
 }
@@ -232,12 +247,12 @@ function CartTab({ cart, loading }: any) {
     </div>
   );
   return (
-    <div>
+    <div className="account-cart">
       <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>Shopping Cart</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
         {cart.items.map((item: any) => (
-          <div key={item.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 1.25rem' }}>
-            <div style={{ width: 60, height: 60, borderRadius: '0.5rem', background: 'var(--bg-secondary)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', color: 'var(--text-secondary)', overflow: 'hidden' }}>
+          <div key={item.id} className="card account-cart-item">
+            <div className="account-cart-img">
               {item.product?.images?.[0] ? <img src={item.product.images[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Package size={24} />}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -245,7 +260,7 @@ function CartTab({ cart, loading }: any) {
               <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>UGX {item.product?.price?.toLocaleString()} each</p>
             </div>
             <div style={{ textAlign: 'center', minWidth: 40 }}><span style={{ fontWeight: 600, fontSize: '0.875rem' }}>x{item.quantity}</span></div>
-            <p style={{ fontWeight: 700, textAlign: 'right', minWidth: 80 }}>UGX {(item.product?.price * item.quantity).toLocaleString()}</p>
+            <p style={{ fontWeight: 700, textAlign: 'right', minWidth: 80, flexShrink: 0 }}>UGX {(item.product?.price * item.quantity).toLocaleString()}</p>
           </div>
         ))}
       </div>
@@ -253,6 +268,18 @@ function CartTab({ cart, loading }: any) {
         <p style={{ fontWeight: 600 }}>Total: <span style={{ fontSize: '1.25rem' }}>UGX {cart.subtotal?.toLocaleString() || '0'}</span></p>
         <Link href="/checkout" className="btn btn-primary">Proceed to Checkout</Link>
       </div>
+      <style>{`
+        .account-cart-item { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; }
+        .account-cart-img { width: 60px; height: 60px; min-width: 60px; border-radius: 0.5rem; background: var(--bg-secondary); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--text-secondary); overflow: hidden; }
+        @media (max-width: 480px) {
+          .account-cart-item { flex-wrap: wrap; gap: 0.5rem; }
+          .account-cart-img { width: 48px; height: 48px; min-width: 48px; }
+          .account-cart-item > p:last-child { min-width: auto; }
+        }
+        @media (max-width: 769px) {
+          .account-cart-item > p:last-child { min-width: 60px; font-size: 0.8125rem; }
+        }
+      `}</style>
     </div>
   );
 }
@@ -262,8 +289,8 @@ function MailboxTab({ notifications, unreadCount, markAllRead, markRead, loading
   const typeColors: any = { NEW_ORDER_ALERT: 'var(--primary)', TIER_WARNING: 'var(--warning)', ADMIN_ANNOUNCEMENT: 'var(--info)', ORDER_CONFIRMATION: 'var(--success)', LOW_STOCK: 'var(--error)' };
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+    <div className="mailbox-tab">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Mail size={20} /> Mailbox
           {unreadCount > 0 && <span className="badge badge-primary" style={{ fontSize: '0.75rem' }}>{unreadCount} unread</span>}
@@ -282,23 +309,33 @@ function MailboxTab({ notifications, unreadCount, markAllRead, markRead, loading
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {notifications.map((n: any) => (
-            <div key={n.id} className="card"
+            <div key={n.id} className="card notification-card"
               onClick={() => !n.isRead && markRead(n.id)}
-              style={{ padding: '0.875rem 1rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start', cursor: !n.isRead ? 'pointer' : 'default', borderLeft: `3px solid ${!n.isRead ? (typeColors[n.type] || 'var(--primary)') : 'transparent'}`, opacity: n.isRead ? 0.7 : 1 }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: !n.isRead ? `${typeColors[n.type] || 'var(--primary)'}20` : 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: typeColors[n.type] || 'var(--text-secondary)' }}>
-                {typeIcons[n.type] || <Bell size={16} />}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.125rem' }}>
-                  <p style={{ fontWeight: !n.isRead ? 600 : 400, fontSize: '0.875rem' }}>{n.title}</p>
-                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{new Date(n.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+              style={{ padding: '0.875rem 1rem', cursor: !n.isRead ? 'pointer' : 'default', borderLeft: `3px solid ${!n.isRead ? (typeColors[n.type] || 'var(--primary)') : 'transparent'}`, opacity: n.isRead ? 0.7 : 1 }}>
+              <div className="notification-inner">
+                <div className="notification-icon">
+                  {typeIcons[n.type] || <Bell size={16} />}
                 </div>
-                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{n.message}</p>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="notification-header">
+                    <p style={{ fontWeight: !n.isRead ? 600 : 400, fontSize: '0.875rem' }}>{n.title}</p>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', flexShrink: 0 }}>{new Date(n.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                  </div>
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{n.message}</p>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
+      <style>{`
+        .notification-inner { display: flex; gap: 0.75rem; align-items: flex-start; }
+        .notification-icon { width: 32px; height: 32px; min-width: 32px; border-radius: 50%; background: var(--bg-secondary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .notification-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.125rem; gap: 0.5rem; }
+        @media (max-width: 480px) {
+          .notification-header { flex-direction: column; align-items: flex-start; }
+        }
+      `}</style>
     </div>
   );
 }
@@ -308,14 +345,18 @@ function SettingsTab({ user }: any) {
     <div>
       <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>Account Settings</h2>
       <div className="card" style={{ padding: '1.25rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', fontSize: '0.875rem' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>Name</span><span style={{ fontWeight: 500 }}>{user.firstName} {user.lastName}</span>
-            <span style={{ color: 'var(--text-secondary)' }}>Email</span><span style={{ fontWeight: 500 }}>{user.email}</span>
-            <span style={{ color: 'var(--text-secondary)' }}>Role</span><span className="badge badge-info" style={{ justifySelf: 'start' }}>{(user.role || '').replace('_', ' ').toLowerCase()}</span>
-          </div>
+        <div className="settings-grid">
+          <span style={{ color: 'var(--text-secondary)' }}>Name</span><span style={{ fontWeight: 500 }}>{user.firstName} {user.lastName}</span>
+          <span style={{ color: 'var(--text-secondary)' }}>Email</span><span style={{ fontWeight: 500 }}>{user.email}</span>
+          <span style={{ color: 'var(--text-secondary)' }}>Role</span><span className="badge badge-info" style={{ justifySelf: 'start' }}>{(user.role || '').replace('_', ' ').toLowerCase()}</span>
         </div>
       </div>
+      <style>{`
+        .settings-grid { display: grid; grid-template-columns: 120px 1fr; gap: 0.5rem; font-size: 0.875rem; }
+        @media (max-width: 480px) {
+          .settings-grid { grid-template-columns: 1fr; gap: 0.25rem; }
+        }
+      `}</style>
     </div>
   );
 }

@@ -18,13 +18,13 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="container" style={{ padding: '4rem 0', display: 'flex', justifyContent: 'center' }}>
-      <div className="card" style={{ width: '100%', maxWidth: 420, padding: '2.5rem' }}>
+    <div className="container" style={{ padding: 'clamp(2rem, 6vw, 4rem) 1rem', display: 'flex', justifyContent: 'center' }}>
+      <div className="card auth-card">
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '0.5rem' }}>Create Account</h1>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.9375rem' }}>Join Nexus Commerce today</p>
         {error && <div style={{ padding: '0.75rem', background: 'var(--error)', color: 'white', borderRadius: '0.5rem', marginBottom: '1rem', fontSize: '0.875rem' }}>{error}</div>}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+          <div className="name-fields">
             <div><label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>First Name</label><input className="input" value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} required /></div>
             <div><label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Last Name</label><input className="input" value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} required /></div>
           </div>
@@ -33,7 +33,7 @@ export default function RegisterPage() {
           <div><label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Confirm Password</label><input className="input" type="password" value={form.confirmPassword} onChange={e => setForm({ ...form, confirmPassword: e.target.value })} required placeholder="Re-enter your password" /></div>
           <div>
             <label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Account Type</label>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div className="role-buttons">
               {[
                 { value: 'CUSTOMER', label: 'Customer', desc: 'Browse & shop' },
                 { value: 'RETAILER', label: 'Retailer', desc: 'Sell products' },
@@ -52,6 +52,15 @@ export default function RegisterPage() {
           Already have an account? <Link href="/login" style={{ color: 'var(--primary)', fontWeight: 500 }}>Sign In</Link>
         </p>
       </div>
+      <style>{`
+        .auth-card { width: 100%; max-width: 420px; padding: clamp(1.5rem, 4vw, 2.5rem); }
+        .name-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .role-buttons { display: flex; gap: 0.5rem; }
+        @media (max-width: 480px) {
+          .auth-card { border-radius: 0.5rem; }
+          .name-fields { grid-template-columns: 1fr; }
+        }
+      `}</style>
     </div>
   );
 }

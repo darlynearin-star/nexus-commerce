@@ -16,8 +16,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="container" style={{ padding: '4rem 0', display: 'flex', justifyContent: 'center' }}>
-      <div className="card" style={{ width: '100%', maxWidth: 420, padding: '2.5rem' }}>
+    <div className="container" style={{ padding: 'clamp(2rem, 6vw, 4rem) 1rem', display: 'flex', justifyContent: 'center' }}>
+      <div className="card auth-card">
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '0.5rem' }}>Welcome Back</h1>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.9375rem' }}>Sign in to your account</p>
         {error && <div style={{ padding: '0.75rem', background: 'var(--error)', color: 'white', borderRadius: '0.5rem', marginBottom: '1rem', fontSize: '0.875rem' }}>{error}</div>}
@@ -36,6 +36,12 @@ export default function LoginPage() {
           <p>Admin: admin@nexuscommerce.com / Password123!</p>
         </div>
       </div>
+      <style>{`
+        .auth-card { width: 100%; max-width: 420px; padding: clamp(1.5rem, 4vw, 2.5rem); }
+        @media (max-width: 480px) {
+          .auth-card { border-radius: 0.5rem; }
+        }
+      `}</style>
     </div>
   );
 }
