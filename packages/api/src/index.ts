@@ -87,9 +87,11 @@ app.use((_req, res, next) => {
   res.setHeader('Referrer-Policy', 'same-origin');
   next();
 });
+const corsAllowList = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'https://nexus-storefront-dusky.vercel.app', 'https://nexus-commerce-retailer-dashboard.vercel.app', 'https://nexus-commerce-developer-dashboard.vercel.app'];
+const raw = process.env.CORS_ORIGIN;
 app.use(cors({
-  origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'https://nexus-storefront-dusky.vercel.app', 'https://nexus-commerce-retailer-dashboard.vercel.app', 'https://nexus-commerce-developer-dashboard.vercel.app'],
-  credentials: true,
+  origin: raw === '*' ? (origin, cb) => cb(null, origin || '*') : ((raw?.split(',') || corsAllowList) as any),
+  credentials: raw !== '*',
 }));
 
 // Parsing

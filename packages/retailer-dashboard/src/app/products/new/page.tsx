@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { ArrowLeft, Plus, X, Upload } from 'lucide-react';
@@ -19,6 +19,7 @@ export default function NewProductPage() {
   const [uploading, setUploading] = useState(false);
   const [categoryAttrs, setCategoryAttrs] = useState<AttributeDef[]>([]);
   const [attrValues, setAttrValues] = useState<Record<string, string>>({});
+  const seoTitleEdited = useRef(false);
 
   const [form, setForm] = useState<any>({
     name: '', brand: '', sku: '', description: '', price: 0, compareAtPrice: '', costPerItem: '',
@@ -221,7 +222,7 @@ export default function NewProductPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div>
                 <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Product Name *<FieldInfo text="The name of your product as it appears on your storefront and in search results." /></label>
-                <input className="input" value={form.name} onChange={e => { update('name', e.target.value); if (!form.seoTitle) update('seoTitle', e.target.value); }} placeholder="e.g., Sterling Silver Chain Necklace" />
+                <input className="input" value={form.name} onChange={e => { update('name', e.target.value); if (!seoTitleEdited.current) update('seoTitle', e.target.value); }} placeholder="e.g., Sterling Silver Chain Necklace" />
               </div>
               <div>
                 <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Brand<FieldInfo text="The brand or manufacturer of this product. Helps customers identify and search for your product." /></label>
@@ -382,7 +383,7 @@ export default function NewProductPage() {
         <div className="card" style={{ padding: '1.5rem' }}>
           <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>SEO</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>SEO Title<FieldInfo text="Title shown in search results. If empty, product name is used." /></label><input className="input" value={form.seoTitle} onChange={e => update('seoTitle', e.target.value)} /></div>
+            <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>SEO Title<FieldInfo text="Title shown in search results. If empty, product name is used." /></label><input className="input" value={form.seoTitle} onChange={e => { seoTitleEdited.current = true; update('seoTitle', e.target.value); }} /></div>
             <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>SEO Description<FieldInfo text="Short description shown below the title in search results." /></label><textarea className="input" rows={2} value={form.seoDescription} onChange={e => update('seoDescription', e.target.value)} /></div>
             <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Tags (comma separated)<FieldInfo text="Keywords that help customers find your product." /></label><input className="input" value={form.tags} onChange={e => update('tags', e.target.value)} placeholder="e.g., necklace, silver, jewelry" /></div>
           </div>
