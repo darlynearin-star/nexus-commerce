@@ -7,6 +7,8 @@ import StarRating from './StarRating';
 
 const img = (id: string) => `https://picsum.photos/seed/${id}/400/400`;
 
+const firstImage = (p: any) => p.images?.[0] || img(p.id);
+
 interface ProductCardProps {
   product: {
     id: string;
@@ -14,6 +16,7 @@ interface ProductCardProps {
     name: string;
     brand: string;
     price: number;
+    images?: string[];
     averageRating?: number;
     reviewCount?: number;
   };
@@ -31,7 +34,7 @@ export default function ProductCard({ product, showAddToCart = true }: ProductCa
         <Heart size={18} />
       </button>
       <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: '0.5rem', overflow: 'hidden' }}>
-        <img src={img(product.id)} alt={product.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img src={firstImage(product)} alt={product.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
       <div>
         <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>{product.brand}</p>

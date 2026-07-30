@@ -2,8 +2,8 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { compressImage } from '@/lib/compress-image';
 import { ArrowLeft, Plus, X, Upload } from 'lucide-react';
-import CategoryPicker from '@/components/CategoryPicker';
 import FieldInfo from '@/components/FieldInfo';
 
 interface FlatCat { id: string; label: string; slug: string; depth: number; parentId: string | null; }
@@ -17,9 +17,19 @@ export default function NewProductPage() {
   const [errors, setErrors] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [majorCatId, setMajorCatId] = useState('');
   const [categoryAttrs, setCategoryAttrs] = useState<AttributeDef[]>([]);
   const [attrValues, setAttrValues] = useState<Record<string, string>>({});
   const seoTitleEdited = useRef(false);
+
+  const topCats = useMemo(() => categories.filter(c => c.parentId === null), [categories]);
+  const subCats = useMemo(() => {
+    if (!majorCatId) return [];
+    const result: FlatCat[] = [];
+    const walk = (parentId: string) => { for (const c of categories) { if (c.parentId === parentId) { result.push(c); walk(c.id); } } };
+    walk(majorCatId);
+    return result;
+  }, [categories, majorCatId]);
 
   const [form, setForm] = useState<any>({
     name: '', brand: '', sku: '', description: '', price: 0, compareAtPrice: '', costPerItem: '',
@@ -101,11 +111,11 @@ export default function NewProductPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (images.length >= 10) { setErrors(['Maximum 10 images allowed']); return; }
-    if (file.size > 5 * 1024 * 1024) { setErrors(['File too large — max 5MB']); return; }
     setUploading(true);
     try {
+      const compressed = await compressImage(file);
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', new File([compressed], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
       const data = await api.upload('/upload', formData);
       setImages(p => [...p, data.data.url]);
     } catch (e: any) { setErrors([e.message || 'Upload failed']); } finally { setUploading(false); }
@@ -217,8 +227,20 @@ export default function NewProductPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {/* Category FIRST */}
             <div>
-              <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Category *<FieldInfo text="Select the best category for your product. This determines the specific attributes you need to fill in below." /></label>
-              <CategoryPicker categories={categories.map(c => ({ id: c.id, label: c.label, slug: c.slug, depth: c.depth, parentId: c.parentId }))} selectedId={form.categoryId} onChange={handleCategoryChange} />
+              <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Major Category *<FieldInfo text="Select the broad category your product belongs to, then pick the specific subcategory below." /></label>
+              <select className="input" value={majorCatId} onChange={e => { const id = e.target.value; setMajorCatId(id); update('categoryId', ''); update('categorySlug', ''); setAttrValues({}); setCategoryAttrs([]); }}>
+                <option value="">Select major category...</option>
+                {topCats.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+              </select>
+              {majorCatId && (
+                <div style={{ marginTop: '0.5rem' }}>
+                  <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Subcategory *<FieldInfo text="Choose the specific category that best describes your product." /></label>
+                  <select className="input" value={form.categoryId} onChange={e => { if (e.target.value) handleCategoryChange(e.target.value); else { update('categoryId', ''); update('categorySlug', ''); setAttrValues({}); setCategoryAttrs([]); } }}>
+                    <option value="">Select subcategory...</option>
+                    {subCats.map(c => <option key={c.id} value={c.id}>{'— '.repeat(Math.max(0, c.depth - 1))}{c.label}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Dynamic category attributes */}

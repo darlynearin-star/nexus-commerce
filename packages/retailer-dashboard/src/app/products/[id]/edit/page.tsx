@@ -1,9 +1,9 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { api } from '@/lib/api';
+import { compressImage } from '@/lib/compress-image';
 import { ArrowLeft, Plus, X, Upload } from 'lucide-react';
-import CategoryPicker from '@/components/CategoryPicker';
 import FieldInfo from '@/components/FieldInfo';
 
 interface AttributeDef { key: string; label: string; type: 'text' | 'number' | 'select' | 'multiselect' | 'boolean'; placeholder?: string; options?: { value: string; label: string }[]; }
@@ -58,11 +58,21 @@ export default function EditProductPage() {
   const [features, setFeatures] = useState<string[]>(['']);
   const [specs, setSpecs] = useState<{ key: string; value: string }[]>([{ key: '', value: '' }]);
   const [variants, setVariants] = useState<Variant[]>([]);
+  const [majorCatId, setMajorCatId] = useState('');
   const [categoryAttrs, setCategoryAttrs] = useState<AttributeDef[]>([]);
   const [attrValues, setAttrValues] = useState<Record<string, string>>({});
   const [catAttrsFetched, setCatAttrsFetched] = useState(false);
 
   const setAttr = useCallback((key: string, value: string) => setAttrValues(p => ({ ...p, [key]: value })), []);
+
+  const topCats = useMemo(() => categories.filter(c => c.parentId === null), [categories]);
+  const subCats = useMemo(() => {
+    if (!majorCatId) return [];
+    const result: FlatCat[] = [];
+    const walk = (parentId: string) => { for (const c of categories) { if (c.parentId === parentId) { result.push(c); walk(c.id); } } };
+    walk(majorCatId);
+    return result;
+  }, [categories, majorCatId]);
 
   useEffect(() => {
     const id = params?.id as string;
@@ -81,6 +91,7 @@ export default function EditProductPage() {
       setCategories(flatCats);
       const p = prodRes.data;
       const initialCat = flatCats.find(c => c.id === p.categoryId);
+      if (initialCat) { let a = initialCat; while (a.parentId) { const pa = flatCats.find(c => c.id === a.parentId); if (pa) a = pa; else break; } setMajorCatId(a.id); }
       setShortCode(p.shortCode || '');
       setStoreSlug(p.store?.slug || localStorage.getItem('activeStoreSlug') || '');
       setForm({
@@ -95,6 +106,7 @@ export default function EditProductPage() {
         returnPolicy: p.returnPolicy || '', warranty: p.warranty || '',
       });
       setFeatures(p.features?.length ? p.features : ['']);
+      setImages(p.images || []);
       const specEntries = p.specifications ? Object.entries(p.specifications) : [];
       setSpecs(specEntries.length ? specEntries.map(([k, v]: [string, any]) => ({ key: k, value: String(v) })) : [{ key: '', value: '' }]);
       setVariants((p.variants || []).map((v: any) => ({ ...v, _key: v.id || Math.random().toString(36).slice(2) })));
@@ -137,11 +149,11 @@ export default function EditProductPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (images.length >= 10) { setErrors(['Maximum 10 images allowed']); return; }
-    if (file.size > 5 * 1024 * 1024) { setErrors(['File too large — max 5MB']); return; }
     setUploading(true);
     try {
+      const compressed = await compressImage(file);
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', new File([compressed], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
       const data = await api.upload('/upload', formData);
       setImages(p => [...p, data.data.url]);
     } catch (e: any) { setErrors([e.message || 'Upload failed']); } finally { setUploading(false); }
@@ -293,8 +305,20 @@ export default function EditProductPage() {
               </div>
             </div>
             <div>
-              <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Category *<FieldInfo text="The category helps customers find your product when browsing your store." /></label>
-              <CategoryPicker categories={categories} selectedId={form.categoryId} onChange={id => { update('categoryId', id); const slug = categories.find(c => c.id === id)?.slug || ''; update('categorySlug', slug); setCatAttrsFetched(false); if (slug) api.get(`/categories/${slug}/attributes`).then((res: any) => { const attrs: AttributeDef[] = res.data || []; setCategoryAttrs(attrs); setCatAttrsFetched(true); setAttrValues({}); }).catch(() => { setCategoryAttrs([]); setCatAttrsFetched(true); }); }} />
+              <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Major Category *<FieldInfo text="Select the broad category your product belongs to, then pick the specific subcategory below." /></label>
+              <select className="input" value={majorCatId} onChange={e => { const id = e.target.value; setMajorCatId(id); update('categoryId', ''); update('categorySlug', ''); setAttrValues({}); setCategoryAttrs([]); }}>
+                <option value="">Select major category...</option>
+                {topCats.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+              </select>
+              {majorCatId && (
+                <div style={{ marginTop: '0.5rem' }}>
+                  <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Subcategory *<FieldInfo text="Choose the specific category that best describes your product." /></label>
+                  <select className="input" value={form.categoryId} onChange={e => { const catId = e.target.value; if (catId) { update('categoryId', catId); const slug = categories.find(c => c.id === catId)?.slug || ''; update('categorySlug', slug); setCatAttrsFetched(false); if (slug) api.get(`/categories/${slug}/attributes`).then((res: any) => { const attrs: AttributeDef[] = res.data || []; setCategoryAttrs(attrs); setCatAttrsFetched(true); setAttrValues({}); }).catch(() => { setCategoryAttrs([]); setCatAttrsFetched(true); }); } else { update('categoryId', ''); update('categorySlug', ''); setAttrValues({}); setCategoryAttrs([]); } }}>
+                    <option value="">Select subcategory...</option>
+                    {subCats.map(c => <option key={c.id} value={c.id}>{'— '.repeat(Math.max(0, c.depth - 1))}{c.label}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
             <div>
               <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Description<FieldInfo text="A detailed description of your product. Include materials, sizing, features." /></label>
