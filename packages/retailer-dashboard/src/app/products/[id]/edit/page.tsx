@@ -1,10 +1,12 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { ArrowLeft, Plus, X, Upload } from 'lucide-react';
 import CategoryPicker from '@/components/CategoryPicker';
 import FieldInfo from '@/components/FieldInfo';
+
+interface AttributeDef { key: string; label: string; type: 'text' | 'number' | 'select' | 'multiselect' | 'boolean'; placeholder?: string; options?: { value: string; label: string }[]; }
 
 interface Category { id: string; name: string; slug: string; parentId: string | null; children?: Category[]; }
 interface Variant { _key: string; name: string; sku: string; price: number; stock: number; options: { name: string; value: string }[]; image: string; }
@@ -56,7 +58,11 @@ export default function EditProductPage() {
   const [features, setFeatures] = useState<string[]>(['']);
   const [specs, setSpecs] = useState<{ key: string; value: string }[]>([{ key: '', value: '' }]);
   const [variants, setVariants] = useState<Variant[]>([]);
+  const [categoryAttrs, setCategoryAttrs] = useState<AttributeDef[]>([]);
+  const [attrValues, setAttrValues] = useState<Record<string, string>>({});
+  const [catAttrsFetched, setCatAttrsFetched] = useState(false);
 
+  const setAttr = useCallback((key: string, value: string) => setAttrValues(p => ({ ...p, [key]: value })), []);
 
   useEffect(() => {
     const id = params?.id as string;
@@ -92,6 +98,20 @@ export default function EditProductPage() {
       const specEntries = p.specifications ? Object.entries(p.specifications) : [];
       setSpecs(specEntries.length ? specEntries.map(([k, v]: [string, any]) => ({ key: k, value: String(v) })) : [{ key: '', value: '' }]);
       setVariants((p.variants || []).map((v: any) => ({ ...v, _key: v.id || Math.random().toString(36).slice(2) })));
+      const catSlug = initialCat?.slug || p.category?.slug;
+      if (catSlug) {
+        api.get(`/categories/${catSlug}/attributes`).then((res: any) => {
+          const attrs: AttributeDef[] = res.data || [];
+          setCategoryAttrs(attrs);
+          setCatAttrsFetched(true);
+          if (attrs.length > 0) {
+            const specsObj = p.specifications || {};
+            const filtered: Record<string, string> = {};
+            for (const a of attrs) if (specsObj[a.key] !== undefined) filtered[a.key] = String(specsObj[a.key]);
+            setAttrValues(filtered);
+          }
+        }).catch(() => { setCategoryAttrs([]); setCatAttrsFetched(true); });
+      }
       setLoading(false);
     }).catch(() => { setLoading(false); setErrors(['Failed to load product']); });
   }, [params?.id]);
@@ -146,6 +166,7 @@ export default function EditProductPage() {
       const cleanedFeatures = features.filter(f => f.trim());
       const cleanedSpecs: Record<string, string> = {};
       specs.filter(s => s.key.trim()).forEach(s => { cleanedSpecs[s.key.trim()] = s.value.trim(); });
+      for (const [k, v] of Object.entries(attrValues)) if (v) cleanedSpecs[k] = v;
       const cleanedVariants = variants.filter(v => v.name.trim()).map(v => {
         const { _key, ...rest } = v;
         return { ...rest, options: v.options.filter(o => o.name.trim()) };
@@ -165,6 +186,50 @@ export default function EditProductPage() {
       await api.put(`/products/${id}/variants`, { variants: cleanedVariants });
       router.push('/products');
     } catch (e: any) { setErrors([e.message || 'Failed to save product']); } finally { setSaving(false); }
+  };
+
+  const renderAttrField = (attr: AttributeDef) => {
+    const val = attrValues[attr.key] || '';
+    if (attr.type === 'select' && attr.options) {
+      return (
+        <select className="input" value={val} onChange={e => setAttr(attr.key, e.target.value)}>
+          <option value="">Select {attr.label.toLowerCase()}...</option>
+          {attr.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+      );
+    }
+    if (attr.type === 'multiselect' && attr.options) {
+      const selected = val ? val.split(',') : [];
+      return (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+          {attr.options.map(o => {
+            const checked = selected.includes(o.value);
+            return (
+              <label key={o.value} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8125rem', cursor: 'pointer', padding: '0.25rem 0.375rem', background: checked ? 'var(--primary)' : 'var(--bg)', color: checked ? 'white' : 'inherit', borderRadius: '0.25rem', border: '1px solid', borderColor: checked ? 'var(--primary)' : 'var(--border)' }}>
+                <input type="checkbox" checked={checked} style={{ display: 'none' }} onChange={() => { const next = checked ? selected.filter(v => v !== o.value) : [...selected, o.value]; setAttr(attr.key, next.join(',')); }} /> {o.label}
+              </label>
+            );
+          })}
+        </div>
+      );
+    }
+    if (attr.type === 'boolean') {
+      return (
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+            <input type="radio" name={`attr_${attr.key}`} checked={val === 'yes'} onChange={() => setAttr(attr.key, 'yes')} /> Yes
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+            <input type="radio" name={`attr_${attr.key}`} checked={val === 'no'} onChange={() => setAttr(attr.key, 'no')} /> No
+          </label>
+          {val && <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-secondary)', textDecoration: 'underline', padding: 0 }} onClick={() => setAttr(attr.key, '')}>Clear</button>}
+        </div>
+      );
+    }
+    if (attr.type === 'number') {
+      return <input className="input" type="number" value={val} onChange={e => setAttr(attr.key, e.target.value)} placeholder={attr.placeholder} />;
+    }
+    return <input className="input" value={val} onChange={e => setAttr(attr.key, e.target.value)} placeholder={attr.placeholder || `Enter ${attr.label.toLowerCase()}`} />;
   };
 
   if (loading) return <div style={{ padding: '2rem' }}><div className="skeleton" style={{ height: 400 }} /></div>;
@@ -229,7 +294,7 @@ export default function EditProductPage() {
             </div>
             <div>
               <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Category *<FieldInfo text="The category helps customers find your product when browsing your store." /></label>
-              <CategoryPicker categories={categories} selectedId={form.categoryId} onChange={id => { update('categoryId', id); const slug = categories.find(c => c.id === id)?.slug || ''; update('categorySlug', slug); }} />
+              <CategoryPicker categories={categories} selectedId={form.categoryId} onChange={id => { update('categoryId', id); const slug = categories.find(c => c.id === id)?.slug || ''; update('categorySlug', slug); setCatAttrsFetched(false); if (slug) api.get(`/categories/${slug}/attributes`).then((res: any) => { const attrs: AttributeDef[] = res.data || []; setCategoryAttrs(attrs); setCatAttrsFetched(true); setAttrValues({}); }).catch(() => { setCategoryAttrs([]); setCatAttrsFetched(true); }); }} />
             </div>
             <div>
               <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Description<FieldInfo text="A detailed description of your product. Include materials, sizing, features." /></label>
@@ -310,11 +375,26 @@ export default function EditProductPage() {
           </div>
         </div>
 
-        {/* Specifications */}
+        {/* Category Attributes */}
+        {catAttrsFetched && categoryAttrs.length > 0 && (
+          <div className="card" style={{ padding: '1.5rem' }}>
+            <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Category Attributes</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {categoryAttrs.map(attr => (
+                <div key={attr.key}>
+                  <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>{attr.label}</label>
+                  {renderAttrField(attr)}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Custom Specifications */}
         <div className="card" style={{ padding: '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 style={{ fontWeight: 600 }}>Specifications</h3>
-            <button className="btn btn-ghost btn-sm" onClick={addSpec}><Plus size={14} /> Add Specification</button>
+            <h3 style={{ fontWeight: 600 }}>Other Specifications</h3>
+            <button className="btn btn-ghost btn-sm" onClick={addSpec}><Plus size={14} /> Add</button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {specs.map((s, i) => (
