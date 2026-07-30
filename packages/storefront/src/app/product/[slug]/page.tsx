@@ -15,6 +15,7 @@ export default function ProductPage() {
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [cartError, setCartError] = useState('');
   const [mainImg, setMainImg] = useState('');
 
   useEffect(() => {
@@ -27,9 +28,12 @@ export default function ProductPage() {
   }, [slug]);
 
   const addToCart = async () => {
-    await api.post('/cart/add', { productId: product.id, variantId: selectedVariant?.id, quantity });
-    setAddedToCart(true);
-    setTimeout(() => setAddedToCart(false), 2000);
+    try {
+      setCartError('');
+      await api.post('/cart/add', { productId: product.id, variantId: selectedVariant?.id, quantity });
+      setAddedToCart(true);
+      setTimeout(() => setAddedToCart(false), 2000);
+    } catch (e: any) { setCartError(e.message || 'Cart error'); }
   };
 
   if (loading) return <div className="container" style={{ padding: '3rem 0' }}>
@@ -122,6 +126,7 @@ export default function ProductPage() {
             <button className="btn btn-secondary btn-icon"><Heart size={20} /></button>
             <button className="btn btn-secondary btn-icon"><Share2 size={20} /></button>
           </div>
+          {cartError && <p style={{ color: 'var(--error)', fontSize: '0.875rem', marginTop: '-1rem', marginBottom: '1rem' }}>{cartError}</p>}
 
           {/* Delivery Info */}
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' }}>
