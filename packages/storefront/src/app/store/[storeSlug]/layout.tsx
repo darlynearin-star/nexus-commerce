@@ -41,6 +41,11 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
   const params = useParams();
   const slug = params.storeSlug as string;
 
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('activeStoreSlug', slug);
+    setStoreSlug(slug);
+  }
+
   return (
     <StoreProvider slug={slug}>
       <StoreInner>{children}</StoreInner>
