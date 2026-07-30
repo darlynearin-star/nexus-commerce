@@ -6,7 +6,7 @@ import { ArrowLeft, Plus, X, Upload } from 'lucide-react';
 import CategoryPicker from '@/components/CategoryPicker';
 import FieldInfo from '@/components/FieldInfo';
 
-interface FlatCat { id: string; label: string; slug: string; depth: number; }
+interface FlatCat { id: string; label: string; slug: string; depth: number; parentId: string | null; }
 interface AttributeDef { key: string; label: string; type: 'select' | 'multiselect' | 'text' | 'boolean' | 'number'; options?: { label: string; value: string }[]; placeholder?: string; unit?: string; }
 interface Variant { _key: string; name: string; sku: string; price: number; stock: number; options: { name: string; value: string }[]; image: string; }
 
@@ -45,7 +45,18 @@ export default function NewProductPage() {
     }).catch(() => null);
     ensureSlug.then(() => {
       api.get('/categories').then((res: any) => {
-        const cats: FlatCat[] = (res.data || []).map((c: any) => ({ id: c.id, label: c.name, slug: c.slug, depth: 0 }));
+        const raw: any[] = res.data || [];
+        const depthMap = new Map<string, number>();
+        const computeDepth = (id: string): number => {
+          if (depthMap.has(id)) return depthMap.get(id)!;
+          const c = raw.find(x => x.id === id);
+          if (!c || !c.parentId) { depthMap.set(id, 0); return 0; }
+          const d = computeDepth(c.parentId) + 1;
+          depthMap.set(id, d);
+          return d;
+        };
+        raw.forEach(c => computeDepth(c.id));
+        const cats: FlatCat[] = raw.map((c: any) => ({ id: c.id, label: c.name, slug: c.slug, depth: depthMap.get(c.id) || 0, parentId: c.parentId || null }));
         setCategories(cats);
       }).catch(() => {});
     });
@@ -191,7 +202,7 @@ export default function NewProductPage() {
             {/* Category FIRST */}
             <div>
               <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Category *<FieldInfo text="Select the best category for your product. This determines the specific attributes you need to fill in below." /></label>
-              <CategoryPicker categories={categories.map(c => ({ id: c.id, label: `${'  '.repeat(c.depth)}${c.label}`, depth: c.depth }))} selectedId={form.categoryId} onChange={handleCategoryChange} />
+              <CategoryPicker categories={categories.map(c => ({ id: c.id, label: c.label, slug: c.slug, depth: c.depth, parentId: c.parentId }))} selectedId={form.categoryId} onChange={handleCategoryChange} />
             </div>
 
             {/* Dynamic category attributes */}

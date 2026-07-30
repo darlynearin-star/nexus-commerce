@@ -21,11 +21,13 @@ function buildTree(cats: Category[]): Category[] {
   return roots;
 }
 
-function flattenTree(nodes: Category[], depth = 0): { id: string; label: string; depth: number }[] {
-  const result: { id: string; label: string; depth: number }[] = [];
+interface FlatCat { id: string; label: string; slug: string; depth: number; parentId: string | null; }
+
+function flattenTree(nodes: Category[], depth = 0, parentId: string | null = null): FlatCat[] {
+  const result: FlatCat[] = [];
   for (const n of nodes) {
-    result.push({ id: n.id, label: n.name, depth });
-    if (n.children) result.push(...flattenTree(n.children, depth + 1));
+    result.push({ id: n.id, label: n.name, slug: n.slug || '', depth, parentId });
+    if (n.children) result.push(...flattenTree(n.children, depth + 1, n.id));
   }
   return result;
 }
@@ -34,7 +36,7 @@ export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
   const [loading, setLoading] = useState(true);
-  const [categories, setCategories] = useState<{ id: string; label: string; depth: number }[]>([]);
+  const [categories, setCategories] = useState<FlatCat[]>([]);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [shortCode, setShortCode] = useState('');
@@ -46,7 +48,7 @@ export default function EditProductPage() {
   const [form, setForm] = useState<any>({
     name: '', brand: '', sku: '', description: '', price: 0, compareAtPrice: '', costPerItem: '',
     stock: 0, lowStockThreshold: 10, trackInventory: true, allowBackorder: false,
-    categoryId: '', status: 'DRAFT', tags: '',
+    categoryId: '', categorySlug: '', status: 'DRAFT', tags: '',
     isFeatured: false, isNew: false,
     seoTitle: '', seoDescription: '', returnPolicy: '', warranty: '',
   });
@@ -228,7 +230,7 @@ export default function EditProductPage() {
             </div>
             <div>
               <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Category *<FieldInfo text="The category helps customers find your product when browsing your store." /></label>
-              <CategoryPicker categories={categories} selectedId={form.categoryId} onChange={id => update('categoryId', id)} />
+              <CategoryPicker categories={categories} selectedId={form.categoryId} onChange={id => { update('categoryId', id); const slug = categories.find(c => c.id === id)?.slug || ''; update('categorySlug', slug); }} />
             </div>
             <div>
               <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Description<FieldInfo text="A detailed description of your product. Include materials, sizing, features." /></label>
