@@ -337,7 +337,7 @@ export default function StoreShopPage() {
               <>
                 <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>{productCount} product{productCount !== 1 ? 's' : ''} found</p>
                 <div className="product-grid">
-                  {products.map((p: any) => <ProductCard key={p.id} product={p} />)}
+                  {products.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} />)}
                 </div>
               </>
             )}

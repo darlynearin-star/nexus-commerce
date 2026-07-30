@@ -40,7 +40,7 @@ export async function apiClient<T = any>(endpoint: string, options: FetchOptions
     ...(options.headers as Record<string, string>),
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  if (storeSlug) headers['x-store-slug'] = storeSlug;
+  if (storeSlug && !headers['x-store-slug']) headers['x-store-slug'] = storeSlug;
 
   const res = await fetch(url, { ...fetchOptions, headers });
 

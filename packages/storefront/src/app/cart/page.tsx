@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+import { storeApi } from '@/lib/store-api';
 import { useAuth } from '@/lib/auth';
 import { Trash2, ShoppingBag, Minus, Plus, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -9,24 +9,25 @@ export default function CartPage() {
   const { user } = useAuth();
   const [cart, setCart] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const storeSlug = typeof window !== 'undefined' ? localStorage.getItem('activeStoreSlug') || 'adorn' : 'adorn';
 
   useEffect(() => { loadCart(); }, []);
 
   const loadCart = async () => {
     try {
-      const res = await api.get('/cart');
+      const res = await storeApi.get('/cart');
       setCart(res.data);
     } catch (e: any) { console.error('Error:', e); } finally { setLoading(false); }
   };
 
   const updateQuantity = async (itemId: string, quantity: number) => {
     if (quantity < 1) return;
-    await api.put(`/cart/item/${itemId}`, { quantity });
+    await storeApi.put(`/cart/item/${itemId}`, { quantity });
     loadCart();
   };
 
   const removeItem = async (itemId: string) => {
-    await api.delete(`/cart/item/${itemId}`);
+    await storeApi.delete(`/cart/item/${itemId}`);
     loadCart();
   };
 
@@ -43,7 +44,7 @@ export default function CartPage() {
           <ShoppingBag size={64} style={{ margin: '0 auto 1rem', color: 'var(--text-secondary)', opacity: 0.5 }} />
           <h2 style={{ marginBottom: '0.5rem' }}>Your cart is empty</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Looks like you haven&apos;t added anything yet.</p>
-          <Link href="/store/adorn/shop" className="btn btn-primary">Continue Shopping</Link>
+          <Link href={`/store/${storeSlug}/shop`} className="btn btn-primary">Continue Shopping</Link>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '2rem' }}>
@@ -51,10 +52,10 @@ export default function CartPage() {
             {items.map((item: any) => (
               <div key={item.id} className="card" style={{ display: 'flex', gap: '1rem', padding: '1rem' }}>
                 <div style={{ width: 100, height: 100, borderRadius: '0.5rem', overflow: 'hidden', flexShrink: 0, background: 'var(--bg-secondary)' }}>
-                  <img src={`https://picsum.photos/seed/${item.product.id}/200/200`} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={item.product.images?.[0] || `https://picsum.photos/seed/${item.product.id}/200/200`} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <Link href={`/product/${item.product.slug}`} style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'inherit', textDecoration: 'none' }}>{item.product.name}</Link>
+                  <Link href={`/store/${storeSlug}/product/${item.product.slug}`} style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'inherit', textDecoration: 'none' }}>{item.product.name}</Link>
                   <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{item.variantId ? `Variant: ${item.variantId}` : ''}</p>
                   <p style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary)', marginTop: '0.5rem' }}>UGX {(item.product.price * item.quantity).toLocaleString()}</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
@@ -85,7 +86,7 @@ export default function CartPage() {
               ) : (
                 <Link href="/login" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '1.5rem', padding: '0.75rem' }}>Sign In to Checkout</Link>
               )}
-              <Link href="/store/adorn/shop" className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem' }}><ArrowLeft size={16} /> Continue Shopping</Link>
+              <Link href={`/store/${storeSlug}/shop`} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem' }}><ArrowLeft size={16} /> Continue Shopping</Link>
             </div>
           </div>
         </div>

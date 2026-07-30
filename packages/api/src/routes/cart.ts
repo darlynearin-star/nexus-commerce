@@ -6,6 +6,25 @@ import { requireStore } from '../middleware/resolve-store';
 export const cartRouter = Router();
 cartRouter.use(requireStore);
 
+// One-time dedup: remove duplicate cart items caused by old variantId='' bug
+cartRouter.post('/dedup', async (_req, res, next) => {
+  try {
+    const result = await prisma.$executeRawUnsafe(`
+      DELETE FROM cart_items
+      WHERE id IN (
+        SELECT id FROM (
+          SELECT id, ROW_NUMBER() OVER (
+            PARTITION BY "cartId", "productId", CASE WHEN "variantId" IS NULL THEN '__NULL__' ELSE "variantId" END
+            ORDER BY id
+          ) AS rn
+          FROM cart_items
+        ) t WHERE t.rn > 1
+      );
+    `);
+    res.json({ success: true, data: { removed: result } });
+  } catch (error) { next(error); }
+});
+
 cartRouter.get('/', optionalAuth, async (req: any, res, next) => {
   try {
     const sessionId = req.headers['x-session-id'] as string;

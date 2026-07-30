@@ -11,9 +11,15 @@ export function getStoreSlug() {
   return _storeSlug;
 }
 
+function getSlugFromUrl(): string | null {
+  if (typeof window === 'undefined') return null;
+  const m = window.location.pathname.match(/^\/store\/([^/]+)/);
+  return m ? m[1] : null;
+}
+
 async function storeApiClient<T = any>(endpoint: string, options: RequestInit = {}) {
   const headers: Record<string, string> = { ...(options.headers as Record<string, string>) };
-  const slug = _storeSlug || (typeof window !== 'undefined' ? localStorage.getItem('activeStoreSlug') : null);
+  const slug = _storeSlug || localStorage.getItem('activeStoreSlug') || getSlugFromUrl();
   if (slug) headers['x-store-slug'] = slug;
   return apiClient<T>(endpoint, { ...options, headers });
 }

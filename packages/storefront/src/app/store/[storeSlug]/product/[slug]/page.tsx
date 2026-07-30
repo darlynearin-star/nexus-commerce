@@ -44,14 +44,12 @@ export default function StoreProductPage() {
           <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: '0.75rem', overflow: 'hidden', marginBottom: '0.75rem' }}>
             <img src={mainImg} alt={product.name} fetchpriority="high" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${product.id}/600/600`; }} />
           </div>
-          {imgs.length > 1 && (
-            <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
-              {imgs.map((url: string, i: number) => (
-                <img key={i} src={url} alt="" onClick={() => setMainImg(url)} loading="lazy"
-                  style={{ width: 64, height: 64, borderRadius: '0.5rem', objectFit: 'cover', cursor: 'pointer', flexShrink: 0, border: mainImg === url ? '2px solid var(--primary)' : '2px solid transparent' }} onError={e => { (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${product.id}-${i}/600/600`; }} />
-              ))}
-            </div>
-          )}
+          <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
+            {imgs.map((url: string, i: number) => (
+              <img key={i} src={url} alt="" onClick={() => setMainImg(url)} loading={i === 0 ? 'eager' : 'lazy'}
+                style={{ width: 64, height: 64, borderRadius: '0.5rem', objectFit: 'cover', cursor: 'pointer', flexShrink: 0, border: mainImg === url ? '2px solid var(--primary)' : '2px solid transparent' }} onError={e => { (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${product.id}-${i}/600/600`; }} />
+            ))}
+          </div>
         </div>
 
         <div>

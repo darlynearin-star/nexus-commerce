@@ -1,12 +1,12 @@
 'use client';
+import { useState } from 'react';
 import { Heart } from 'lucide-react';
 import Link from 'next/link';
-import { api } from '@/lib/api';
+import { storeApi } from '@/lib/store-api';
 import { useAuth } from '@/lib/auth';
 import StarRating from './StarRating';
 
 const img = (id: string) => `https://picsum.photos/seed/${id}/400/400`;
-
 const firstImage = (p: any) => p.images?.[0] || img(p.id);
 
 interface ProductCardProps {
@@ -21,12 +21,15 @@ interface ProductCardProps {
     reviewCount?: number;
   };
   showAddToCart?: boolean;
+  storeSlug?: string;
 }
 
-export default function ProductCard({ product, showAddToCart = true }: ProductCardProps) {
+export default function ProductCard({ product, showAddToCart = true, storeSlug: propSlug }: ProductCardProps) {
   const { user } = useAuth();
+  const [added, setAdded] = useState(false);
+  const storeSlug = propSlug || (typeof window !== 'undefined' ? localStorage.getItem('activeStoreSlug') || 'adorn' : 'adorn');
   return (
-    <Link href={`/product/${product.slug}`} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', textDecoration: 'none', color: 'inherit', position: 'relative' }}>
+    <Link href={`/store/${storeSlug}/product/${product.slug}`} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', textDecoration: 'none', color: 'inherit', position: 'relative' }}>
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
         style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '0.25rem', zIndex: 1 }}
@@ -49,11 +52,16 @@ export default function ProductCard({ product, showAddToCart = true }: ProductCa
         <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary)' }}>UGX {product.price.toLocaleString()}</span>
       </div>
       {showAddToCart && (user ? (
-        <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={(e) => {
+        <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={async (e) => {
           e.preventDefault(); e.stopPropagation();
-          api.post('/cart/add', { productId: product.id });
+          try {
+            setAdded(false);
+            await storeApi.post('/cart/add', { productId: product.id });
+            setAdded(true);
+            setTimeout(() => setAdded(false), 2000);
+          } catch (err: any) { console.error('Cart error:', err); }
         }}>
-          Add to Cart
+          {added ? 'Added!' : 'Add to Cart'}
         </button>
       ) : (
         <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={(e) => {

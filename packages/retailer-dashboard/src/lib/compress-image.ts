@@ -1,4 +1,4 @@
-export function compressImage(file: File, maxW = 1920, quality = 0.8): Promise<Blob> {
+export function compressImage(file: File, maxW = 3840, quality = 0.95): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);

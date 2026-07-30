@@ -12,6 +12,7 @@ export default function StoreHomePage() {
   const [featured, setFeatured] = useState<any[]>([]);
   const [newArrivals, setNewArrivals] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const storeSlug = store?.slug || (typeof window !== 'undefined' ? localStorage.getItem('activeStoreSlug') : '');
 
   useEffect(() => {
     storeApi.get('/products/featured/list').then((r: any) => setFeatured(r.data || [])).catch((e: any) => console.error('API error:', e));
@@ -48,7 +49,7 @@ export default function StoreHomePage() {
               <Link href={`/store/${store?.slug}/shop`} style={{ color: 'var(--primary)', fontSize: '0.875rem', textDecoration: 'none' }}>View All →</Link>
             </div>
             <div className="product-grid">
-              {featured.map((p: any) => <ProductCard key={p.id} product={p} />)}
+              {featured.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} />)}
             </div>
           </div>
         </section>
@@ -81,7 +82,7 @@ export default function StoreHomePage() {
               <Link href={`/store/${store?.slug}/shop`} style={{ color: 'var(--primary)', fontSize: '0.875rem', textDecoration: 'none' }}>View All →</Link>
             </div>
             <div className="product-grid">
-              {newArrivals.map((p: any) => <ProductCard key={p.id} product={p} />)}
+              {newArrivals.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} />)}
             </div>
           </div>
         </section>
