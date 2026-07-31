@@ -30,10 +30,9 @@ export default function UsersPage() {
           <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>2FA</th><th>Sessions</th><th>Actions</th></tr></thead>
           <tbody>
             {users
-              .filter((u: any) => u.isActive)
               .filter((u: any) => !search || u.email?.includes(search) || u.firstName?.includes(search))
               .map((u: any) => (
-              <tr key={u.id}>
+              <tr key={u.id} style={{ opacity: u.isActive ? 1 : 0.55 }}>
                 <td style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <div style={{ width: 32, height: 32, borderRadius: '50%', background: `var(--${u.role === 'SUPER_DEVELOPER' ? 'error' : u.role === 'DEVELOPER' ? 'warning' : 'primary'})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.75rem', fontWeight: 600 }}>{u.firstName?.[0]}{u.lastName?.[0]}</div>
                   <span style={{ fontWeight: 500, fontSize: '0.875rem' }}>{u.firstName} {u.lastName}</span>
@@ -44,7 +43,7 @@ export default function UsersPage() {
                 <td><span className={`badge ${u.twoFactorEnabled ? 'badge-success' : 'badge-info'}`}>{u.twoFactorEnabled ? 'Enabled' : 'Disabled'}</span></td>
                 <td style={{ fontSize: '0.875rem' }}>{u._count?.sessions || 0}</td>
                 <td>
-                  <button className={`btn btn-ghost btn-icon ${!u.isActive ? 'badge-success' : 'badge-error'}`} onClick={() => toggleUser(u.id, u.isActive)}>
+                  <button className={`btn btn-ghost btn-icon ${!u.isActive ? 'badge-success' : 'badge-error'}`} title={u.isActive ? 'Suspend user' : 'Reactivate user'} onClick={() => toggleUser(u.id, u.isActive)}>
                     {u.isActive ? <ShieldOff size={14} /> : <Shield size={14} />}
                   </button>
                 </td>
