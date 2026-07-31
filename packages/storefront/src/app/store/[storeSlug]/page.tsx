@@ -40,9 +40,24 @@ export default function StoreHomePage() {
         </div>
       </section>
 
+      {/* New Arrivals */}
+      {newArrivals.length > 0 && (
+        <section style={{ padding: '3rem 1rem' }}>
+          <div className="container">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>New Arrivals</h2>
+              <Link href={`/store/${store?.slug}/shop`} style={{ color: 'var(--primary)', fontSize: '0.875rem', textDecoration: 'none' }}>View All →</Link>
+            </div>
+            <div className="product-grid">
+              {newArrivals.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} />)}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Featured Products */}
       {featured.length > 0 && (
-        <section style={{ padding: '3rem 1rem' }}>
+        <section style={{ padding: '3rem 1rem', background: 'var(--bg-secondary)' }}>
           <div className="container">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Featured</h2>
@@ -57,32 +72,17 @@ export default function StoreHomePage() {
 
       {/* Quick Browse — top-level categories sorted by product count */}
       {categories.length > 0 && (
-        <section style={{ padding: '3rem 1rem', background: 'var(--bg-secondary)' }}>
+        <section style={{ padding: '3rem 1rem' }}>
           <div className="container">
             <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '1.5rem' }}>Quick Browse</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1rem' }}>
-              {categories.filter((c: any) => !c.parentId).sort((a: any, b: any) => (b._count?.products || 0) - (a._count?.products || 0)).map((cat: any) => (
+              {categories.filter((c: any) => !c.parentId).map((cat: any) => (
                 <Link key={cat.id} href={`/store/${store?.slug}/shop?parent=${cat.slug}`} className="card" style={{ textDecoration: 'none', color: 'inherit', textAlign: 'center', padding: '1.5rem 1rem' }}>
                   <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{categoryIcon(cat.slug, cat.name)}</div>
                   <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{cat.name}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{cat._count?.products || 0} items</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{cat.productCount || 0} items</div>
                 </Link>
               ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* New Arrivals */}
-      {newArrivals.length > 0 && (
-        <section style={{ padding: '3rem 1rem', background: 'var(--bg-secondary)' }}>
-          <div className="container">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>New Arrivals</h2>
-              <Link href={`/store/${store?.slug}/shop`} style={{ color: 'var(--primary)', fontSize: '0.875rem', textDecoration: 'none' }}>View All →</Link>
-            </div>
-            <div className="product-grid">
-              {newArrivals.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} />)}
             </div>
           </div>
         </section>

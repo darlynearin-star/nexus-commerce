@@ -32,6 +32,13 @@ export default function StoreShopPage() {
   const [priceMax, setPriceMax] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
+  // Overlay draft state (committed only on Apply)
+  const [draftCategory, setDraftCategory] = useState('');
+  const [draftAttributes, setDraftAttributes] = useState<AttributeDef[]>([]);
+  const [draftSpecFilters, setDraftSpecFilters] = useState<Record<string, string>>({});
+  const [draftPriceMin, setDraftPriceMin] = useState('');
+  const [draftPriceMax, setDraftPriceMax] = useState('');
+
   const catMap = useMemo(() => {
     const map = new Map<string, any>();
     for (const c of allCategories) map.set(c.id, c);
@@ -65,14 +72,24 @@ export default function StoreShopPage() {
     return trail;
   }, [selectedParent, selectedCategory, catMap]);
 
-  const visibleChildren = useMemo(() => {
-    if (!selectedParent) return [];
-    return childrenOf(selectedParent.id);
-  }, [selectedParent, allCategories, childrenOf]);
-
   const sortField = sort.split('_')[0];
   const sortOrder = sort.split('_')[1] || 'desc';
 
+  // Sync URL params -> state on navigation
+  useEffect(() => {
+    const cat = searchParams.get('category') || '';
+    const par = searchParams.get('parent') || '';
+    const srch = searchParams.get('search') || '';
+    setCategory(cat);
+    setParentSlug(par);
+    setSearch(srch);
+    setSpecFilters({});
+    setPriceMin('');
+    setPriceMax('');
+    setPage(1);
+  }, [searchParams]);
+
+  // Load attributes for the committed category
   useEffect(() => {
     if (category) {
       storeApi.get<{ data: AttributeDef[] }>(`/categories/${category}/attributes`)
@@ -81,11 +98,17 @@ export default function StoreShopPage() {
     } else {
       setAttributes([]);
     }
-    setSpecFilters({});
-    setPriceMin('');
-    setPriceMax('');
-    setPage(1);
   }, [category]);
+
+  const loadAttributesFor = useCallback((slug: string) => {
+    if (!slug) {
+      setDraftAttributes([]);
+      return Promise.resolve();
+    }
+    return storeApi.get<{ data: AttributeDef[] }>(`/categories/${slug}/attributes`)
+      .then(r => setDraftAttributes(r.data || []))
+      .catch(() => setDraftAttributes([]));
+  }, []);
 
   const fetchProducts = useCallback(() => {
     setLoading(true);
@@ -112,6 +135,16 @@ export default function StoreShopPage() {
       .catch((e: any) => console.error('API error:', e));
   }, []);
 
+  // Subcategory options for the overlay dropdown (children of current parent, or siblings of selected category)
+  const overlaySubcategories = useMemo(() => {
+    if (selectedParent) return childrenOf(selectedParent.id);
+    if (selectedCategory?.parentId) {
+      const p = catMap.get(selectedCategory.parentId);
+      return p ? childrenOf(p.id) : [];
+    }
+    return [];
+  }, [selectedParent, selectedCategory, childrenOf, catMap]);
+
   const handleSpecChange = (key: string, value: string) => {
     setSpecFilters(prev => {
       if (!value) {
@@ -121,6 +154,44 @@ export default function StoreShopPage() {
       return { ...prev, [key]: value };
     });
     setPage(1);
+  };
+
+  const handleDraftSpecChange = (key: string, value: string) => {
+    setDraftSpecFilters(prev => {
+      if (!value) {
+        const { [key]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [key]: value };
+    });
+  };
+
+  const openFilters = () => {
+    setDraftCategory(category);
+    setDraftSpecFilters(specFilters);
+    setDraftPriceMin(priceMin);
+    setDraftPriceMax(priceMax);
+    setDraftAttributes(attributes);
+    setShowFilters(true);
+  };
+
+  const closeFilters = () => setShowFilters(false);
+
+  const applyFilters = () => {
+    setCategory(draftCategory);
+    setSpecFilters(draftSpecFilters);
+    setPriceMin(draftPriceMin);
+    setPriceMax(draftPriceMax);
+    setPage(1);
+    setShowFilters(false);
+  };
+
+  const handleDraftCategoryChange = (slug: string) => {
+    setDraftCategory(slug);
+    setDraftSpecFilters({});
+    setDraftPriceMin('');
+    setDraftPriceMax('');
+    loadAttributesFor(slug);
   };
 
   const activeFilterCount = Object.keys(specFilters).length + (priceMin ? 1 : 0) + (priceMax ? 1 : 0);
@@ -133,6 +204,53 @@ export default function StoreShopPage() {
   };
 
   const productCount = products.length;
+
+  const renderAttrControl = (attr: AttributeDef, value: string, onChange: (v: string) => void) => {
+    if (attr.type === 'select') {
+      return (
+        <select className="input" style={{ fontSize: '0.8125rem' }} value={value} onChange={e => onChange(e.target.value)}>
+          <option value="">All</option>
+          {attr.options?.map(o => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+      );
+    }
+    if (attr.type === 'multiselect') {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', maxHeight: 180, overflowY: 'auto' }}>
+          {attr.options?.map(o => {
+            const selected = value?.split(',').includes(o.value) || false;
+            return (
+              <label key={o.value} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', cursor: 'pointer', padding: '0.25rem 0' }}>
+                <input type="checkbox" checked={selected} onChange={() => {
+                  const current = value ? value.split(',') : [];
+                  const next = selected ? current.filter(v => v !== o.value) : [...current, o.value];
+                  onChange(next.join(',') || '');
+                }} style={{ accentColor: 'var(--primary)' }} />
+                {o.label}
+              </label>
+            );
+          })}
+        </div>
+      );
+    }
+    if (attr.type === 'text') {
+      return <input className="input" style={{ fontSize: '0.8125rem' }} placeholder={attr.placeholder || `Enter ${attr.label.toLowerCase()}`} value={value} onChange={e => onChange(e.target.value)} />;
+    }
+    if (attr.type === 'number') {
+      return <input className="input" style={{ fontSize: '0.8125rem' }} type="number" placeholder={attr.placeholder || `Enter ${attr.label.toLowerCase()}`} value={value} onChange={e => onChange(e.target.value)} />;
+    }
+    if (attr.type === 'boolean') {
+      return (
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', cursor: 'pointer' }}>
+          <input type="checkbox" checked={value === 'yes'} onChange={e => onChange(e.target.checked ? 'yes' : '')} style={{ accentColor: 'var(--primary)' }} />
+          Yes
+        </label>
+      );
+    }
+    return null;
+  };
 
   return (
     <div style={{ position: 'relative', zIndex: 1, padding: '2rem 0' }}>
@@ -166,25 +284,6 @@ export default function StoreShopPage() {
           </div>
         )}
 
-        {/* Sub-category grid when a parent is selected */}
-        {visibleChildren.length > 0 && !category && (
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-            {visibleChildren.map((child: any) => {
-              const grandkids = childrenOf(child.id);
-              const href = grandkids.length > 0 ? `/store/${storeSlug}/shop?parent=${child.slug}` : `/store/${storeSlug}/shop?category=${child.slug}`;
-              return (
-                <Link key={child.id} href={href}
-                  className={`btn btn-sm ${category === child.slug ? 'btn-primary' : 'btn-ghost'}`}
-                  style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
-                >
-                  <span>{categoryIcon(child.slug, child.name)}</span>
-                  {child.name}
-                </Link>
-              );
-            })}
-          </div>
-        )}
-
         {/* Search + Sort + Filter toggle bar */}
         <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ flex: 1, minWidth: 200, position: 'relative' }}>
@@ -201,7 +300,7 @@ export default function StoreShopPage() {
             <option value="name_desc">Name: Z to A</option>
           </select>
           {(category || parentSlug) && (
-            <button className="btn btn-ghost btn-sm" onClick={() => setShowFilters(!showFilters)} style={{ position: 'relative' }}>
+            <button className="btn btn-ghost btn-sm" onClick={openFilters} style={{ position: 'relative' }}>
               <Filter size={16} />
               Filters
               {activeFilterCount > 0 && (
@@ -212,83 +311,6 @@ export default function StoreShopPage() {
         </div>
 
         <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
-          {/* Filter Sidebar */}
-          {(category || parentSlug) && showFilters && (
-            <div style={{ width: 260, minWidth: 260, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '0.75rem', padding: '1.25rem', position: 'sticky', top: '5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '0.9375rem', fontWeight: 600 }}>Filters</h3>
-                {activeFilterCount > 0 && (
-                  <button className="btn btn-ghost btn-sm" onClick={clearAllFilters} style={{ fontSize: '0.75rem', gap: '0.25rem' }}>
-                    <RotateCcw size={12} /> Clear
-                  </button>
-                )}
-              </div>
-
-              {/* Price range */}
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ fontSize: '0.8125rem', fontWeight: 600, display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Price Range (UGX)</label>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input className="input" style={{ fontSize: '0.8125rem' }} placeholder="Min" type="number" min="0" value={priceMin} onChange={e => { setPriceMin(e.target.value); setPage(1); }} />
-                  <span style={{ alignSelf: 'center', color: 'var(--text-secondary)' }}>-</span>
-                  <input className="input" style={{ fontSize: '0.8125rem' }} placeholder="Max" type="number" min="0" value={priceMax} onChange={e => { setPriceMax(e.target.value); setPage(1); }} />
-                </div>
-              </div>
-
-              {/* Dynamic attribute filters */}
-              {attributes.map(attr => (
-                <div key={attr.key} style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
-                  <label style={{ fontSize: '0.8125rem', fontWeight: 600, display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>{attr.label}</label>
-
-                  {attr.type === 'select' && (
-                    <select className="input" style={{ fontSize: '0.8125rem' }} value={specFilters[attr.key] || ''} onChange={e => handleSpecChange(attr.key, e.target.value)}>
-                      <option value="">All</option>
-                      {attr.options?.map(o => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </select>
-                  )}
-
-                  {attr.type === 'multiselect' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', maxHeight: 180, overflowY: 'auto' }}>
-                      {attr.options?.map(o => {
-                        const selected = specFilters[attr.key]?.split(',').includes(o.value) || false;
-                        return (
-                          <label key={o.value} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', cursor: 'pointer', padding: '0.25rem 0' }}>
-                            <input type="checkbox" checked={selected} onChange={() => {
-                              const current = specFilters[attr.key] ? specFilters[attr.key].split(',') : [];
-                              const next = selected ? current.filter(v => v !== o.value) : [...current, o.value];
-                              handleSpecChange(attr.key, next.join(',') || '');
-                            }} style={{ accentColor: 'var(--primary)' }} />
-                            {o.label}
-                          </label>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {attr.type === 'text' && (
-                    <input className="input" style={{ fontSize: '0.8125rem' }} placeholder={attr.placeholder || `Enter ${attr.label.toLowerCase()}`} value={specFilters[attr.key] || ''} onChange={e => handleSpecChange(attr.key, e.target.value)} />
-                  )}
-
-                  {attr.type === 'number' && (
-                    <input className="input" style={{ fontSize: '0.8125rem' }} type="number" placeholder={attr.placeholder || `Enter ${attr.label.toLowerCase()}`} value={specFilters[attr.key] || ''} onChange={e => handleSpecChange(attr.key, e.target.value)} />
-                  )}
-
-                  {attr.type === 'boolean' && (
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', cursor: 'pointer' }}>
-                      <input type="checkbox" checked={specFilters[attr.key] === 'yes'} onChange={e => handleSpecChange(attr.key, e.target.checked ? 'yes' : '')} style={{ accentColor: 'var(--primary)' }} />
-                      Yes
-                    </label>
-                  )}
-                </div>
-              ))}
-
-              {attributes.length === 0 && (
-                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>No specific filters for this category</p>
-              )}
-            </div>
-          )}
-
           {/* Main content */}
           <div style={{ flex: 1, minWidth: 0 }}>
             {/* Active filter chips */}
@@ -353,6 +375,80 @@ export default function StoreShopPage() {
           </div>
         </div>
       </div>
+
+      {/* Filter Overlay */}
+      {showFilters && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={closeFilters}>
+          <div className="card" style={{ width: '100%', maxWidth: 560, maxHeight: '88vh', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+            {/* Overlay header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Filters</h3>
+              {activeFilterCount > 0 && (
+                <button className="btn btn-ghost btn-sm" onClick={clearAllFilters} style={{ fontSize: '0.75rem', gap: '0.25rem' }}>
+                  <RotateCcw size={12} /> Clear
+                </button>
+              )}
+              <button className="btn btn-ghost btn-icon" onClick={closeFilters} aria-label="Close filters"><X size={18} /></button>
+            </div>
+
+            {/* Overlay body */}
+            <div style={{ padding: '1.25rem', overflowY: 'auto', flex: 1 }}>
+              {/* Step 1: Subcategory dropdown */}
+              {overlaySubcategories.length > 0 && (
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <label style={{ fontSize: '0.8125rem', fontWeight: 600, display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Subcategory</label>
+                  <select className="input" style={{ fontSize: '0.875rem' }} value={draftCategory} onChange={e => handleDraftCategoryChange(e.target.value)}>
+                    <option value="">All Subcategories</option>
+                    {overlaySubcategories.map((c: any) => (
+                      <option key={c.id} value={c.slug}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Step 2: Special filters for selected subcategory */}
+              {draftCategory && (
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <h4 style={{ fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                    Specific Filters
+                  </h4>
+                  {draftAttributes.length === 0 ? (
+                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>No specific filters for this subcategory</p>
+                  ) : (
+                    draftAttributes.map(attr => (
+                      <div key={attr.key} style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
+                        <label style={{ fontSize: '0.8125rem', fontWeight: 600, display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>{attr.label}</label>
+                        {renderAttrControl(attr, draftSpecFilters[attr.key] || '', v => handleDraftSpecChange(attr.key, v))}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* Step 3: General filters */}
+              <div>
+                <h4 style={{ fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                  General
+                </h4>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ fontSize: '0.8125rem', fontWeight: 600, display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Price Range (UGX)</label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input className="input" style={{ fontSize: '0.8125rem' }} placeholder="Min" type="number" min="0" value={draftPriceMin} onChange={e => setDraftPriceMin(e.target.value)} />
+                    <span style={{ alignSelf: 'center', color: 'var(--text-secondary)' }}>-</span>
+                    <input className="input" style={{ fontSize: '0.8125rem' }} placeholder="Max" type="number" min="0" value={draftPriceMax} onChange={e => setDraftPriceMax(e.target.value)} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Overlay footer */}
+            <div style={{ display: 'flex', gap: '0.75rem', padding: '1rem 1.25rem', borderTop: '1px solid var(--border)' }}>
+              <button className="btn btn-ghost" style={{ flex: 1 }} onClick={closeFilters}>Cancel</button>
+              <button className="btn btn-primary" style={{ flex: 1 }} onClick={applyFilters}>Apply Filters</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

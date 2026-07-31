@@ -49,13 +49,18 @@ export default function ProductsPage() {
 
   const deleteProduct = async (id: string) => {
     if (!confirm('Delete this product? This cannot be undone.')) return;
-    await api.delete(`/products/${id}`);
-    loadProducts();
+    try {
+      const res = await api.delete(`/products/${id}`);
+      alert(res.message || 'Product deleted');
+      loadProducts();
+    } catch (e: any) { alert(e.message || 'Failed to delete product'); }
   };
 
   const duplicateProduct = async (id: string) => {
-    await api.post(`/products/${id}/duplicate`);
-    loadProducts();
+    try {
+      await api.post(`/products/${id}/duplicate`);
+      loadProducts();
+    } catch (e: any) { alert(e.message || 'Failed to duplicate product'); }
   };
 
   const filtered = products.filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.sku?.toLowerCase().includes(search.toLowerCase()) || p.brand?.toLowerCase().includes(search.toLowerCase()));

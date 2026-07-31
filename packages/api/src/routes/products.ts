@@ -13,6 +13,25 @@ function generateShortCode(): string {
   return crypto.randomBytes(5).toString('base64url').slice(0, 8);
 }
 
+async function getCategoryDescendantIds(storeId: string, categoryId: string): Promise<string[]> {
+  const allCats = await prisma.category.findMany({ where: { storeId } });
+  const childMap = new Map<string, string[]>();
+  for (const c of allCats) {
+    if (c.parentId) {
+      if (!childMap.has(c.parentId)) childMap.set(c.parentId, []);
+      childMap.get(c.parentId)!.push(c.id);
+    }
+  }
+  const descendantIds: string[] = [categoryId];
+  const queue = [categoryId];
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    const kids = childMap.get(id) || [];
+    for (const kid of kids) { descendantIds.push(kid); queue.push(kid); }
+  }
+  return descendantIds;
+}
+
 export const productsRouter = Router();
 
 // Short-link redirect: no store context needed
@@ -60,26 +79,16 @@ productsRouter.get('/', optionalAuth, async (req: StoreRequest, res, next) => {
         { brand: { contains: search, mode: 'insensitive' } },
       ];
     }
-    if (category) where.category = { slug: category };
+    if (category) {
+      const cat = await prisma.category.findFirst({ where: { slug: category, storeId: req.storeId! } });
+      if (cat) {
+        where.categoryId = { in: await getCategoryDescendantIds(req.storeId!, cat.id) };
+      }
+    }
     if (parent) {
       const parentCat = await prisma.category.findFirst({ where: { slug: parent, storeId: req.storeId! } });
       if (parentCat) {
-        const allCats = await prisma.category.findMany({ where: { storeId: req.storeId! } });
-        const childMap = new Map<string, string[]>();
-        for (const c of allCats) {
-          if (c.parentId) {
-            if (!childMap.has(c.parentId)) childMap.set(c.parentId, []);
-            childMap.get(c.parentId)!.push(c.id);
-          }
-        }
-        const descendantIds: string[] = [parentCat.id];
-        const queue = [parentCat.id];
-        while (queue.length > 0) {
-          const id = queue.shift()!;
-          const kids = childMap.get(id) || [];
-          for (const kid of kids) { descendantIds.push(kid); queue.push(kid); }
-        }
-        where.categoryId = { in: descendantIds };
+        where.categoryId = { in: await getCategoryDescendantIds(req.storeId!, parentCat.id) };
       }
     }
     if (brand) where.brand = brand;
@@ -207,6 +216,14 @@ productsRouter.put('/:id', authenticate, requirePermission(Permission.MANAGE_PRO
 
 productsRouter.delete('/:id', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), async (req: StoreRequest, res, next) => {
   try {
+    const product = await prisma.product.findFirst({ where: { id: req.params.id, storeId: req.storeId! } });
+    if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
+    const references = await prisma.orderItem.count({ where: { productId: req.params.id } });
+    if (references > 0) {
+      await prisma.product.update({ where: { id: req.params.id }, data: { status: 'ARCHIVED' } });
+      logActivity({ userId: (req as any).user!.userId, action: 'product:archived', resource: 'product', resourceId: req.params.id, req: req as any });
+      return res.json({ success: true, message: 'Product archived (has order history)' });
+    }
     await prisma.product.delete({ where: { id: req.params.id } });
     logActivity({ userId: (req as any).user!.userId, action: 'product:deleted', resource: 'product', resourceId: req.params.id, req: req as any });
     res.json({ success: true, message: 'Product deleted' });

@@ -366,16 +366,36 @@ categoriesRouter.get('/', async (req: StoreRequest, res, next) => {
       await prisma.category.deleteMany({ where: { storeId } });
     }
     const sortBy = req.query.sortBy as string | undefined;
-    const orderBy: any = sortBy === 'productCount' ? { products: { _count: 'desc' } } : { name: 'asc' };
-    let categories = await prisma.category.findMany({ where: { storeId }, include: { _count: { select: { products: true } } }, orderBy });
+    let categories = await prisma.category.findMany({ where: { storeId }, include: { _count: { select: { products: true } } }, orderBy: { name: 'asc' } });
     if (categories.length === 0) {
       const seeded = await seedStoreCategories(storeId);
-      if (seeded > 0) categories = await prisma.category.findMany({ where: { storeId }, include: { _count: { select: { products: true } } }, orderBy });
+      if (seeded > 0) categories = await prisma.category.findMany({ where: { storeId }, include: { _count: { select: { products: true } } }, orderBy: { name: 'asc' } });
     } else {
       await syncStoreCategories(storeId);
-      categories = await prisma.category.findMany({ where: { storeId }, include: { _count: { select: { products: true } } }, orderBy });
+      categories = await prisma.category.findMany({ where: { storeId }, include: { _count: { select: { products: true } } }, orderBy: { name: 'asc' } });
     }
-    res.json({ success: true, data: categories });
+    const directCounts = new Map<string, number>(categories.map(c => [c.id, c._count?.products || 0]));
+    const childrenByParent = new Map<string, string[]>();
+    for (const c of categories) {
+      if (c.parentId) {
+        if (!childrenByParent.has(c.parentId)) childrenByParent.set(c.parentId, []);
+        childrenByParent.get(c.parentId)!.push(c.id);
+      }
+    }
+    const subtreeCount = new Map<string, number>();
+    const computeCount = (id: string): number => {
+      if (subtreeCount.has(id)) return subtreeCount.get(id)!;
+      let total = directCounts.get(id) || 0;
+      for (const childId of childrenByParent.get(id) || []) total += computeCount(childId);
+      subtreeCount.set(id, total);
+      return total;
+    };
+    for (const c of categories) computeCount(c.id);
+    const withCounts = categories.map(c => ({ ...c, productCount: subtreeCount.get(c.id) || 0 }));
+    if (sortBy === 'productCount') {
+      withCounts.sort((a: any, b: any) => b.productCount - a.productCount);
+    }
+    res.json({ success: true, data: withCounts });
   } catch (error) { next(error); }
 });
 
