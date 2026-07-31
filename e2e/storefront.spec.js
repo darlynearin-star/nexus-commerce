@@ -21,6 +21,17 @@ const STORE_SLUG = 'test-store-1785454996381';
     }
   }
 
+  async function waitForBodyContains(page, text, timeout = 20000) {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+      const body = await page.locator('body').innerText().catch(() => '');
+      if (body.includes(text)) return body;
+      await page.waitForTimeout(500);
+    }
+    const body = await page.locator('body').innerText().catch(() => '');
+    throw new Error(`Timed out waiting for "${text}" in page content`);
+  }
+
   await test('Store homepage loads', async () => {
     const page = await context.newPage();
     await page.goto(`${BASE}/store/${STORE_SLUG}`, { waitUntil: 'networkidle' });
@@ -32,8 +43,7 @@ const STORE_SLUG = 'test-store-1785454996381';
   await test('Products visible on homepage', async () => {
     const page = await context.newPage();
     await page.goto(`${BASE}/store/${STORE_SLUG}`, { waitUntil: 'networkidle' });
-    const body = await page.locator('body').innerText();
-    if (!body.includes('Test Product')) throw new Error('Test products not found');
+    const body = await waitForBodyContains(page, 'Test Product');
     console.log('    Found test products');
     await page.close();
   });
@@ -41,7 +51,7 @@ const STORE_SLUG = 'test-store-1785454996381';
   await test('Homepage sections order: New Arrivals, Featured, Quick Browse', async () => {
     const page = await context.newPage();
     await page.goto(`${BASE}/store/${STORE_SLUG}`, { waitUntil: 'networkidle' });
-    const body = await page.locator('body').innerText();
+    const body = await waitForBodyContains(page, 'New Arrivals');
     const iNew = body.indexOf('New Arrivals');
     const iFeatured = body.indexOf('Featured');
     const iQuick = body.indexOf('Quick Browse');
@@ -53,7 +63,7 @@ const STORE_SLUG = 'test-store-1785454996381';
   await test('Quick Browse shows item counts', async () => {
     const page = await context.newPage();
     await page.goto(`${BASE}/store/${STORE_SLUG}`, { waitUntil: 'networkidle' });
-    const body = await page.locator('body').innerText();
+    const body = await waitForBodyContains(page, 'Quick Browse');
     if (!/\d+ items?/.test(body)) throw new Error('No "N items" count found on homepage');
     await page.close();
   });
