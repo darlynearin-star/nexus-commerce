@@ -196,11 +196,19 @@ export default function StoreShopPage() {
 
   const activeFilterCount = Object.keys(specFilters).length + (priceMin ? 1 : 0) + (priceMax ? 1 : 0);
 
+  const draftActiveCount = Object.keys(draftSpecFilters).length + (draftPriceMin ? 1 : 0) + (draftPriceMax ? 1 : 0);
+
   const clearAllFilters = () => {
     setSpecFilters({});
     setPriceMin('');
     setPriceMax('');
     setPage(1);
+  };
+
+  const clearDraftFilters = () => {
+    setDraftSpecFilters({});
+    setDraftPriceMin('');
+    setDraftPriceMax('');
   };
 
   const productCount = products.length;
@@ -383,8 +391,8 @@ export default function StoreShopPage() {
             {/* Overlay header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
               <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Filters</h3>
-              {activeFilterCount > 0 && (
-                <button className="btn btn-ghost btn-sm" onClick={clearAllFilters} style={{ fontSize: '0.75rem', gap: '0.25rem' }}>
+              {draftActiveCount > 0 && (
+                <button className="btn btn-ghost btn-sm" onClick={clearDraftFilters} style={{ fontSize: '0.75rem', gap: '0.25rem' }}>
                   <RotateCcw size={12} /> Clear
                 </button>
               )}
