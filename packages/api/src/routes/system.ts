@@ -30,7 +30,7 @@ systemRouter.get('/health', authenticate, async (req, res, next) => {
   }
 });
 
-systemRouter.get('/feature-flags', async (req, res, next) => {
+systemRouter.get('/feature-flags', authenticate, async (req, res, next) => {
   try {
     const flags = await prisma.featureFlag.findMany();
     res.json({ success: true, data: flags });

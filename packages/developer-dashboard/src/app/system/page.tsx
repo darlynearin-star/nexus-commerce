@@ -1,19 +1,19 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { Activity, Server, Database, Cpu, HardDrive, Wifi } from 'lucide-react';
+import { Activity, Server, Database, Cpu, HardDrive, Wifi, RefreshCw } from 'lucide-react';
 
 export default function SystemHealthPage() {
   const [health, setHealth] = useState<any>({});
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const load = async () => {
-      try { const res = await api.get('/system/health'); setHealth(res.data); } catch (e: any) { console.error('Error:', e); }
-    };
-    load();
-    const interval = setInterval(load, 10000);
-    return () => clearInterval(interval);
-  }, []);
+  const load = async () => {
+    setLoading(true);
+    try { const res = await api.get('/system/health'); setHealth(res.data); } catch (e: any) { console.error('Error:', e); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
 
   const metrics = [
     { label: 'CPU Usage', value: health?.cpu ? `${(health.cpu.usage || 0).toFixed(1)}%` : 'N/A', icon: <Cpu size={20} /> },
@@ -25,8 +25,13 @@ export default function SystemHealthPage() {
 
   return (
     <div style={{ padding: '2rem' }}>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>System Health</h1>
-      <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>Real-time platform monitoring</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>System Health</h1>
+        <button className="btn btn-primary btn-sm" onClick={load} disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+          <RefreshCw size={14} style={loading ? { animation: 'spin 0.8s linear infinite' } : {}} /> {loading ? 'Refreshing...' : 'Refresh'}
+        </button>
+      </div>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>Platform monitoring — click Refresh to check status</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
         {metrics.map((m, i) => (
           <div key={i} className="card">
