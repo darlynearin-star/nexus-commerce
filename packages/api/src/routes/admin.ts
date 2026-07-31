@@ -22,6 +22,10 @@ adminRouter.put('/users/:id', authenticate, requirePermission(Permission.MANAGE_
     const data: any = {};
     for (const key of ALLOWED_USER_FIELDS) { if (req.body[key] !== undefined) data[key] = req.body[key]; }
     if (req.body.password) data.passwordHash = await require('bcryptjs').hash(req.body.password, 10);
+    if (data.isActive === false) {
+      const target = await prisma.user.findUnique({ where: { id: req.params.id }, select: { role: true } });
+      if (target?.role === UserRole.SUPER_DEVELOPER) return res.status(403).json({ success: false, error: 'Cannot suspend a super developer account' });
+    }
     const user = await prisma.user.update({ where: { id: req.params.id }, data });
     logActivity({ userId: req.user!.userId, action: 'user:updated', resource: 'user', resourceId: user.id, details: { changes: Object.keys(data) }, req: req as any });
     res.json({ success: true, data: { ...user, passwordHash: undefined } });
@@ -50,6 +54,8 @@ adminRouter.post('/users', authenticate, requirePermission(Permission.MANAGE_USE
 
 adminRouter.delete('/users/:id', authenticate, requirePermission(Permission.MANAGE_USERS), async (req: AuthRequest, res, next) => {
   try {
+    const target = await prisma.user.findUnique({ where: { id: req.params.id }, select: { role: true } });
+    if (target?.role === UserRole.SUPER_DEVELOPER) return res.status(403).json({ success: false, error: 'Cannot suspend a super developer account' });
     await prisma.user.update({ where: { id: req.params.id }, data: { isActive: false } });
     logActivity({ userId: req.user!.userId, action: 'user:deleted', resource: 'user', resourceId: req.params.id, req: req as any });
     res.json({ success: true, message: 'User suspended' });

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { Search, Shield, ShieldOff } from 'lucide-react';
+import { Search, Shield, ShieldOff, Lock } from 'lucide-react';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -43,9 +43,13 @@ export default function UsersPage() {
                 <td><span className={`badge ${u.twoFactorEnabled ? 'badge-success' : 'badge-info'}`}>{u.twoFactorEnabled ? 'Enabled' : 'Disabled'}</span></td>
                 <td style={{ fontSize: '0.875rem' }}>{u._count?.sessions || 0}</td>
                 <td>
-                  <button className={`btn btn-ghost btn-icon ${!u.isActive ? 'badge-success' : 'badge-error'}`} title={u.isActive ? 'Suspend user' : 'Reactivate user'} onClick={() => toggleUser(u.id, u.isActive)}>
-                    {u.isActive ? <ShieldOff size={14} /> : <Shield size={14} />}
-                  </button>
+                  {u.role === 'SUPER_DEVELOPER' ? (
+                    <span className="btn btn-ghost btn-icon" title="Protected account"><Lock size={14} /></span>
+                  ) : (
+                    <button className={`btn btn-ghost btn-icon ${!u.isActive ? 'badge-success' : 'badge-error'}`} title={u.isActive ? 'Suspend user' : 'Reactivate user'} onClick={() => toggleUser(u.id, u.isActive)}>
+                      {u.isActive ? <ShieldOff size={14} /> : <Shield size={14} />}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
