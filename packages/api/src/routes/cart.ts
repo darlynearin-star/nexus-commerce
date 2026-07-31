@@ -4,9 +4,8 @@ import { authenticate, optionalAuth } from '../middleware/auth';
 import { requireStore } from '../middleware/resolve-store';
 
 export const cartRouter = Router();
-cartRouter.use(requireStore);
 
-// One-time dedup: remove duplicate cart items caused by old variantId='' bug
+// One-time dedup: remove duplicate cart items caused by old variantId='' bug (before requireStore so no auth needed)
 cartRouter.post('/dedup', async (_req, res, next) => {
   try {
     const result = await prisma.$executeRawUnsafe(`

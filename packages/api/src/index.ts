@@ -56,6 +56,21 @@ async function runMigrations() {
     logger.info('Migration: added images column to products');
     await prisma.$executeRawUnsafe('DO $$ BEGIN ALTER TABLE products ALTER COLUMN "categoryId" DROP NOT NULL; EXCEPTION WHEN others THEN NULL; END $$');
     logger.info('Migration: made categoryId nullable on products');
+    // Order table columns
+    await prisma.$executeRawUnsafe("ALTER TABLE orders ADD COLUMN IF NOT EXISTS \"customerPhone\" TEXT NOT NULL DEFAULT ''");
+    logger.info('Migration: added customerPhone to orders');
+    await prisma.$executeRawUnsafe("ALTER TABLE orders ADD COLUMN IF NOT EXISTS \"shippingAddress\" TEXT NOT NULL DEFAULT ''");
+    logger.info('Migration: added shippingAddress to orders');
+    await prisma.$executeRawUnsafe("ALTER TABLE orders ADD COLUMN IF NOT EXISTS \"paymentMethod\" TEXT NOT NULL DEFAULT 'pay_on_delivery'");
+    logger.info('Migration: added paymentMethod to orders');
+    await prisma.$executeRawUnsafe("ALTER TABLE orders ADD COLUMN IF NOT EXISTS \"paymentStatus\" TEXT NOT NULL DEFAULT 'PENDING'");
+    logger.info('Migration: added paymentStatus to orders');
+    await prisma.$executeRawUnsafe("ALTER TABLE orders ADD COLUMN IF NOT EXISTS \"trackingNumber\" TEXT");
+    logger.info('Migration: added trackingNumber to orders');
+    await prisma.$executeRawUnsafe("ALTER TABLE orders ADD COLUMN IF NOT EXISTS \"estimatedDelivery\" TIMESTAMP");
+    logger.info('Migration: added estimatedDelivery to orders');
+    await prisma.$executeRawUnsafe("ALTER TABLE orders ADD COLUMN IF NOT EXISTS \"deliveredAt\" TIMESTAMP");
+    logger.info('Migration: added deliveredAt to orders');
   } catch (e: any) {
     logger.warn(`Migrations skipped: ${e.message}`);
   }
