@@ -46,6 +46,9 @@ export default function EditProductPage() {
   const [storeSlug, setStoreSlug] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [brokenImages, setBrokenImages] = useState<string[]>([]);
+
+  const markBroken = (url: string) => setBrokenImages(p => (p.includes(url) ? p : [...p, url]));
 
   const [form, setForm] = useState<any>({
     name: '', brand: '', sku: '', description: '', price: 0, compareAtPrice: '', costPerItem: '',
@@ -159,7 +162,10 @@ export default function EditProductPage() {
     } catch (e: any) { setErrors([e.message || 'Upload failed']); } finally { setUploading(false); }
   };
 
-  const removeImage = (url: string) => setImages(p => p.filter(i => i !== url));
+  const removeImage = (url: string) => {
+    setImages(p => p.filter(i => i !== url));
+    setBrokenImages(p => p.filter(i => i !== url));
+  };
 
   const validate = (): boolean => {
     const errs: string[] = [];
@@ -373,7 +379,11 @@ export default function EditProductPage() {
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
             {images.map((url, i) => (
               <div key={i} style={{ width: 100, height: 130, borderRadius: '0.5rem', overflow: 'hidden', position: 'relative', background: 'var(--bg)' }}>
-                <img src={url} alt="" style={{ width: '100%', height: 100, objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.innerHTML = '<div style=\"padding:1rem;text-align:center;color:var(--error);font-size:0.75rem\">Broken</div>'; }} />
+                {brokenImages.includes(url) ? (
+                  <div style={{ width: '100%', height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--error)', fontSize: '0.75rem' }}>Broken</div>
+                ) : (
+                  <img src={url} alt="" style={{ width: '100%', height: 100, objectFit: 'cover' }} onError={() => markBroken(url)} />
+                )}
                 <div style={{ fontSize: '0.625rem', textAlign: 'center', padding: '0.125rem 0', color: 'var(--text-secondary)' }}>{i === 0 ? 'Main' : `Image ${i + 1}`}</div>
                 <button style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white' }} onClick={() => removeImage(url)}><X size={12} /></button>
               </div>
