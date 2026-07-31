@@ -17,7 +17,7 @@ export const createProductSchema = z.object({
   lowStockThreshold: z.number().int().min(0).default(10),
   trackInventory: z.boolean().default(true),
   allowBackorder: z.boolean().default(false),
-  status: z.nativeEnum(ProductStatus).default('DRAFT'),
+  status: z.nativeEnum(ProductStatus).default(ProductStatus.DRAFT),
   categoryId: z.string().min(1, 'Category is required'),
   tags: z.array(z.string()).default([]),
   seoTitle: z.string().max(200).default(''),

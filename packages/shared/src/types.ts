@@ -568,7 +568,6 @@ export interface Store {
 
 export interface StoreSettings {
   currency: string;
-  taxRate: number;
   shippingThreshold: number;
   location: string;
   shippingRate: number;

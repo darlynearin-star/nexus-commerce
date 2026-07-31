@@ -19,10 +19,8 @@ storesRouter.get('/mine', authenticate, async (req: AuthRequest, res, next) => {
     });
     if (!store) return res.status(404).json({ success: false, error: 'No store found for this user' });
     // Append extra DB fields via raw SQL
-    const [extraTheme] = await prisma.$queryRaw`SELECT animation FROM store_themes WHERE "storeId" = ${store.id}` as any;
     const [extraSettings] = await prisma.$queryRaw`SELECT phone, whatsapp FROM store_settings WHERE "storeId" = ${store.id}` as any;
-    if (extraTheme) Object.assign(store.theme, extraTheme);
-    if (extraSettings) Object.assign(store.settings, extraSettings);
+    if (extraSettings && store.settings) Object.assign(store.settings, extraSettings);
     res.json({ success: true, data: store });
   } catch (error) { next(error); }
 });
@@ -47,10 +45,8 @@ storesRouter.get('/public/:slug', async (req, res, next) => {
     });
     if (!store) return res.status(404).json({ success: false, error: 'Store not found' });
     if (!store.isActive) return res.status(503).json({ success: false, error: 'Store is currently disabled' });
-    const [extraTheme] = await prisma.$queryRaw`SELECT animation FROM store_themes WHERE "storeId" = ${store.id}` as any;
     const [extraSettings] = await prisma.$queryRaw`SELECT phone, whatsapp FROM store_settings WHERE "storeId" = ${store.id}` as any;
-    if (extraTheme) Object.assign(store.theme, extraTheme);
-    if (extraSettings) Object.assign(store.settings, extraSettings);
+    if (extraSettings && store.settings) Object.assign(store.settings, extraSettings);
     res.json({ success: true, data: store });
   } catch (error) { next(error); }
 });
@@ -81,7 +77,7 @@ storesRouter.post('/', authenticate, async (req: AuthRequest, res, next) => {
       data: {
         name, slug, logoUrl: logoUrl || null, ownerId: req.user!.userId,
         theme: { create: { template: template || 'elegance', colors: JSON.stringify(colors || { primary: '#D4A843', secondary: '#A8822E', bg: '#0A0A0A', surface: '#141414', text: '#FAFAFA', accent: '#F0D48A' }) } },
-        settings: { create: { currency: 'UGX', taxRate: 18, location: 'Kampala, Uganda' } },
+        settings: { create: { currency: 'UGX', location: 'Kampala, Uganda' } },
       },
       include: { settings: true, theme: true },
     });
@@ -94,15 +90,11 @@ storesRouter.post('/', authenticate, async (req: AuthRequest, res, next) => {
     });
 
     // Set extra fields via raw SQL (columns exist in DB but not in Prisma schema)
-    const anim = req.body.animation || 'subtle';
-    await prisma.$executeRaw`UPDATE store_themes SET animation = ${anim} WHERE "storeId" = ${store.id}`;
     await prisma.$executeRaw`UPDATE store_settings SET phone = '', whatsapp = '' WHERE "storeId" = ${store.id}`;
 
     // Re-fetch from raw SQL to include extra fields
-    const [themeRaw] = await prisma.$queryRaw`SELECT * FROM store_themes WHERE "storeId" = ${store.id}` as any;
     const [settingsRaw] = await prisma.$queryRaw`SELECT * FROM store_settings WHERE "storeId" = ${store.id}` as any;
-    if (themeRaw) Object.assign(store.theme, themeRaw);
-    if (settingsRaw) Object.assign(store.settings, settingsRaw);
+    if (settingsRaw && store.settings) Object.assign(store.settings, settingsRaw);
 
     logActivity({ userId: req.user!.userId, action: 'store:created', resource: 'store', resourceId: store.id, req: req as any });
     res.status(201).json({ success: true, data: store });
@@ -133,10 +125,6 @@ storesRouter.put('/:id', authenticate, async (req: AuthRequest, res, next) => {
       },
       include: { settings: true, theme: true },
     });
-
-    if (theme?.animation) {
-      await prisma.$executeRaw`UPDATE store_themes SET animation = ${theme.animation} WHERE "storeId" = ${updated.id}`;
-    }
 
     res.json({ success: true, data: updated });
   } catch (error) { next(error); }

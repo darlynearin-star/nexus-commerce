@@ -15,7 +15,12 @@ subscriptionsRouter.get('/', authenticate, requireRole(UserRole.RETAILER), async
       const subscription = await prisma.retailerSubscription.create({ data: { retailerId: retailer.id, trialEnd } });
       return res.json({ success: true, data: subscription });
     }
-    res.json({ success: true, data: retailer.subscription });
+    const sub = retailer.subscription;
+    if (sub.status === 'TRIAL' && sub.trialEnd < new Date()) {
+      const updated = await prisma.retailerSubscription.update({ where: { id: sub.id }, data: { status: 'SUSPENDED' } });
+      return res.json({ success: true, data: updated });
+    }
+    res.json({ success: true, data: sub });
   } catch (error) { next(error); }
 });
 

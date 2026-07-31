@@ -102,10 +102,6 @@ export default function SettingsPage() {
               <input className="input" value={settings.currency || 'UGX'} onChange={e => setSettings((p: any) => ({ ...p, currency: e.target.value }))} />
             </div>
             <div>
-              <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>Tax Rate (%)</label>
-              <input className="input" type="number" value={settings.taxRate || 18} onChange={e => setSettings((p: any) => ({ ...p, taxRate: parseFloat(e.target.value) }))} />
-            </div>
-            <div>
               <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>Location</label>
               <input className="input" value={settings.location || 'Kampala, Uganda'} onChange={e => setSettings((p: any) => ({ ...p, location: e.target.value }))} />
           </div>

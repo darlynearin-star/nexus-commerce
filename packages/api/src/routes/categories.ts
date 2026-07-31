@@ -349,7 +349,7 @@ export async function syncStoreCategories(storeId: string): Promise<number> {
           slugToParent.set(node.slug, parentId);
           fixed++;
         }
-        if (node.children) await walkTree(node.children, dbId);
+        if (node.children) await walkTree(node.children, dbId ?? null);
       }
     }
   }

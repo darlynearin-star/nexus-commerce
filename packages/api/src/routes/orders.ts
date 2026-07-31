@@ -42,9 +42,6 @@ ordersRouter.post('/', authenticate, async (req: StoreRequest, res, next) => {
     const cart = await prisma.cart.findFirst({ where: { customerId: (req as any).user!.userId, storeId: req.storeId! }, include: { items: { include: { product: true } } } });
     if (!cart || cart.items.length === 0) return res.status(400).json({ success: false, error: 'Cart is empty' });
 
-    const store = req.store;
-    const taxRate = (store?.settings?.taxRate || 18) / 100;
-
     const subtotal = cart.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
     const orderNumber = `NEXUS-${Date.now().toString(36).toUpperCase()}`;
 
@@ -52,8 +49,8 @@ ordersRouter.post('/', authenticate, async (req: StoreRequest, res, next) => {
       data: {
         storeId: req.storeId!, orderNumber, customerId: customer.id,
         subtotal, shippingCost: 0,
-        taxAmount: subtotal * taxRate, discountAmount: cart.couponDiscount,
-        total: subtotal + subtotal * taxRate - cart.couponDiscount,
+        taxAmount: 0, discountAmount: cart.couponDiscount,
+        total: subtotal - cart.couponDiscount,
         customerPhone: req.body.customerPhone || '',
         shippingAddress: req.body.shippingAddress || '',
         notes: req.body.notes || '',

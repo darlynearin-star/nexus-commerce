@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import prisma from '@nexus/database';
-import { authenticate } from '../middleware/auth';
+import { authenticate, AuthRequest } from '../middleware/auth';
 import { StoreRequest, requireStore } from '../middleware/resolve-store';
 
 export const customersRouter = Router();

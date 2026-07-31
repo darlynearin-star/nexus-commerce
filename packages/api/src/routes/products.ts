@@ -125,7 +125,7 @@ productsRouter.get('/', optionalAuth, async (req: StoreRequest, res, next) => {
   } catch (error) { next(error); }
 });
 
-productsRouter.get('/:slug', optionalAuth, async (req: AuthRequest, res, next) => {
+productsRouter.get('/:slug', optionalAuth, async (req: StoreRequest & AuthRequest, res, next) => {
   try {
     const where: any = { slug: req.params.slug, storeId: req.storeId! };
     if (!req.user) where.status = 'PUBLISHED';

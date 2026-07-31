@@ -230,7 +230,6 @@ model StoreSettings {
   storeId          String  @unique
   store            Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
   currency         String  @default("UGX")
-  taxRate          Float   @default(18)
   location         String  @default("Kampala, Uganda")
   shippingRate     Float   @default(0)
   shippingThreshold Float  @default(0)

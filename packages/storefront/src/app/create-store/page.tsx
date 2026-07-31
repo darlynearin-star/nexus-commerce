@@ -46,7 +46,6 @@ export default function CreateStorePage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
-  const [animation, setAnimation] = useState('subtle');
 
   useEffect(() => {
     setColors(template.colors);
@@ -65,7 +64,7 @@ export default function CreateStorePage() {
     setSubmitting(true);
     setError('');
     try {
-      const res = await api.post('/stores', { name, slug, template: template.id, colors, logoUrl: logoUrl || undefined, animation });
+      const res = await api.post('/stores', { name, slug, template: template.id, colors, logoUrl: logoUrl || undefined });
       if (res.success) {
         localStorage.setItem('activeStoreSlug', slug);
         setStoreSlug(slug);
@@ -130,7 +129,7 @@ export default function CreateStorePage() {
 
       {/* Progress */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '3rem', justifyContent: 'center' }}>
-        {[{ n: 1, label: 'Template' }, { n: 2, label: 'Colors' }, { n: 3, label: 'Animation' }, { n: 4, label: 'Details' }].map(s => (
+        {[{ n: 1, label: 'Template' }, { n: 2, label: 'Colors' }, { n: 3, label: 'Details' }].map(s => (
           <div key={s.n} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.875rem', background: step >= s.n ? 'var(--primary)' : 'var(--bg-secondary)', color: step >= s.n ? 'var(--bg)' : 'var(--text-secondary)', border: step >= s.n ? 'none' : '1px solid var(--border)' }}>
               {step > s.n ? <Check size={16} /> : s.n}
@@ -174,41 +173,13 @@ export default function CreateStorePage() {
           ))}
           <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
             <button className="btn btn-secondary" onClick={() => setStep(1)}>Back</button>
-            <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setStep(3)}>Next: Animation <ArrowRight size={16} /></button>
+            <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setStep(3)}>Next: Details <ArrowRight size={16} /></button>
           </div>
         </div>
       )}
 
-      {/* Step 3: Animation */}
+      {/* Step 3: Name & Slug */}
       {step === 3 && (
-        <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem' }}>Animation & Effects</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Set the motion and 3D feel of your store. Preview changes live.</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {[
-              { id: 'none', name: 'Static', desc: 'Clean, minimal — no animations', icon: '▬' },
-              { id: 'subtle', name: 'Subtle', desc: 'Gentle fades, smooth hover effects — balanced', icon: '◐' },
-              { id: 'dynamic', name: 'Dynamic', desc: 'Slide-ins, scale effects, bold transitions', icon: '◈' },
-            ].map(a => (
-              <button key={a.id} onClick={() => setAnimation(a.id)} style={{ display: 'flex', gap: '1rem', alignItems: 'center', padding: '1.25rem', borderRadius: '0.75rem', border: `2px solid ${animation === a.id ? 'var(--primary)' : 'var(--border)'}`, background: 'var(--surface)', cursor: 'pointer', textAlign: 'left', width: '100%' }}>
-                <div style={{ width: 48, height: 48, borderRadius: '0.5rem', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}>{a.icon}</div>
-                <div>
-                  <div style={{ fontWeight: 600 }}>{a.name}</div>
-                  <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{a.desc}</div>
-                </div>
-                {animation === a.id && <Check size={20} style={{ color: 'var(--primary)', marginLeft: 'auto' }} />}
-              </button>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-            <button className="btn btn-secondary" onClick={() => setStep(2)}>Back</button>
-            <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setStep(4)}>Next: Details <ArrowRight size={16} /></button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 4: Name & Slug */}
-      {step === 4 && (
         <div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '2rem' }}>Store details</h2>
           <div style={{ marginBottom: '1.5rem' }}>
@@ -257,7 +228,7 @@ export default function CreateStorePage() {
             </div>
           )}
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <button className="btn btn-secondary" onClick={() => setStep(3)}>Back</button>
+            <button className="btn btn-secondary" onClick={() => setStep(2)}>Back</button>
             <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} disabled={!name || !slug || !slugAvailable || submitting} onClick={handleSubmit}>
               {submitting ? 'Creating...' : 'Launch Store'} <ArrowRight size={16} />
             </button>
