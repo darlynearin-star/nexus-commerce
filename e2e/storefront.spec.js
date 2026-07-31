@@ -38,6 +38,63 @@ const STORE_SLUG = 'test-store-1785454996381';
     await page.close();
   });
 
+  await test('Homepage sections order: New Arrivals, Featured, Quick Browse', async () => {
+    const page = await context.newPage();
+    await page.goto(`${BASE}/store/${STORE_SLUG}`, { waitUntil: 'networkidle' });
+    const body = await page.locator('body').innerText();
+    const iNew = body.indexOf('New Arrivals');
+    const iFeatured = body.indexOf('Featured');
+    const iQuick = body.indexOf('Quick Browse');
+    if (iNew === -1 || iFeatured === -1 || iQuick === -1) throw new Error('Missing section headers');
+    if (!(iNew < iFeatured && iFeatured < iQuick)) throw new Error(`Wrong order: New=${iNew} Featured=${iFeatured} Quick=${iQuick}`);
+    await page.close();
+  });
+
+  await test('Quick Browse shows item counts', async () => {
+    const page = await context.newPage();
+    await page.goto(`${BASE}/store/${STORE_SLUG}`, { waitUntil: 'networkidle' });
+    const body = await page.locator('body').innerText();
+    if (!/\d+ items?/.test(body)) throw new Error('No "N items" count found on homepage');
+    await page.close();
+  });
+
+  await test('Shop page filter overlay opens with subcategory dropdown', async () => {
+    const page = await context.newPage();
+    await page.goto(`${BASE}/store/${STORE_SLUG}/shop?parent=phones-tablets`, { waitUntil: 'networkidle' });
+    const filterBtn = page.locator('button', { hasText: 'Filters' }).first();
+    await filterBtn.click();
+    await page.waitForTimeout(500);
+    const overlayText = await page.locator('body').innerText();
+    if (!overlayText.includes('Subcategory')) throw new Error('Overlay missing Subcategory dropdown');
+    if (!overlayText.includes('Apply Filters')) throw new Error('Overlay missing Apply button');
+    if (!overlayText.includes('Cancel')) throw new Error('Overlay missing Cancel button');
+    await page.close();
+  });
+
+  await test('Filter overlay Apply/Cancel behavior', async () => {
+    const page = await context.newPage();
+    await page.goto(`${BASE}/store/${STORE_SLUG}/shop?parent=phones-tablets`, { waitUntil: 'networkidle' });
+    const filterBtn = page.locator('button', { hasText: 'Filters' }).first();
+    await filterBtn.click();
+    await page.waitForTimeout(500);
+    // Select a subcategory in the dropdown
+    await page.locator('select').nth(1).selectOption('mobile-phones').catch(() => {});
+    await page.waitForTimeout(500);
+    // Cancel should close overlay
+    await page.locator('button', { hasText: 'Cancel' }).click();
+    await page.waitForTimeout(300);
+    const afterCancel = await page.locator('body').innerText();
+    if (afterCancel.includes('Apply Filters')) throw new Error('Overlay still open after Cancel');
+    // Reopen and Apply
+    await filterBtn.click();
+    await page.waitForTimeout(500);
+    await page.locator('button', { hasText: 'Apply Filters' }).click();
+    await page.waitForTimeout(500);
+    const afterApply = await page.locator('body').innerText();
+    if (afterApply.includes('Apply Filters')) throw new Error('Overlay still open after Apply');
+    await page.close();
+  });
+
   await test('Login page renders', async () => {
     const page = await context.newPage();
     await page.goto(`${BASE}/login`, { waitUntil: 'networkidle' });
