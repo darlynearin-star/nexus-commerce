@@ -50,6 +50,9 @@ function Sidebar({ children }: { children: React.ReactNode }) {
           <a href={`${process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app'}/store/${typeof window !== 'undefined' ? localStorage.getItem('activeStoreSlug') : ''}`} target="_blank" className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: collapsed ? 'center' : 'flex-start', gap: '0.375rem' }}>
             <Eye size={16} /> {!collapsed && <>View Store <ExternalLink size={12} /></>}
           </a>
+          <a href={process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app'} target="_blank" className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: collapsed ? 'center' : 'flex-start', gap: '0.375rem', marginTop: '0.25rem' }}>
+            <Store size={16} /> {!collapsed && <>To Main Page <ExternalLink size={12} /></>}
+          </a>
         </div>
         <div style={{ padding: '0.5rem 0.75rem', borderTop: '1px solid var(--border)' }}>
           {!collapsed && (
