@@ -42,7 +42,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(res.data.user);
     const role = res.data.user?.role;
     if (role === 'RETAILER') {
-      window.location.href = (process.env.NEXT_PUBLIC_RETAILER_DASHBOARD_URL || 'https://nexus-commerce-retailer-dashboard.vercel.app') + '/dashboard#token=' + encodeURIComponent(res.data.accessToken);
+      const hasStore = await api.get('/stores/mine').then(() => true).catch(() => false);
+      if (hasStore) {
+        window.location.href = (process.env.NEXT_PUBLIC_RETAILER_DASHBOARD_URL || 'https://nexus-commerce-retailer-dashboard.vercel.app') + '/dashboard#token=' + encodeURIComponent(res.data.accessToken);
+      } else {
+        router.push('/create-store');
+      }
     } else if (role === 'DEVELOPER' || role === 'SUPER_DEVELOPER') {
       window.location.href = (process.env.NEXT_PUBLIC_DEVELOPER_DASHBOARD_URL || 'https://nexus-commerce-developer-dashboard.vercel.app') + '/dashboard';
     } else {

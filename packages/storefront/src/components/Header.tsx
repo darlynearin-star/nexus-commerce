@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ShoppingCart, Heart, Search, User, Sun, Moon, Menu, X, Gem, Store, ExternalLink, LayoutDashboard, LogOut } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
+import { api } from '@/lib/api';
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -11,11 +12,21 @@ export default function Header() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [storeSlug, setStoreSlug] = useState<string | null>(null);
+  const [hasStore, setHasStore] = useState(false);
   const [isStorePage, setIsStorePage] = useState(false);
 
   useEffect(() => {
-    setStoreSlug(localStorage.getItem('activeStoreSlug'));
     setIsStorePage(window.location.pathname.startsWith('/store/'));
+    if (user?.role === 'RETAILER') {
+      api.get('/stores/mine').then((res: any) => {
+        const s = res.data;
+        setStoreSlug(s?.slug || null);
+        setHasStore(!!s);
+      }).catch(() => { setStoreSlug(null); setHasStore(false); });
+    } else {
+      setStoreSlug(null);
+      setHasStore(false);
+    }
   }, [user]);
 
   if (isStorePage) return null;
@@ -94,21 +105,22 @@ export default function Header() {
             <div style={{ padding: '0.5rem 0.75rem', borderTop: '1px solid var(--border)', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Account</div>
             <div style={{ padding: '0 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
               <Link href="/account" onClick={close} className="btn btn-ghost" style={{ justifyContent: 'flex-start' }}><User size={16} /> {user.firstName} {user.lastName}</Link>
-              {user.role === 'RETAILER' && (
+              {user.role === 'RETAILER' && hasStore && (
                 <>
-                  {storeSlug ? (
+                  {storeSlug && (
                     <a href={`${storefrontUrl}/store/${storeSlug}`} target="_blank" className="btn btn-ghost" style={{ justifyContent: 'flex-start' }} onClick={close}>
                       <Store size={16} /> Visit Store <ExternalLink size={12} />
                     </a>
-                  ) : (
-                    <Link href="/create-store" onClick={close} className="btn btn-ghost" style={{ justifyContent: 'flex-start', color: 'var(--primary)' }}>
-                      <Store size={16} /> Create Store
-                    </Link>
                   )}
                   <a href={retDashUrl + '/dashboard#token=' + encodeURIComponent(localStorage.getItem('accessToken') || '')} className="btn btn-ghost" style={{ justifyContent: 'flex-start' }}>
                     <LayoutDashboard size={16} /> Dashboard
                   </a>
                 </>
+              )}
+              {user.role === 'RETAILER' && !hasStore && (
+                <Link href="/create-store" onClick={close} className="btn btn-ghost" style={{ justifyContent: 'flex-start', color: 'var(--primary)' }}>
+                  <Store size={16} /> Create Store
+                </Link>
               )}
               {user.role === 'DEVELOPER' || user.role === 'SUPER_DEVELOPER' ? (
                 <a href={devDashUrl + '/dashboard#token=' + encodeURIComponent(localStorage.getItem('accessToken') || '')} className="btn btn-ghost" style={{ justifyContent: 'flex-start' }}>

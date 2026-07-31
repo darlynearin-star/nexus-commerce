@@ -12,6 +12,19 @@ function decodeJwt(token: string): any {
   try { return JSON.parse(atob(token.split('.')[1])); } catch { return null; }
 }
 
+async function ensureStore() {
+  const token = localStorage.getItem('accessToken');
+  if (!token) return;
+  try {
+    await api.get('/stores/mine');
+  } catch (e: any) {
+    if (e?.status === 404) {
+      const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
+      window.location.href = `${storefrontUrl}/create-store#token=${encodeURIComponent(token)}`;
+    }
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const payload = decodeJwt(tokenParam);
       if (payload) {
         setUser({ id: payload.userId, email: payload.email, role: payload.role, firstName: '', lastName: '', avatar: undefined });
+        if (payload.role === 'RETAILER') ensureStore();
       }
       setLoading(false);
       return;
@@ -36,6 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const payload = decodeJwt(token);
       if (payload) {
         setUser({ id: payload.userId, email: payload.email, role: payload.role, firstName: '', lastName: '', avatar: undefined });
+        if (payload.role === 'RETAILER') ensureStore();
       }
     }
     setLoading(false);
@@ -51,7 +66,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
     if (res.data.user?.role === 'RETAILER') {
-      window.location.href = '/dashboard';
+      const hasStore = await api.get('/stores/mine').then(() => true).catch(() => false);
+      if (hasStore) {
+        window.location.href = '/dashboard';
+      } else {
+        window.location.href = `${storefrontUrl}/create-store#token=${encodeURIComponent(res.data.accessToken)}`;
+      }
     } else {
       window.location.href = `${storefrontUrl}/?noStore=1#token=${encodeURIComponent(res.data.accessToken)}`;
     }

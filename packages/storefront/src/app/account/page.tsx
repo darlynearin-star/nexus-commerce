@@ -16,6 +16,12 @@ export default function AccountPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState({ orders: true, cart: true, notifications: true });
   const [mobile, setMobile] = useState(false);
+  const [hasStore, setHasStore] = useState(false);
+
+  useEffect(() => {
+    if (!user) { setHasStore(false); return; }
+    api.get('/stores/mine').then((r: any) => setHasStore(!!r.data)).catch(() => setHasStore(false));
+  }, [user]);
 
   useEffect(() => {
     const check = () => setMobile(window.innerWidth < 768);
@@ -23,9 +29,9 @@ export default function AccountPage() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  const isStoreOwner = !!(user as any)?.retailer;
-  const retailer = (user as any)?.retailer;
-  const storeSlug = retailer?.storeSlug;
+  const isStoreOwner = hasStore;
+  const retailer = hasStore ? (user as any)?.retailer : null;
+  const storeSlug = retailer?.storeSlug || (typeof window !== 'undefined' ? localStorage.getItem('activeStoreSlug') : null);
   const subscription = retailer?.subscription;
   const tierName = subscription?.status === 'TRIAL' ? 'Trial' : subscription?.status === 'ACTIVE' ? 'Weekly' : subscription?.status || 'N/A';
   const tierProgress = subscription?.trialEnd ? Math.min(100, Math.round((Date.now() - new Date(subscription.trialStart).getTime()) / (new Date(subscription.trialEnd).getTime() - new Date(subscription.trialStart).getTime()) * 100)) : 0;
@@ -33,11 +39,11 @@ export default function AccountPage() {
   useEffect(() => {
     if (!user) return;
     api.get<any>('/orders').then(r => { setOrders(r.data || []); setLoading(p => ({ ...p, orders: false })); }).catch(() => setLoading(p => ({ ...p, orders: false })));
-    if (!isStoreOwner) {
+    if (!hasStore) {
       api.get<any>('/cart').then(r => { setCart(r.data); setLoading(p => ({ ...p, cart: false })); }).catch(() => setLoading(p => ({ ...p, cart: false })));
     }
     api.get<any>('/notifications').then(r => { setNotifications(r.data?.notifications || []); setUnreadCount(r.data?.unreadCount || 0); setLoading(p => ({ ...p, notifications: false })); }).catch(() => setLoading(p => ({ ...p, notifications: false })));
-  }, [user]);
+  }, [user, hasStore]);
 
   const markAllRead = async () => {
     await api.put('/notifications/read-all');
