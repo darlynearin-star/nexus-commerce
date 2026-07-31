@@ -12,6 +12,8 @@ function DashboardContent() {
   const router = useRouter();
   const [stats, setStats] = useState<any>({});
   const [store, setStore] = useState<any>(null);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [lowStock, setLowStock] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,13 +24,18 @@ function DashboardContent() {
     Promise.allSettled([
       api.get('/analytics/summary').catch(() => null),
       api.get('/stores/mine'),
-    ]).then(async ([s, st]: any) => {
+      api.get('/orders', { limit: 5 }).catch(() => null),
+      api.get('/products', { limit: 50 }).catch(() => null),
+    ]).then(async ([s, st, o, p]: any) => {
       setStats(s.value?.data || {});
       const storeData = st.value?.data || null;
       setStore(storeData);
       if (storeData?.slug) {
         localStorage.setItem('activeStoreSlug', storeData.slug);
       }
+      setRecentOrders(o.value?.data || []);
+      const products = p.value?.data || [];
+      setLowStock(products.filter((prod: any) => prod.trackInventory && prod.stock <= prod.lowStockThreshold));
     }).catch(() => setError('Failed to load data'));
   }, [user, loading]);
 
@@ -82,8 +89,42 @@ function DashboardContent() {
         ))}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-        <div className="card"><h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Recent Orders</h3><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>No recent orders to display.</p></div>
-        <div className="card"><h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Low Stock Alerts</h3><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>All products adequately stocked.</p></div>
+        <div className="card">
+          <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Recent Orders</h3>
+          {recentOrders.length === 0 ? (
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>No recent orders to display.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {recentOrders.map(o => (
+                <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid var(--border)', fontSize: '0.875rem' }}>
+                  <div>
+                    <span style={{ fontWeight: 600 }}>{o.orderNumber}</span>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem', marginLeft: '0.5rem' }}>{o.customer?.user?.firstName} {o.customer?.user?.lastName}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontWeight: 600 }}>UGX {o.total.toLocaleString()}</span>
+                    <span className={`badge ${o.status === 'COMPLETED' ? 'badge-success' : o.status === 'PROCESSING' ? 'badge-warning' : o.status === 'CANCELLED' ? 'badge-error' : 'badge-info'}`}>{o.status}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="card">
+          <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Low Stock Alerts</h3>
+          {lowStock.length === 0 ? (
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>All products adequately stocked.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {lowStock.map(p => (
+                <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid var(--border)', fontSize: '0.875rem' }}>
+                  <span>{p.name}</span>
+                  <span style={{ color: 'var(--error, #f87171)', fontWeight: 600 }}>{p.stock} left</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

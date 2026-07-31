@@ -14,7 +14,7 @@ analyticsRouter.get('/summary', async (req: StoreRequest, res, next) => {
     const periodEnd = new Date();
 
     const [revenue, orders, products, customers] = await Promise.all([
-      prisma.order.aggregate({ where: { storeId: req.storeId!, createdAt: { gte: periodStart, lte: periodEnd }, paymentStatus: 'PAID' }, _sum: { total: true } }),
+      prisma.order.aggregate({ where: { storeId: req.storeId!, createdAt: { gte: periodStart, lte: periodEnd }, status: { notIn: ['CANCELLED', 'REFUNDED', 'RETURNED'] } }, _sum: { total: true } }),
       prisma.order.count({ where: { storeId: req.storeId!, createdAt: { gte: periodStart, lte: periodEnd } } }),
       prisma.product.count({ where: { storeId: req.storeId!, status: 'PUBLISHED' } }),
       prisma.order.groupBy({ by: ['customerId'], where: { storeId: req.storeId!, createdAt: { gte: periodStart, lte: periodEnd } }, _count: true }),
@@ -41,7 +41,7 @@ analyticsRouter.get('/revenue', async (req: StoreRequest, res, next) => {
     const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
     const orders = await prisma.order.findMany({
-      where: { storeId: req.storeId!, createdAt: { gte: startDate }, paymentStatus: 'PAID' },
+      where: { storeId: req.storeId!, createdAt: { gte: startDate }, status: { notIn: ['CANCELLED', 'REFUNDED', 'RETURNED'] } },
       select: { total: true, createdAt: true },
       orderBy: { createdAt: 'asc' },
     });
@@ -95,7 +95,7 @@ analyticsRouter.get('/product-stats', async (req: StoreRequest, res, next) => {
 
     const orderItems = await prisma.orderItem.groupBy({
       by: ['productId'],
-      where: { product: { storeId: req.storeId! }, order: { paymentStatus: 'PAID' } },
+      where: { product: { storeId: req.storeId! }, order: { status: { notIn: ['CANCELLED', 'REFUNDED', 'RETURNED'] } } },
       _sum: { totalPrice: true, quantity: true },
     });
 
