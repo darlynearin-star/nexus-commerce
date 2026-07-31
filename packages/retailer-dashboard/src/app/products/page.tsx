@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { Plus, Edit2, Trash2, Copy, Search, ExternalLink, Package } from 'lucide-react';
+import { Plus, Edit2, Trash2, Copy, Search, ExternalLink, Package, Link2, Check } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProductsPage() {
@@ -10,6 +10,31 @@ export default function ProductsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyLink = (p: any) => {
+    const link = `https://nexus-storefront-dusky.vercel.app/store/${p.store?.slug || localStorage.getItem('activeStoreSlug')}/product/${p.slug}`;
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = link;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (err) { console.error('Copy failed:', err); }
+      document.body.removeChild(ta);
+      setCopiedId(p.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(link).then(() => {
+        setCopiedId(p.id);
+        setTimeout(() => setCopiedId(null), 2000);
+      }).catch(() => fallback());
+    } else {
+      fallback();
+    }
+  };
 
   const loadProducts = async () => {
     setLoading(true);
@@ -104,6 +129,7 @@ export default function ProductsPage() {
                     <td>
                       <div style={{ display: 'flex', gap: '0.25rem' }}>
                         <Link href={`/products/${p.id}/edit`} className="btn btn-ghost btn-icon" title="Edit"><Edit2 size={14} /></Link>
+                        <button className="btn btn-ghost btn-icon" onClick={() => copyLink(p)} title="Copy product link">{copiedId === p.id ? <Check size={14} style={{ color: 'var(--success, #4ade80)' }} /> : <Link2 size={14} />}</button>
                         <button className="btn btn-ghost btn-icon" onClick={() => duplicateProduct(p.id)} title="Duplicate"><Copy size={14} /></button>
                         <button className="btn btn-ghost btn-icon" style={{ color: 'var(--error)' }} onClick={() => deleteProduct(p.id)} title="Delete"><Trash2 size={14} /></button>
                         {p.store?.slug && <Link href={`https://nexus-storefront-dusky.vercel.app/store/${p.store.slug}/product/${p.slug}`} target="_blank" className="btn btn-ghost btn-icon" title="View on store"><ExternalLink size={14} /></Link>}

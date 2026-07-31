@@ -276,9 +276,27 @@ export default function EditProductPage() {
                 onClick={e => (e.target as HTMLInputElement).select()}
               />
               <button className="btn btn-secondary" onClick={() => {
-                navigator.clipboard.writeText(`https://nexus-storefront-dusky.vercel.app/store/${storeSlug}/product/${form.slug}`);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
+                const link = `https://nexus-storefront-dusky.vercel.app/store/${storeSlug}/product/${form.slug}`;
+                const fallback = () => {
+                  const ta = document.createElement('textarea');
+                  ta.value = link;
+                  ta.style.position = 'fixed';
+                  ta.style.opacity = '0';
+                  document.body.appendChild(ta);
+                  ta.select();
+                  try { document.execCommand('copy'); } catch (err) { console.error('Copy failed:', err); }
+                  document.body.removeChild(ta);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                };
+                if (navigator.clipboard && window.isSecureContext) {
+                  navigator.clipboard.writeText(link).then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }).catch(() => fallback());
+                } else {
+                  fallback();
+                }
               }}>
                 {copied ? 'Copied!' : 'Copy Link'}
               </button>
