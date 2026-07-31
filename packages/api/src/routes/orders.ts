@@ -77,9 +77,7 @@ ordersRouter.post('/', authenticate, async (req: StoreRequest, res, next) => {
     await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
     logActivity({ userId: (req as any).user!.userId, action: 'order:created', resource: 'order', resourceId: order.id, req: req as any });
     res.status(201).json({ success: true, data: { ...order, storePhone: contact?.phone || '', storeWhatsapp: contact?.whatsapp || '' } });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || 'Internal server error', code: error.code, meta: error.meta });
-  }
+  } catch (error) { next(error); }
 });
 
 ordersRouter.put('/:id/status', authenticate, async (req: StoreRequest, res, next) => {
