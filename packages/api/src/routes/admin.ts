@@ -27,6 +27,9 @@ adminRouter.put('/users/:id', authenticate, requirePermission(Permission.MANAGE_
       if (target?.role === UserRole.SUPER_DEVELOPER) return res.status(403).json({ success: false, error: 'Cannot suspend a super developer account' });
     }
     const user = await prisma.user.update({ where: { id: req.params.id }, data });
+    if (data.isActive === false) {
+      await prisma.session.updateMany({ where: { userId: user.id, isActive: true }, data: { isActive: false } });
+    }
     logActivity({ userId: req.user!.userId, action: 'user:updated', resource: 'user', resourceId: user.id, details: { changes: Object.keys(data) }, req: req as any });
     res.json({ success: true, data: { ...user, passwordHash: undefined } });
   } catch (error) { next(error); }
@@ -57,6 +60,7 @@ adminRouter.delete('/users/:id', authenticate, requirePermission(Permission.MANA
     const target = await prisma.user.findUnique({ where: { id: req.params.id }, select: { role: true } });
     if (target?.role === UserRole.SUPER_DEVELOPER) return res.status(403).json({ success: false, error: 'Cannot suspend a super developer account' });
     await prisma.user.update({ where: { id: req.params.id }, data: { isActive: false } });
+    await prisma.session.updateMany({ where: { userId: req.params.id, isActive: true }, data: { isActive: false } });
     logActivity({ userId: req.user!.userId, action: 'user:deleted', resource: 'user', resourceId: req.params.id, req: req as any });
     res.json({ success: true, message: 'User suspended' });
   } catch (error) { next(error); }

@@ -1,12 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken, JwtPayload } from '../utils/jwt';
 import { ROLE_PERMISSIONS, Permission, UserRole } from '@nexus/shared';
+import prisma from '@nexus/database';
 
 export interface AuthRequest extends Request {
   user?: JwtPayload;
 }
 
-export function authenticate(req: AuthRequest, res: Response, next: NextFunction) {
+export async function authenticate(req: AuthRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ success: false, error: 'Authentication required' });
@@ -14,18 +15,25 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
 
   try {
     const token = authHeader.split(' ')[1];
-    req.user = verifyAccessToken(token);
+    const payload = verifyAccessToken(token);
+    const user = await prisma.user.findUnique({ where: { id: payload.userId }, select: { id: true, isActive: true } });
+    if (!user || !user.isActive) {
+      return res.status(401).json({ success: false, error: 'Account suspended or inactive' });
+    }
+    req.user = payload;
     next();
   } catch (error) {
     return res.status(401).json({ success: false, error: 'Invalid or expired token' });
   }
 }
 
-export function optionalAuth(req: AuthRequest, _res: Response, next: NextFunction) {
+export async function optionalAuth(req: AuthRequest, _res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (authHeader?.startsWith('Bearer ')) {
     try {
-      req.user = verifyAccessToken(authHeader.split(' ')[1]);
+      const payload = verifyAccessToken(authHeader.split(' ')[1]);
+      const user = await prisma.user.findUnique({ where: { id: payload.userId }, select: { id: true, isActive: true } });
+      if (user?.isActive) req.user = payload;
     } catch {
       // Ignore invalid token for optional auth
     }
