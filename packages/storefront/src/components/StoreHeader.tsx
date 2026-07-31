@@ -35,11 +35,15 @@ export default function StoreHeader() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
           <button className="btn btn-ghost btn-icon" onClick={() => setSearchOpen(!searchOpen)}><Search size={20} /></button>
-          <Link href={`/store/${store.slug}/shop`} className="btn btn-ghost btn-icon"><Heart size={20} /></Link>
-          <Link href={`/store/${store.slug}/shop`} className="btn btn-ghost btn-icon"><ShoppingCart size={20} /></Link>
-          {user && (
-            <Link href={`/store/${store.slug}/shop`} className="btn btn-ghost btn-sm" style={{ gap: '0.375rem' }}>
+          <Link href="/wishlist" className="btn btn-ghost btn-icon"><Heart size={20} /></Link>
+          <Link href="/cart" className="btn btn-ghost btn-icon"><ShoppingCart size={20} /></Link>
+          {user ? (
+            <Link href="/account" className="btn btn-ghost btn-sm" style={{ gap: '0.375rem' }}>
               <User size={18} /> {user.firstName}
+            </Link>
+          ) : (
+            <Link href="/login" className="btn btn-ghost btn-sm" style={{ gap: '0.375rem' }}>
+              <User size={18} /> Sign In
             </Link>
           )}
           <button className="btn btn-ghost btn-icon store-mobile-menu-btn" onClick={() => setMobileMenu(!mobileMenu)}>
