@@ -22,7 +22,7 @@ export default function LoginPage() {
       <div className="card" style={{ width: '100%', maxWidth: 400, padding: '2.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
           <Terminal size={24} color="var(--primary)" />
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Developer Dashboard</h1>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Lyn-nxy Dev Dashboard</h1>
         </div>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>Full platform administration</p>
         {error && <div style={{ padding: '0.75rem', background: 'var(--error)', color: 'white', borderRadius: '0.5rem', marginBottom: '1rem', fontSize: '0.8125rem' }}>{error}</div>}

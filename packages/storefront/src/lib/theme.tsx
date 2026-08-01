@@ -13,7 +13,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem('adorn-theme');
+    const stored = localStorage.getItem('linnxy-theme');
     if (stored === 'light') setIsDark(false);
     else if (stored === 'dark') setIsDark(true);
     else setIsDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -21,7 +21,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-    localStorage.setItem('adorn-theme', isDark ? 'dark' : 'light');
+    localStorage.setItem('linnxy-theme', isDark ? 'dark' : 'light');
   }, [isDark]);
 
   const toggleDark = () => setIsDark(prev => !prev);

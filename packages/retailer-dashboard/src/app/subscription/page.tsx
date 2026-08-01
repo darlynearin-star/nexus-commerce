@@ -20,7 +20,12 @@ export default function SubscriptionPage() {
     try {
       const r: any = await api.post('/subscriptions/subscribe');
       setSub(r.data);
-      setMessage({ type: 'success', text: 'Subscription activated!' });
+      if (r.data?.checkoutUrl) {
+        setMessage({ type: 'success', text: 'Redirecting to payment...' });
+        window.location.href = r.data.checkoutUrl;
+      } else {
+        setMessage({ type: 'success', text: 'Subscription activated!' });
+      }
     } catch (e: any) {
       setMessage({ type: 'error', text: e?.message || 'Failed to activate' });
     }

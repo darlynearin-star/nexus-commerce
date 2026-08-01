@@ -7,6 +7,7 @@ interface User { id: string; email: string; firstName: string; lastName: string;
 interface AuthContextType {
   user: User | null; loading: boolean; login: (email: string, password: string) => Promise<void>;
   register: (data: any) => Promise<void>; logout: () => void;
+  completeSession: (res: { user: User; accessToken: string; refreshToken: string }) => Promise<void>;
 }
 const AuthContext = createContext<AuthContextType>({} as any);
 export const useAuth = () => useContext(AuthContext);
@@ -35,16 +36,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const login = async (email: string, password: string) => {
-    const res = await api.post<any>('/auth/login', { email, password });
-    localStorage.setItem('accessToken', res.data.accessToken);
-    localStorage.setItem('refreshToken', res.data.refreshToken);
-    setUser(res.data.user);
-    const role = res.data.user?.role;
+  async function completeSession(res: { user: User; accessToken: string; refreshToken: string }) {
+    localStorage.setItem('accessToken', res.accessToken);
+    localStorage.setItem('refreshToken', res.refreshToken);
+    setUser(res.user);
+    const role = res.user?.role;
     if (role === 'RETAILER') {
       const hasStore = await api.get('/stores/mine').then(() => true).catch(() => false);
       if (hasStore) {
-        window.location.href = (process.env.NEXT_PUBLIC_RETAILER_DASHBOARD_URL || 'https://nexus-commerce-retailer-dashboard.vercel.app') + '/dashboard#token=' + encodeURIComponent(res.data.accessToken);
+        window.location.href = (process.env.NEXT_PUBLIC_RETAILER_DASHBOARD_URL || 'https://nexus-commerce-retailer-dashboard.vercel.app') + '/dashboard#token=' + encodeURIComponent(res.accessToken);
       } else {
         router.push('/create-store');
       }
@@ -53,6 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       router.push('/account');
     }
+  }
+
+  const login = async (email: string, password: string) => {
+    const res = await api.post<any>('/auth/login', { email, password });
+    await completeSession(res.data);
   };
 
   const register = async (data: any) => {
@@ -71,5 +76,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push('/');
   };
 
-  return <AuthContext.Provider value={{ user, loading, login, register, logout }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, loading, login, register, logout, completeSession }}>{children}</AuthContext.Provider>;
 }

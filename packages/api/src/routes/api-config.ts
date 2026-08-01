@@ -6,12 +6,15 @@ import { logActivity } from '../utils/activity-log';
 
 export const apiConfigRouter = Router();
 
-const KEY_PREFIXES = ['MTN_', 'AIRTEL_', 'FLUTTERWAVE_'];
+const KEY_PREFIXES = ['MTN_', 'AIRTEL_', 'FLUTTERWAVE_', 'RESEND_', 'GOOGLE_', 'AUTH_'];
 
 const ALL_KEYS = [
   'MTN_MOMO_API_KEY', 'MTN_MOMO_API_USER',
   'AIRTEL_MONEY_API_KEY', 'AIRTEL_MONEY_USERNAME',
   'FLUTTERWAVE_PUBLIC_KEY', 'FLUTTERWAVE_SECRET_KEY', 'FLUTTERWAVE_WEBHOOK_SECRET',
+  'RESEND_API_KEY', 'RESEND_FROM_EMAIL',
+  'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET',
+  'AUTH_REDIRECT_URL',
   ...KEY_PREFIXES.map(p => `${p}ENABLED`),
   ...KEY_PREFIXES.map(p => `${p}LAST_TESTED`),
 ];
@@ -48,6 +51,13 @@ apiConfigRouter.post('/test/:key', authenticate, requirePermission(Permission.MA
         result.success = r.status === 200;
         result.message = r.ok ? 'Connected to Flutterwave API' : `HTTP ${r.status}`;
       } else result.message = 'Secret key not configured';
+    } else if (key === 'RESEND_API_KEY') {
+      const value = await prisma.setting.findUnique({ where: { key: 'RESEND_API_KEY' } });
+      if (value?.value) {
+        const r = await fetch('https://api.resend.com/domains', { headers: { Authorization: `Bearer ${value.value}` } });
+        result.success = r.status === 200;
+        result.message = r.ok ? 'Connected to Resend API' : `HTTP ${r.status}`;
+      } else result.message = 'API key not configured';
     } else {
       const setting = await prisma.setting.findUnique({ where: { key } });
       result.success = !!setting?.value;

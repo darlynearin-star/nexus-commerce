@@ -2,13 +2,14 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { Eye, EyeOff, Check, RefreshCw, Save, AlertCircle, Wifi, WifiOff, CreditCard, Zap } from 'lucide-react';
+import { Eye, EyeOff, Check, RefreshCw, Save, AlertCircle, Wifi, WifiOff, CreditCard, Zap, Mail, ShieldCheck } from 'lucide-react';
 
 interface IntegrationService {
   category: string;
   icon: any;
   services: {
     name: string;
+    icon?: any;
     keys: { key: string; label: string; type: 'password' | 'text' | 'number' }[];
   }[];
 }
@@ -20,6 +21,14 @@ const INTEGRATIONS: IntegrationService[] = [
       { name: 'MTN MoMo', keys: [{ key: 'MTN_MOMO_API_KEY', label: 'API Key', type: 'password' }, { key: 'MTN_MOMO_API_USER', label: 'API User', type: 'text' }] },
       { name: 'Airtel Money', keys: [{ key: 'AIRTEL_MONEY_API_KEY', label: 'API Key', type: 'password' }, { key: 'AIRTEL_MONEY_USERNAME', label: 'Username', type: 'text' }] },
       { name: 'Flutterwave', keys: [{ key: 'FLUTTERWAVE_PUBLIC_KEY', label: 'Public Key', type: 'text' }, { key: 'FLUTTERWAVE_SECRET_KEY', label: 'Secret Key', type: 'password' }, { key: 'FLUTTERWAVE_WEBHOOK_SECRET', label: 'Webhook Secret', type: 'password' }] },
+    ],
+  },
+  {
+    category: 'Auth & Email', icon: <ShieldCheck size={18} />,
+    services: [
+      { name: 'Resend (Magic Links)', keys: [{ key: 'RESEND_API_KEY', label: 'API Key', type: 'password' }, { key: 'RESEND_FROM_EMAIL', label: 'From Email', type: 'text' }] },
+      { name: 'Google Login', keys: [{ key: 'GOOGLE_CLIENT_ID', label: 'Client ID', type: 'text' }, { key: 'GOOGLE_CLIENT_SECRET', label: 'Client Secret', type: 'password' }] },
+      { name: 'Auth Redirect', icon: <Mail size={14} />, keys: [{ key: 'AUTH_REDIRECT_URL', label: 'Frontend URL (magic links + Google callback)', type: 'text' }] },
     ],
   },
 ];

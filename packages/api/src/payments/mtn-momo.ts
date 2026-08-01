@@ -10,7 +10,7 @@ async function getCredentials() {
 export const mtnMomoProvider: () => PaymentProvider = () => ({
   name: 'MTN MoMo',
 
-  async charge(amount: number, _currency: string, options: PaymentOptions): Promise<PaymentResult> {
+  async charge(amount: number, currency: string, options: PaymentOptions): Promise<PaymentResult> {
     const { apiKey, apiUser } = await getCredentials();
     if (!apiKey || !apiUser) return { success: false, status: 'ERROR', message: 'MTN MoMo not configured' };
     try {
@@ -29,8 +29,8 @@ export const mtnMomoProvider: () => PaymentProvider = () => ({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount: (amount / 100).toString(),
-          currency: 'EUR',
+          amount: amount.toString(),
+          currency: currency || 'UGX',
           externalId: options.reference,
           payer: { partyIdType: 'MSISDN', partyId: options.phone?.replace(/\D/g, '') || '' },
           payerMessage: 'Store purchase',

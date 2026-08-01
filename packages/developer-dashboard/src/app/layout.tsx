@@ -40,7 +40,7 @@ function Sidebar({ children }: { children: React.ReactNode }) {
       <div className={`sidebar-overlay ${mobileOpen ? 'open' : ''}`} onClick={closeMobile} />
       <div className={`sidebar ${mobileOpen ? 'open' : ''}`} style={{ width: collapsed ? 64 : 'var(--sidebar)', transition: 'width 0.2s' }}>
         <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'space-between' }}>
-          {!collapsed && <Link href="/dashboard" onClick={closeMobile} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary)', textDecoration: 'none' }}><Terminal size={22} /> Developer</Link>}
+          {!collapsed && <Link href="/dashboard" onClick={closeMobile} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary)', textDecoration: 'none' }}><Terminal size={22} /> Lyn-nxy Dev</Link>}
           <button className="btn btn-ghost btn-icon" onClick={() => { if (window.innerWidth < 768) setMobileOpen(false); else setCollapsed(!collapsed); }}>{collapsed ? <Menu size={18} /> : <X size={18} />}</button>
         </div>
         <nav style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>

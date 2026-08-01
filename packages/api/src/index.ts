@@ -69,6 +69,19 @@ async function runMigrations() {
     logger.info('Migration: added estimatedDelivery to orders');
     await prisma.$executeRawUnsafe("ALTER TABLE orders ADD COLUMN IF NOT EXISTS \"deliveredAt\" TIMESTAMP");
     logger.info('Migration: added deliveredAt to orders');
+    // Auth: Google OAuth + magic links
+    await prisma.$executeRawUnsafe('ALTER TABLE users ADD COLUMN IF NOT EXISTS "googleId" TEXT');
+    await prisma.$executeRawUnsafe('ALTER TABLE users ALTER COLUMN "passwordHash" DROP NOT NULL');
+    await prisma.$executeRawUnsafe('CREATE UNIQUE INDEX IF NOT EXISTS users_googleid_key ON users("googleId") WHERE "googleId" IS NOT NULL');
+    await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS magic_link_tokens (
+      id TEXT PRIMARY KEY,
+      token TEXT NOT NULL UNIQUE,
+      email TEXT NOT NULL,
+      "expiresAt" TIMESTAMP NOT NULL,
+      "usedAt" TIMESTAMP,
+      "createdAt" TIMESTAMP NOT NULL DEFAULT now()
+    )`);
+    logger.info('Migration: added googleId + magic_link_tokens');
   } catch (e: any) {
     logger.warn(`Migrations skipped: ${e.message}`);
   }
@@ -186,7 +199,7 @@ app.use('/api/*', (_req, res) => {
 app.use(errorHandler);
 
 app.listen(PORT, async () => {
-  logger.info(`Nexus Commerce API running on port ${PORT}`);
+  logger.info(`Lyn-nxy Stores API running on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
   await runMigrations();
 });

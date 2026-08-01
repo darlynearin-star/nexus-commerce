@@ -4,14 +4,14 @@
 
 :root {
   --sidebar: 260px;
-  --primary: #6366f1;
-  --primary-dark: #4f46e5;
-  --bg: #0a0f1e;
-  --bg-secondary: #111827;
-  --bg-card: #1a2332;
+  --primary: #00D9A3;
+  --primary-dark: #00A87B;
+  --bg: #0A0F0D;
+  --bg-secondary: #101713;
+  --bg-card: #131B17;
   --text: #f1f5f9;
   --text-secondary: #94a3b8;
-  --border: #1e293b;
+  --border: #22302A;
   --success: #22c55e;
   --warning: #f59e0b;
   --error: #ef4444;
@@ -36,8 +36,8 @@ body {
   cursor: pointer; border: 1px solid transparent;
   transition: all 0.2s;
 }
-.btn-primary { background: var(--primary); color: white; }
-.btn-primary:hover { background: var(--primary-dark); }
+.btn-primary { background: var(--primary); color: var(--bg); }
+.btn-primary:hover { background: var(--primary-dark); color: var(--bg); }
 .btn-secondary { background: var(--bg-card); color: var(--text); border-color: var(--border); }
 .btn-secondary:hover { border-color: var(--text-secondary); }
 .btn-ghost { background: transparent; color: var(--text-secondary); }

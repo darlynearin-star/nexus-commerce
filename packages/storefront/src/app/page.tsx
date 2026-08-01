@@ -218,7 +218,7 @@ export default function LandingPage() {
             {[
               { icon: <Layout size={24} />, title: '4 Templates', desc: 'Elegance, Minimal, Bold, Nature — pick the look that fits your brand.' },
               { icon: <Palette size={24} />, title: 'Custom Branding', desc: 'Set your colors, upload your logo and banner. Your store, your identity.' },
-              { icon: <Globe size={24} />, title: 'Your Own URL', desc: 'Get a unique Adorn URL for your store. Share it everywhere.' },
+              { icon: <Globe size={24} />, title: 'Your Own URL', desc: 'Get a unique Lyn-nxy Stores URL for your store. Share it everywhere.' },
               { icon: <Store size={24} />, title: 'Own Products', desc: 'List your items, set UGX prices, organize categories, manage stock.' },
               { icon: <Users size={24} />, title: 'Own Customers', desc: 'Build your customer base. Track orders and engagement.' },
               { icon: <Smartphone size={24} />, title: 'Mobile Money', desc: 'Accept MTN MoMo and Airtel Money payments from day one.' },

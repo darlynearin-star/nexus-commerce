@@ -43,7 +43,7 @@ export default function Header() {
         <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64, gap: '1rem' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary)', textDecoration: 'none', flexShrink: 0 }}>
             <Gem size={28} />
-            <span className={isDark ? 'gold-shimmer' : ''}>Adorn</span>
+            <span className={isDark ? 'gold-shimmer' : ''}>Lyn-nxy Stores</span>
           </Link>
 
           <nav style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }} className="desktop-nav">
@@ -88,7 +88,7 @@ export default function Header() {
         <div style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
           <Link href="/" onClick={close} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary)', textDecoration: 'none' }}>
             <Gem size={24} />
-            <span className={isDark ? 'gold-shimmer' : ''}>Adorn</span>
+            <span className={isDark ? 'gold-shimmer' : ''}>Lyn-nxy Stores</span>
           </Link>
           <button className="btn btn-ghost btn-icon" onClick={close}><X size={20} /></button>
         </div>

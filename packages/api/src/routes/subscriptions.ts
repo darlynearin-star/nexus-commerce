@@ -3,6 +3,7 @@ import prisma from '@nexus/database';
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth';
 import { UserRole } from '@nexus/shared';
 import { logActivity } from '../utils/activity-log';
+import { getPaymentProvider } from '../payments';
 
 export const subscriptionsRouter = Router();
 
@@ -33,15 +34,49 @@ subscriptionsRouter.post('/subscribe', authenticate, requireRole(UserRole.RETAIL
       return res.json({ success: true, data: retailer.subscription, message: 'Already active' });
     }
 
+    const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+    const provider = getPaymentProvider('flutterwave');
+    if (!provider) return res.status(503).json({ success: false, error: 'Flutterwave is not configured yet' });
+
     const nextBilling = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const subscription = await prisma.retailerSubscription.upsert({
       where: { retailerId: retailer.id },
-      create: { retailerId: retailer.id, status: 'ACTIVE', trialStart: new Date(), trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), nextBillingDate: nextBilling },
-      update: { status: 'ACTIVE', nextBillingDate: nextBilling },
+      create: { retailerId: retailer.id, status: 'TRIAL', trialStart: new Date(), trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), nextBillingDate: nextBilling },
+      update: { nextBillingDate: nextBilling },
     });
 
-    logActivity({ userId: req.user!.userId, action: 'subscription:activated', resource: 'subscription', resourceId: subscription.id, req: req as any });
-    res.json({ success: true, data: subscription });
+    const reference = `SUB-${subscription.id}-${Date.now()}`;
+    const callbackUrl = `${req.protocol}://${req.get('host')}/api/subscriptions/callback`;
+
+    const result = await provider.charge(subscription.weeklyAmount, subscription.currency, {
+      email: user.email,
+      phone: user.phone || undefined,
+      reference,
+      callbackUrl,
+      metadata: { subscriptionId: subscription.id, retailerId: retailer.id },
+    });
+
+    if (!result.success) {
+      return res.status(502).json({ success: false, error: result.message || 'Failed to initiate payment' });
+    }
+
+    await prisma.subscriptionPayment.create({
+      data: {
+        subscriptionId: subscription.id,
+        amount: subscription.weeklyAmount,
+        currency: subscription.currency,
+        method: 'flutterwave',
+        status: 'PENDING',
+        transactionId: result.transactionId,
+        periodStart: new Date(),
+        periodEnd: nextBilling,
+      },
+    });
+
+    logActivity({ userId: req.user!.userId, action: 'subscription:payment_initiated', resource: 'subscription', resourceId: subscription.id, details: { amount: subscription.weeklyAmount, method: 'flutterwave' }, req: req as any });
+    res.json({ success: true, data: { ...subscription, checkoutUrl: result.data?.link || null } });
   } catch (error) { next(error); }
 });
 
@@ -57,6 +92,60 @@ subscriptionsRouter.post('/cancel', authenticate, requireRole(UserRole.RETAILER)
 
     logActivity({ userId: req.user!.userId, action: 'subscription:cancelled', resource: 'subscription', resourceId: subscription.id, req: req as any });
     res.json({ success: true, data: subscription });
+  } catch (error) { next(error); }
+});
+
+async function verifySubscriptionPayment(transactionId: string) {
+  const provider = getPaymentProvider('flutterwave');
+  if (!provider) return { ok: false as const, message: 'Flutterwave not configured' };
+
+  const result = await provider.verify(transactionId);
+  if (!result.success || result.status !== 'PAID') {
+    return { ok: false as const, message: result.message || 'Payment not confirmed yet' };
+  }
+
+  const payment = await prisma.subscriptionPayment.findFirst({ where: { transactionId } });
+  if (!payment) return { ok: false as const, message: 'Payment record not found' };
+
+  await prisma.subscriptionPayment.update({ where: { id: payment.id }, data: { status: 'PAID' } });
+  await prisma.retailerSubscription.update({
+    where: { id: payment.subscriptionId },
+    data: { status: 'ACTIVE', lastBillingDate: new Date(), nextBillingDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+  });
+  return { ok: true as const, payment, subscriptionId: payment.subscriptionId };
+}
+
+// Flutterwave redirects the browser back here after payment
+subscriptionsRouter.get('/callback', async (req, res, next) => {
+  try {
+    const transactionId = (req.query.transaction_id as string) || (req.query.transactionId as string);
+    const txRef = req.query.tx_ref as string | undefined;
+
+    if (!transactionId && !txRef) return res.redirect(`/?payment=error&message=missing_transaction`);
+
+    const provider = getPaymentProvider('flutterwave');
+    const result = await provider!.verify(transactionId || txRef!);
+
+    if (result.success && result.status === 'PAID') {
+      const verified = await verifySubscriptionPayment(transactionId || txRef!);
+      if (verified.ok) {
+        logActivity({ userId: 'system', action: 'subscription:renewed', resource: 'subscription', resourceId: verified.subscriptionId, req: req as any });
+        return res.redirect(`/?payment=success`);
+      }
+    }
+    res.redirect(`/?payment=error`);
+  } catch (error) { next(error); }
+});
+
+// Manual verify (frontend polls after redirect)
+subscriptionsRouter.post('/verify', authenticate, requireRole(UserRole.RETAILER), async (req: AuthRequest, res, next) => {
+  try {
+    const { transactionId } = req.body;
+    if (!transactionId) return res.status(400).json({ success: false, error: 'transactionId is required' });
+
+    const verified = await verifySubscriptionPayment(transactionId);
+    if (!verified.ok) return res.status(400).json({ success: false, error: verified.message });
+    res.json({ success: true, data: { subscriptionId: verified.subscriptionId, payment: verified.payment } });
   } catch (error) { next(error); }
 });
 

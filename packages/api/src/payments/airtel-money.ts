@@ -12,7 +12,7 @@ const AIRTEL_BASE = 'https://openapi.airtel.africa';
 export const airtelMoneyProvider: () => PaymentProvider = () => ({
   name: 'Airtel Money',
 
-  async charge(amount: number, _currency: string, options: PaymentOptions): Promise<PaymentResult> {
+  async charge(amount: number, currency: string, options: PaymentOptions): Promise<PaymentResult> {
     const { apiKey, username } = await getCredentials();
     if (!apiKey || !username) return { success: false, status: 'ERROR', message: 'Airtel Money not configured' };
     try {
@@ -26,8 +26,8 @@ export const airtelMoneyProvider: () => PaymentProvider = () => ({
         method: 'POST',
         headers: { Authorization: `Bearer ${auth.access_token}`, 'Content-Type': 'application/json', 'X-Reference-Id': options.reference },
         body: JSON.stringify({
-          amount: (amount / 100).toString(),
-          currency: 'UGX',
+          amount: amount.toString(),
+          currency: currency || 'UGX',
           reference: options.reference,
           subscriber: { msisdn: options.phone?.replace(/\D/g, ''), country: 'UG' },
           description: 'Store purchase',

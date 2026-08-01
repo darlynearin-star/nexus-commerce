@@ -18,7 +18,7 @@ export const flutterwaveProvider: () => PaymentProvider = () => ({
         headers: { Authorization: `Bearer ${secretKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tx_ref: options.reference,
-          amount: amount / 100,
+          amount,
           currency,
           redirect_url: options.callbackUrl,
           customer: { email: options.email, phonenumber: options.phone },
@@ -59,7 +59,7 @@ export const flutterwaveProvider: () => PaymentProvider = () => ({
       const res = await fetch(`https://api.flutterwave.com/v3/transactions/${transactionId}/refund`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${secretKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(amount ? { amount: amount / 100 } : {}),
+        body: JSON.stringify(amount ? { amount } : {}),
       });
       const data: any = await res.json();
       if (data.status === 'success') {
