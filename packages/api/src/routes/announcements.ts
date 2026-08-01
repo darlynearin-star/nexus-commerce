@@ -3,11 +3,15 @@ import prisma from '@nexus/database';
 import { UserRole } from '@nexus/shared';
 import { authenticate, requireRole } from '../middleware/auth';
 import { logActivity } from '../utils/activity-log';
+import { cacheGet, cacheSet, clearCache } from './cache';
 
 export const announcementsRouter = Router();
 
 announcementsRouter.get('/', async (_req, res, next) => {
   try {
+    const cached = cacheGet('public:announcements');
+    if (cached) return res.json({ success: true, data: cached });
+
     const setting = await prisma.setting.findUnique({ where: { key: 'platform_announcements' } });
     const announcements = (setting?.value as any[]) || [];
     const now = new Date();
@@ -17,6 +21,8 @@ announcementsRouter.get('/', async (_req, res, next) => {
       if (a.endsAt && new Date(a.endsAt) < now) return false;
       return true;
     });
+
+    cacheSet('public:announcements', active, 30000);
     res.json({ success: true, data: active });
   } catch (error) { next(error); }
 });
@@ -45,6 +51,7 @@ announcementsRouter.post('/', authenticate, requireRole(UserRole.DEVELOPER, User
       create: { key: 'platform_announcements', value: announcements },
     });
     logActivity({ userId: (req as any).user!.userId, action: 'announcement:created', resource: 'announcement', details: { title }, req: req as any });
+    clearCache('public:announcements');
     res.json({ success: true, data: announcements });
   } catch (error) { next(error); }
 });
@@ -70,6 +77,7 @@ announcementsRouter.put('/:id', authenticate, requireRole(UserRole.DEVELOPER, Us
       create: { key: 'platform_announcements', value: announcements },
     });
     logActivity({ userId: (req as any).user!.userId, action: 'announcement:updated', resource: 'announcement', details: { id: req.params.id }, req: req as any });
+    clearCache('public:announcements');
     res.json({ success: true, data: announcements });
   } catch (error) { next(error); }
 });
@@ -85,6 +93,7 @@ announcementsRouter.delete('/:id', authenticate, requireRole(UserRole.DEVELOPER,
       create: { key: 'platform_announcements', value: filtered },
     });
     logActivity({ userId: (req as any).user!.userId, action: 'announcement:deleted', resource: 'announcement', details: { id: req.params.id }, req: req as any });
+    clearCache('public:announcements');
     res.json({ success: true, data: filtered });
   } catch (error) { next(error); }
 });

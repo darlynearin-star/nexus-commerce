@@ -17,7 +17,10 @@ activityLogsRouter.get('/', authenticate, requirePermission(Permission.VIEW_LOGS
     if (userId) where.userId = userId;
 
     const [logs, total] = await Promise.all([
-      prisma.activityLog.findMany({ where, orderBy: { createdAt: 'desc' }, skip: (page - 1) * limit, take: limit }),
+      prisma.activityLog.findMany({
+        where, orderBy: { createdAt: 'desc' }, skip: (page - 1) * limit, take: limit,
+        include: { user: { select: { email: true, firstName: true, lastName: true } } },
+      }),
       prisma.activityLog.count({ where }),
     ]);
 

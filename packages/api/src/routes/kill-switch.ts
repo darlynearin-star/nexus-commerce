@@ -6,7 +6,7 @@ import { logActivity } from '../utils/activity-log';
 
 export const killSwitchRouter = Router();
 
-killSwitchRouter.get('/', authenticate, async (req, res, next) => {
+killSwitchRouter.get('/', authenticate, requirePermission(Permission.MANAGE_KILL_SWITCH), async (req, res, next) => {
   try {
     const state = await prisma.killSwitch.findFirst();
     res.json({ success: true, data: state });

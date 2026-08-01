@@ -2,6 +2,7 @@ import { Router } from 'express';
 import prisma from '@nexus/database';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { StoreRequest, requireStore } from '../middleware/resolve-store';
+import { requireFeatureEnabled } from '../middleware/feature-flags';
 
 export const wishlistRouter = Router();
 wishlistRouter.use(requireStore);
@@ -14,7 +15,7 @@ wishlistRouter.get('/', authenticate, async (req: StoreRequest, res, next) => {
   } catch (error) { next(error); }
 });
 
-wishlistRouter.post('/add', authenticate, async (req: StoreRequest, res, next) => {
+wishlistRouter.post('/add', authenticate, requireFeatureEnabled('wishlist'), async (req: StoreRequest, res, next) => {
   try {
     const { productId } = req.body;
     const customer = await prisma.customer.findUnique({ where: { userId: (req as any).user!.userId } });

@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/lib/theme';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ParticleField from '@/components/Background/ParticleField';
+import AnnouncementBanner from '@/components/AnnouncementBanner';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <AuthProvider>
             <ParticleField />
+            <AnnouncementBanner />
             <Header />
             <main style={{ minHeight: 'calc(100vh - 64px)', position: 'relative', zIndex: 1 }}>{children}</main>
             <Footer />

@@ -167,3 +167,25 @@ adminRouter.post('/cleanup', authenticate, requirePermission(Permission.MANAGE_S
     res.json({ success: true, message: `Cleanup complete: ${storesDeleted} stores deleted, ${usersToDelete.length} users deleted` });
   } catch (error) { next(error); }
 });
+
+adminRouter.get('/summary', authenticate, requirePermission(Permission.MANAGE_SYSTEM), async (_req: AuthRequest, res, next) => {
+  try {
+    const [revenue, users, stores, orders, products] = await Promise.all([
+      prisma.order.aggregate({ where: { status: { notIn: ['CANCELLED', 'REFUNDED', 'RETURNED'] } }, _sum: { total: true } }),
+      prisma.user.count({ where: { role: UserRole.CUSTOMER } }),
+      prisma.store.count(),
+      prisma.order.count(),
+      prisma.product.count({ where: { status: 'PUBLISHED' } }),
+    ]);
+    res.json({
+      success: true,
+      data: {
+        totalRevenue: revenue._sum.total || 0,
+        totalUsers: users,
+        totalStores: stores,
+        totalOrders: orders,
+        totalProducts: products,
+      },
+    });
+  } catch (error) { next(error); }
+});

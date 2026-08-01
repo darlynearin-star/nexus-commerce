@@ -2,6 +2,7 @@ import { Router } from 'express';
 import prisma from '@nexus/database';
 import { authenticate, requirePermission, AuthRequest } from '../middleware/auth';
 import { Permission } from '@nexus/shared';
+import { requireFeatureEnabled } from '../middleware/feature-flags';
 import { logActivity } from '../utils/activity-log';
 
 // TODO before production launch: reduce this back to ~50-100
@@ -60,7 +61,7 @@ storesRouter.get('/check-slug/:slug', async (req, res, next) => {
 });
 
 // Create a store (authenticated users)
-storesRouter.post('/', authenticate, async (req: AuthRequest, res, next) => {
+storesRouter.post('/', authenticate, requireFeatureEnabled('storeCreation'), async (req: AuthRequest, res, next) => {
   try {
     const storeCount = await prisma.store.count();
     if (storeCount >= MAX_STORES) {

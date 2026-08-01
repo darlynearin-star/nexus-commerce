@@ -2,6 +2,7 @@ import { Router } from 'express';
 import prisma from '@nexus/database';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { StoreRequest, requireStore } from '../middleware/resolve-store';
+import { requireFeatureEnabled } from '../middleware/feature-flags';
 
 export const reviewsRouter = Router();
 reviewsRouter.use(requireStore);
@@ -18,7 +19,7 @@ reviewsRouter.get('/product/:productId', async (req: StoreRequest, res, next) =>
   } catch (error) { next(error); }
 });
 
-reviewsRouter.post('/', authenticate, async (req: StoreRequest, res, next) => {
+reviewsRouter.post('/', authenticate, requireFeatureEnabled('reviews'), async (req: StoreRequest, res, next) => {
   try {
     const customer = await prisma.customer.findUnique({ where: { userId: (req as any).user!.userId } });
     if (!customer) return res.status(400).json({ success: false, error: 'Customer not found' });

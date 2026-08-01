@@ -42,6 +42,14 @@ async function main() {
 
   await prisma.killSwitch.create({ data: {} });
 
+  await prisma.featureFlag.createMany({
+    data: [
+      { key: 'reviews', name: 'Product Reviews', description: 'Allow customers to submit product reviews', enabled: true },
+      { key: 'wishlist', name: 'Wishlist', description: 'Allow customers to save products to their wishlist', enabled: true },
+      { key: 'storeCreation', name: 'Store Creation', description: 'Allow new stores to be created on the platform', enabled: true },
+    ],
+  });
+
   const passwordHash = await bcrypt.hash('Password123!', 10);
 
   const adminUser = await prisma.user.create({

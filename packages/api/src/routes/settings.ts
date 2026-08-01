@@ -6,7 +6,7 @@ import { logActivity } from '../utils/activity-log';
 
 export const settingsRouter = Router();
 
-settingsRouter.get('/', authenticate, async (req: AuthRequest, res, next) => {
+settingsRouter.get('/', authenticate, requirePermission(Permission.MANAGE_SETTINGS), async (req: AuthRequest, res, next) => {
   try {
     const settings = await prisma.setting.findMany();
     const result: Record<string, any> = {};

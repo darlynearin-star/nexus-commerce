@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
-import { Users, DollarSign, AlertTriangle } from 'lucide-react';
+import { Users, DollarSign, AlertTriangle, Store, ShoppingCart, Package } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -14,7 +14,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!loading && (!user || (user.role !== 'DEVELOPER' && user.role !== 'SUPER_DEVELOPER'))) router.push('/login');
     Promise.all([
-      api.get('/analytics/summary'),
+      api.get('/admin/summary'),
       api.get('/kill-switch'),
     ]).then(([s, k]) => { setStats(s.data); setKillSwitch(k.data); }).catch((e: any) => console.error('API error:', e));
   }, [user, loading]);
@@ -23,7 +23,10 @@ export default function DashboardPage() {
 
   const cards = [
     { label: 'Total Revenue', value: `UGX ${(stats.totalRevenue || 0).toLocaleString()}`, icon: <DollarSign size={24} /> },
-    { label: 'Total Users', value: (stats.totalCustomers || 0).toString(), icon: <Users size={24} /> },
+    { label: 'Total Users', value: (stats.totalUsers || 0).toString(), icon: <Users size={24} /> },
+    { label: 'Total Stores', value: (stats.totalStores || 0).toString(), icon: <Store size={24} /> },
+    { label: 'Total Orders', value: (stats.totalOrders || 0).toString(), icon: <ShoppingCart size={24} /> },
+    { label: 'Products Live', value: (stats.totalProducts || 0).toString(), icon: <Package size={24} /> },
   ];
 
   const activeKills = killSwitch ? Object.entries(killSwitch).filter(([k, v]) => v === true && k !== 'id' && k !== 'updatedAt' && k !== 'updatedBy' && k !== 'maintenanceMessage').length : 0;

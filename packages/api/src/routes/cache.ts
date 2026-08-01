@@ -23,6 +23,13 @@ export function cacheSet(key: string, value: any, ttlMs: number = 60000) {
   memoryCache.set(key, { key, value, ttl: ttlMs, createdAt: Date.now() });
 }
 
+export function clearCache(prefix?: string) {
+  if (!prefix) { memoryCache.clear(); return; }
+  for (const key of Array.from(memoryCache.keys())) {
+    if (key.startsWith(prefix)) memoryCache.delete(key);
+  }
+}
+
 export const cacheRouter = Router();
 
 cacheRouter.get('/', authenticate, requireRole(UserRole.DEVELOPER, UserRole.SUPER_DEVELOPER), async (_req, res, next) => {
