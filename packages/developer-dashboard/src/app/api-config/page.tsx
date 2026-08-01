@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { Key, Eye, EyeOff, Check, X, RefreshCw, Save, AlertCircle, Wifi, WifiOff, Globe, Mail, CreditCard, Lock, Database, Camera, Smartphone, Server, Zap, BookOpen, Brain, Map, Shield, BarChart3, Bug, HardDrive } from 'lucide-react';
+import { Eye, EyeOff, Check, RefreshCw, Save, AlertCircle, Wifi, WifiOff, CreditCard, Zap } from 'lucide-react';
 
 interface IntegrationService {
   category: string;
@@ -15,77 +15,11 @@ interface IntegrationService {
 
 const INTEGRATIONS: IntegrationService[] = [
   {
-    category: 'Authentication', icon: <Lock size={18} />,
-    services: [
-      { name: 'Google OAuth', keys: [{ key: 'GOOGLE_OAUTH_CLIENT_ID', label: 'Client ID', type: 'text' }, { key: 'GOOGLE_OAUTH_CLIENT_SECRET', label: 'Client Secret', type: 'password' }] },
-      { name: 'Facebook OAuth', keys: [{ key: 'FACEBOOK_OAUTH_CLIENT_ID', label: 'App ID', type: 'text' }, { key: 'FACEBOOK_OAUTH_CLIENT_SECRET', label: 'App Secret', type: 'password' }] },
-      { name: 'Apple Sign-In', keys: [{ key: 'APPLE_SIGN_IN_CLIENT_ID', label: 'Client ID', type: 'text' }, { key: 'APPLE_SIGN_IN_KEY_ID', label: 'Key ID', type: 'text' }, { key: 'APPLE_SIGN_IN_TEAM_ID', label: 'Team ID', type: 'text' }] },
-      { name: 'GitHub OAuth', keys: [{ key: 'GITHUB_OAUTH_CLIENT_ID', label: 'Client ID', type: 'text' }, { key: 'GITHUB_OAUTH_CLIENT_SECRET', label: 'Client Secret', type: 'password' }] },
-    ],
-  },
-  {
-    category: 'Storage & Media', icon: <Camera size={18} />,
-    services: [
-      { name: 'Cloudinary', keys: [{ key: 'CLOUDINARY_CLOUD_NAME', label: 'Cloud Name', type: 'text' }, { key: 'CLOUDINARY_API_KEY', label: 'API Key', type: 'text' }, { key: 'CLOUDINARY_API_SECRET', label: 'API Secret', type: 'password' }] },
-      { name: 'AWS S3', keys: [{ key: 'AWS_ACCESS_KEY_ID', label: 'Access Key ID', type: 'text' }, { key: 'AWS_SECRET_ACCESS_KEY', label: 'Secret Access Key', type: 'password' }, { key: 'AWS_S3_REGION', label: 'Region', type: 'text' }, { key: 'AWS_S3_BUCKET', label: 'Bucket Name', type: 'text' }] },
-      { name: 'Firebase', keys: [{ key: 'FIREBASE_API_KEY', label: 'API Key', type: 'text' }, { key: 'FIREBASE_PROJECT_ID', label: 'Project ID', type: 'text' }, { key: 'FIREBASE_PRIVATE_KEY', label: 'Private Key', type: 'password' }] },
-      { name: 'Supabase', keys: [{ key: 'SUPABASE_URL', label: 'Project URL', type: 'text' }, { key: 'SUPABASE_ANON_KEY', label: 'Anon Key', type: 'password' }, { key: 'SUPABASE_SERVICE_KEY', label: 'Service Key', type: 'password' }] },
-    ],
-  },
-  {
     category: 'Payments', icon: <CreditCard size={18} />,
     services: [
-      { name: 'Stripe', keys: [{ key: 'STRIPE_PUBLISHABLE_KEY', label: 'Publishable Key', type: 'text' }, { key: 'STRIPE_SECRET_KEY', label: 'Secret Key', type: 'password' }, { key: 'STRIPE_WEBHOOK_SECRET', label: 'Webhook Secret', type: 'password' }] },
-      { name: 'Flutterwave', keys: [{ key: 'FLUTTERWAVE_PUBLIC_KEY', label: 'Public Key', type: 'text' }, { key: 'FLUTTERWAVE_SECRET_KEY', label: 'Secret Key', type: 'password' }, { key: 'FLUTTERWAVE_WEBHOOK_SECRET', label: 'Webhook Secret', type: 'password' }] },
-      { name: 'Paystack', keys: [{ key: 'PAYSTACK_PUBLIC_KEY', label: 'Public Key', type: 'text' }, { key: 'PAYSTACK_SECRET_KEY', label: 'Secret Key', type: 'password' }] },
+      { name: 'MTN MoMo', keys: [{ key: 'MTN_MOMO_API_KEY', label: 'API Key', type: 'password' }, { key: 'MTN_MOMO_API_USER', label: 'API User', type: 'text' }] },
       { name: 'Airtel Money', keys: [{ key: 'AIRTEL_MONEY_API_KEY', label: 'API Key', type: 'password' }, { key: 'AIRTEL_MONEY_USERNAME', label: 'Username', type: 'text' }] },
-      { name: 'MTN MoMo', keys: [{ key: 'MTN_MOMO_API_KEY', label: 'API Key', type: 'password' }, { key: 'MTN_MOMO_API_USER', label: 'API User', type: 'text' }, { key: 'MTN_MOMO_SUBSCRIPTION_KEY', label: 'Subscription Key', type: 'password' }] },
-      { name: 'Pesapal', keys: [{ key: 'PESAPAL_CONSUMER_KEY', label: 'Consumer Key', type: 'text' }, { key: 'PESAPAL_CONSUMER_SECRET', label: 'Consumer Secret', type: 'password' }] },
-    ],
-  },
-  {
-    category: 'Email & Notifications', icon: <Mail size={18} />,
-    services: [
-      { name: 'SMTP', keys: [{ key: 'SMTP_HOST', label: 'Host', type: 'text' }, { key: 'SMTP_PORT', label: 'Port', type: 'number' }, { key: 'SMTP_USER', label: 'Username', type: 'text' }, { key: 'SMTP_PASS', label: 'Password', type: 'password' }, { key: 'SMTP_FROM', label: 'From Address', type: 'text' }] },
-      { name: 'Resend', keys: [{ key: 'RESEND_API_KEY', label: 'API Key', type: 'password' }] },
-      { name: 'Mailgun', keys: [{ key: 'MAILGUN_API_KEY', label: 'API Key', type: 'password' }, { key: 'MAILGUN_DOMAIN', label: 'Domain', type: 'text' }] },
-      { name: 'Twilio (SMS)', keys: [{ key: 'TWILIO_ACCOUNT_SID', label: 'Account SID', type: 'text' }, { key: 'TWILIO_AUTH_TOKEN', label: 'Auth Token', type: 'password' }, { key: 'TWILIO_PHONE_NUMBER', label: 'Phone Number', type: 'text' }] },
-    ],
-  },
-  {
-    category: 'AI & Language', icon: <Brain size={18} />,
-    services: [
-      { name: 'OpenAI', keys: [{ key: 'OPENAI_API_KEY', label: 'API Key', type: 'password' }] },
-      { name: 'Anthropic', keys: [{ key: 'ANTHROPIC_API_KEY', label: 'API Key', type: 'password' }] },
-      { name: 'Google Gemini', keys: [{ key: 'GOOGLE_GEMINI_API_KEY', label: 'API Key', type: 'password' }] },
-      { name: 'HuggingFace', keys: [{ key: 'HUGGINGFACE_API_KEY', label: 'API Key', type: 'password' }] },
-    ],
-  },
-  {
-    category: 'Maps & Location', icon: <Map size={18} />,
-    services: [
-      { name: 'Mapbox', keys: [{ key: 'MAPBOX_ACCESS_TOKEN', label: 'Access Token', type: 'password' }] },
-      { name: 'Google Maps', keys: [{ key: 'GOOGLE_MAPS_API_KEY', label: 'API Key', type: 'password' }] },
-    ],
-  },
-  {
-    category: 'Security', icon: <Shield size={18} />,
-    services: [
-      { name: 'reCAPTCHA', keys: [{ key: 'RECAPTCHA_SITE_KEY', label: 'Site Key', type: 'text' }, { key: 'RECAPTCHA_SECRET_KEY', label: 'Secret Key', type: 'password' }] },
-      { name: 'Cloudflare', keys: [{ key: 'CLOUDFLARE_API_TOKEN', label: 'API Token', type: 'password' }, { key: 'CLOUDFLARE_ZONE_ID', label: 'Zone ID', type: 'text' }] },
-    ],
-  },
-  {
-    category: 'Monitoring', icon: <BarChart3 size={18} />,
-    services: [
-      { name: 'Analytics (GA)', keys: [{ key: 'ANALYTICS_GA_ID', label: 'Measurement ID', type: 'text' }] },
-      { name: 'Sentry', keys: [{ key: 'SENTRY_DSN', label: 'DSN', type: 'password' }] },
-    ],
-  },
-  {
-    category: 'Infrastructure', icon: <Server size={18} />,
-    services: [
-      { name: 'Redis', keys: [{ key: 'REDIS_URL', label: 'Connection URL', type: 'password' }] },
+      { name: 'Flutterwave', keys: [{ key: 'FLUTTERWAVE_PUBLIC_KEY', label: 'Public Key', type: 'text' }, { key: 'FLUTTERWAVE_SECRET_KEY', label: 'Secret Key', type: 'password' }, { key: 'FLUTTERWAVE_WEBHOOK_SECRET', label: 'Webhook Secret', type: 'password' }] },
     ],
   },
 ];
