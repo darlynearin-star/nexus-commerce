@@ -67,7 +67,7 @@ export default function UsersPage() {
                     {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
-                <div><label style={{ fontSize: '0.75rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>Password (optional)</label><input className="input" type="password" placeholder="Default: Password123!" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} /></div>
+                <div><label style={{ fontSize: '0.75rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>Password (optional)</label><input className="input" type="password" placeholder="Password (random if blank)" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} /></div>
               </div>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>A retailer account will also create a store for the user. An email verification is not required for created accounts.</p>
               {error && <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', background: '#2e0505', color: '#f87171', fontSize: '0.8125rem' }}><AlertTriangle size={14} /> {error}</div>}

@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { User, Package, ShoppingCart, Mail, Settings, LogOut, Store, Activity, AlertTriangle, Bell, CheckCheck, ExternalLink, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 
-const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'http://localhost:3000';
+const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
 
 export default function AccountPage() {
   const { user, logout } = useAuth();

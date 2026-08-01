@@ -216,7 +216,7 @@ authRouter.post('/magic-link', async (req, res, next) => {
       data: { token, email, expiresAt: new Date(Date.now() + 15 * 60 * 1000) },
     });
 
-    const frontendUrl = (await getSetting('AUTH_REDIRECT_URL')) || 'http://localhost:3000';
+    const frontendUrl = (await getSetting('AUTH_REDIRECT_URL')) || 'https://nexus-storefront-dusky.vercel.app';
     const link = `${frontendUrl}/auth/magic-link?token=${token}&email=${encodeURIComponent(email)}`;
 
     await sendEmail({
@@ -314,7 +314,7 @@ authRouter.get('/google/callback', async (req, res, next) => {
 
     const clientId = await getSetting('GOOGLE_CLIENT_ID');
     const clientSecret = await getSetting('GOOGLE_CLIENT_SECRET');
-    const frontendUrl = (await getSetting('AUTH_REDIRECT_URL')) || 'http://localhost:3000';
+    const frontendUrl = (await getSetting('AUTH_REDIRECT_URL')) || 'https://nexus-storefront-dusky.vercel.app';
     if (!clientId || !clientSecret) return res.status(503).json({ success: false, error: 'Google login is not configured yet' });
 
     const callbackUrl = `${req.protocol}://${req.get('host')}/api/auth/google/callback`;

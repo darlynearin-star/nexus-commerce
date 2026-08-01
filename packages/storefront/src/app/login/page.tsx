@@ -73,12 +73,6 @@ export default function LoginPage() {
         <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
           Don&apos;t have an account? <Link href="/register" style={{ color: 'var(--primary)', fontWeight: 500 }}>Register</Link>
         </p>
-        <div className="card" style={{ marginTop: '1.5rem', padding: '1rem', background: 'var(--bg-secondary)', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-          <p style={{ fontWeight: 600, marginBottom: '0.375rem' }}>Demo Accounts:</p>
-          <p>Customer: customer@nexuscommerce.com / Password123!</p>
-          <p>Retailer: retailer@nexuscommerce.com / Password123!</p>
-          <p>Admin: admin@nexuscommerce.com / Password123!</p>
-        </div>
       </div>
       <style>{`
         .auth-card { width: 100%; max-width: 420px; padding: clamp(1.5rem, 4vw, 2.5rem); }

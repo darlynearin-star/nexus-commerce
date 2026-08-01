@@ -149,6 +149,53 @@ subscriptionsRouter.post('/verify', authenticate, requireRole(UserRole.RETAILER)
   } catch (error) { next(error); }
 });
 
+// Flutterwave webhook — server-to-server, must NOT require auth
+subscriptionsRouter.post('/webhook/flutterwave', async (req, res, next) => {
+  try {
+    const secret = await prisma.setting.findUnique({ where: { key: 'FLUTTERWAVE_WEBHOOK_SECRET' } });
+    const webhookSecret = (secret?.value as string) || '';
+    if (!webhookSecret) return res.status(503).json({ success: false, error: 'Webhook secret not configured' });
+
+    const hash = req.headers['verif-hash'];
+    if (!hash || hash !== webhookSecret) {
+      return res.status(401).json({ success: false, error: 'Invalid webhook signature' });
+    }
+
+    const event = req.body?.event;
+    const data = req.body?.data || {};
+    if (event === 'charge.completed' && (data.status === 'successful' || data.status === 'completed')) {
+      const txRef = (data.tx_ref as string) || '';
+      if (txRef.startsWith('SUB-')) {
+        const parts = txRef.split('-');
+        const subscriptionId = parts[1];
+        const txId = data.id?.toString() || txRef;
+        const payment = subscriptionId ? await prisma.subscriptionPayment.findFirst({
+          where: { subscriptionId, transactionId: txRef },
+        }) : null;
+        if (payment) {
+          await prisma.subscriptionPayment.update({
+            where: { id: payment.id },
+            data: { status: 'PAID', transactionId: txId },
+          });
+          await prisma.retailerSubscription.update({
+            where: { id: payment.subscriptionId },
+            data: { status: 'ACTIVE', lastBillingDate: new Date(), nextBillingDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+          });
+          logActivity({ userId: 'system', action: 'subscription:webhook_paid', resource: 'subscription', resourceId: payment.subscriptionId, req: req as any });
+        }
+      } else {
+        const payment = await prisma.payment.findFirst({ where: { transactionId: txRef } });
+        if (payment) {
+          await prisma.payment.update({ where: { id: payment.id }, data: { status: 'PAID' } });
+          await prisma.order.update({ where: { id: payment.orderId }, data: { paymentStatus: 'PAID', status: 'PROCESSING' } });
+        }
+      }
+    }
+
+    res.json({ success: true });
+  } catch (error) { next(error); }
+});
+
 subscriptionsRouter.get('/all', authenticate, requireRole(UserRole.SUPER_DEVELOPER), async (_req: AuthRequest, res, next) => {
   try {
     const subscriptions = await prisma.retailerSubscription.findMany({ include: { retailer: { include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } } } }, orderBy: { createdAt: 'desc' } });

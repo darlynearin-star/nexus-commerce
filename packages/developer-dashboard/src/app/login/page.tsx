@@ -31,7 +31,6 @@ export default function LoginPage() {
           <input className="input" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
           <button className="btn btn-primary" style={{ justifyContent: 'center', padding: '0.75rem' }}>Sign In</button>
         </form>
-        <p style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center' }}>Demo: admin@nexuscommerce.com / Password123!</p>
       </div>
     </div>
   );

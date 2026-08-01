@@ -5,7 +5,6 @@ import { Permission } from '@nexus/shared';
 import { requireFeatureEnabled } from '../middleware/feature-flags';
 import { logActivity } from '../utils/activity-log';
 
-// TODO before production launch: reduce this back to ~50-100
 export const storesRouter = Router();
 
 const CONTACT_MESSAGE = 'Service is under maintenance. Please contact Mr.Dev at +256740157510 (call/WhatsApp) or email darlenzai01@gmail.com to request a store reservation.';

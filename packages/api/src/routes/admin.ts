@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { randomBytes } from 'crypto';
 import prisma from '@nexus/database';
 import { authenticate, requirePermission, AuthRequest } from '../middleware/auth';
 import { Permission, UserRole } from '@nexus/shared';
@@ -39,8 +40,8 @@ const ALLOWED_CREATE_FIELDS = ['email', 'firstName', 'lastName', 'role'];
 adminRouter.post('/users', authenticate, requirePermission(Permission.MANAGE_USERS), async (req: AuthRequest, res, next) => {
   try {
     const bcrypt = require('bcryptjs');
-    const password = req.body.password || 'Password123!';
-    if (password === 'Password123!') console.warn('Using default password - user should change on first login');
+    const password = req.body.password || randomBytes(8).toString('hex');
+    if (!req.body.password) console.warn(`Generated random password for ${req.body.email} - share it securely`);
     const passwordHash = await bcrypt.hash(password, 10);
     const data: any = {};
     for (const key of ALLOWED_CREATE_FIELDS) data[key] = req.body[key];

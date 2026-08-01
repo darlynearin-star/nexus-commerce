@@ -1,3 +1,0 @@
-Need to install the following packages:
-next@16.2.11
-Ok to proceed? (y) 

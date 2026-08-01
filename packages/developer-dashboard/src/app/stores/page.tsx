@@ -53,7 +53,7 @@ export default function StoresPage() {
               <tr key={store.id} style={{ borderBottom: '1px solid var(--border)' }}>
                 <td style={{ padding: '1rem' }}>
                   <div style={{ fontWeight: 600 }}>{store.name}</div>
-                  <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}><Link href={`${process.env.NEXT_PUBLIC_STOREFRONT_URL || 'http://localhost:3000'}/store/${store.slug}`} target="_blank" style={{ color: 'var(--primary)' }}>/{store.slug}</Link></div>
+                  <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}><Link href={`${process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app'}/store/${store.slug}`} target="_blank" style={{ color: 'var(--primary)' }}>/{store.slug}</Link></div>
                 </td>
                 <td style={{ padding: '1rem', fontSize: '0.875rem' }}>{store.owner?.firstName} {store.owner?.lastName}<br /><span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{store.owner?.email}</span></td>
                 <td style={{ padding: '1rem', fontSize: '0.875rem' }}>{TEMPLATE_LABELS[store.theme?.template] || store.theme?.template || '—'}</td>
@@ -65,7 +65,7 @@ export default function StoresPage() {
                 </td>
                 <td style={{ padding: '1rem', textAlign: 'center' }}>
                   <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                    <Link href={`${process.env.NEXT_PUBLIC_STOREFRONT_URL || 'http://localhost:3000'}/store/${store.slug}`} target="_blank" className="btn btn-ghost btn-sm"><ExternalLink size={14} /> Visit</Link>
+                    <Link href={`${process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app'}/store/${store.slug}`} target="_blank" className="btn btn-ghost btn-sm"><ExternalLink size={14} /> Visit</Link>
                   </div>
                 </td>
               </tr>
