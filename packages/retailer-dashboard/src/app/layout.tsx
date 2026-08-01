@@ -5,7 +5,7 @@ import { AuthProvider, useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/lib/auth-guard';
 import { SubscriptionGuard } from '@/lib/subscription-guard';
 import ErrorBoundary from '@/lib/error-boundary';
-import { LayoutDashboard, Package, ShoppingCart, Users, BarChart3, Settings, Image, Megaphone, LogOut, Menu, X, Store, CreditCard, Eye, ExternalLink } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Users, BarChart3, Settings, Image, Megaphone, LogOut, Menu, X, Store, CreditCard, Eye, ExternalLink, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -28,6 +28,7 @@ function Sidebar({ children }: { children: React.ReactNode }) {
     { href: '/reports', label: 'Reports', icon: <BarChart3 size={18} /> },
     { href: '/subscription', label: 'Subscription', icon: <CreditCard size={18} /> },
     { href: '/settings', label: 'Settings', icon: <Settings size={18} /> },
+    { href: '/guides', label: 'Guides & Tutorials', icon: <BookOpen size={18} /> },
   ];
 
   if (pathname === '/login') return <>{children}</>;

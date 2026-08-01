@@ -49,6 +49,7 @@ export default function Header() {
           <nav style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }} className="desktop-nav">
             <Link href="/" className="btn btn-ghost btn-sm">Home</Link>
             <Link href="/categories" className="btn btn-ghost btn-sm">Categories</Link>
+            <Link href="/guides" className="btn btn-ghost btn-sm">Guides</Link>
           </nav>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flex: 1, justifyContent: 'flex-end', minWidth: 0 }}>
@@ -96,6 +97,7 @@ export default function Header() {
         <div style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
           <Link href="/" onClick={close} className="btn btn-ghost" style={{ justifyContent: 'flex-start' }}>Home</Link>
           <Link href="/categories" onClick={close} className="btn btn-ghost" style={{ justifyContent: 'flex-start' }}>Categories</Link>
+          <Link href="/guides" onClick={close} className="btn btn-ghost" style={{ justifyContent: 'flex-start' }}>Guides</Link>
           <Link href="/wishlist" onClick={close} className="btn btn-ghost" style={{ justifyContent: 'flex-start' }}><Heart size={16} /> Wishlist</Link>
           <Link href="/cart" onClick={close} className="btn btn-ghost" style={{ justifyContent: 'flex-start' }}><ShoppingCart size={16} /> Cart</Link>
         </div>
