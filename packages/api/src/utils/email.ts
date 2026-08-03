@@ -29,13 +29,32 @@ async function getGmailConfig() {
   };
 }
 
+async function getBrevoConfig() {
+  const [user, smtpKey, fromEmail, fromName] = await Promise.all([
+    prisma.setting.findUnique({ where: { key: 'BREVO_SMTP_LOGIN' } }),
+    prisma.setting.findUnique({ where: { key: 'BREVO_SMTP_KEY' } }),
+    prisma.setting.findUnique({ where: { key: 'BREVO_FROM_EMAIL' } }),
+    prisma.setting.findUnique({ where: { key: 'BREVO_FROM_NAME' } }),
+  ]);
+  return {
+    user: (user?.value as string) || '',
+    smtpKey: (smtpKey?.value as string) || '',
+    fromEmail: (fromEmail?.value as string) || '',
+    fromName: (fromName?.value as string) || '',
+  };
+}
+
 export async function isEmailConfigured(): Promise<boolean> {
-  const [resend, gmail] = await Promise.all([getResendConfig(), getGmailConfig()]);
-  return Boolean((resend.apiKey && resend.fromEmail) || (gmail.user && gmail.appPassword));
+  const [resend, gmail, brevo] = await Promise.all([getResendConfig(), getGmailConfig(), getBrevoConfig()]);
+  return Boolean(
+    (resend.apiKey && resend.fromEmail) ||
+    (gmail.user && gmail.appPassword) ||
+    (brevo.user && brevo.smtpKey)
+  );
 }
 
 export async function sendEmail({ to, subject, text, html }: EmailOptions): Promise<{ success: boolean; message: string }> {
-  const [resend, gmail] = await Promise.all([getResendConfig(), getGmailConfig()]);
+  const [resend, gmail, brevo] = await Promise.all([getResendConfig(), getGmailConfig(), getBrevoConfig()]);
 
   if (resend.apiKey && resend.fromEmail) {
     try {
@@ -70,7 +89,23 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
     }
   }
 
-  return { success: false, message: 'Email not configured (set RESEND or GMAIL keys)' };
+  if (brevo.user && brevo.smtpKey) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: 'smtp-relay.brevo.com',
+        port: 587,
+        secure: false,
+        auth: { user: brevo.user, pass: brevo.smtpKey },
+      });
+      const from = brevo.fromEmail ? (brevo.fromName ? `${brevo.fromName} <${brevo.fromEmail}>` : brevo.fromEmail) : brevo.user;
+      await transporter.sendMail({ from, to, subject, text, html });
+      return { success: true, message: 'Email sent via Brevo' };
+    } catch (error: any) {
+      return { success: false, message: `Brevo error: ${error.message}` };
+    }
+  }
+
+  return { success: false, message: 'Email not configured (set RESEND, BREVO, or GMAIL keys)' };
 }
 
 export function magicLinkHtml(url: string): string {
