@@ -21,7 +21,7 @@ export default function Footer() {
           <div>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '1rem' }}>
               <Gem size={24} />
-              <span className={isDark ? 'gold-shimmer' : ''}>Lyn-nxy Stores</span>
+              <span className={isDark ? 'gold-shimmer' : ''}>Lyn-nyx Stores</span>
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>Shop, sell, and scale. Premium products, smart commerce.</p>
           </div>
@@ -45,7 +45,7 @@ export default function Footer() {
           </div>
         </div>
         <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.8125rem' }}>
-          &copy; 2026 Lyn-nxy Stores. All rights reserved.
+          &copy; 2026 Lyn-nyx Stores. All rights reserved.
         </div>
       </div>
       <style>{`

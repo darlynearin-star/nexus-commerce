@@ -35,7 +35,7 @@ export default function ParticleField() {
     const draw = () => {
       ctx.clearRect(0, 0, w, h);
 
-      const color = isDark ? '212, 168, 67' : '140, 140, 140';
+      const color = isDark ? '0, 217, 163' : '0, 168, 123';
 
       for (const p of particles) {
         p.x += p.vx;

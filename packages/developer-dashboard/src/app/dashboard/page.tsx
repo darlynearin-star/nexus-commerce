@@ -34,7 +34,7 @@ export default function DashboardPage() {
   return (
     <div style={{ padding: '2rem' }}>
       <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Lyn-nxy Dev Dashboard</h1>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Lyn-nyx Dev Dashboard</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Full platform control and monitoring</p>
       </div>
       {activeKills > 0 && (

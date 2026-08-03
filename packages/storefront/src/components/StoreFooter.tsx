@@ -41,7 +41,7 @@ export default function StoreFooter() {
       <div className="container" style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)', textAlign: 'center', fontSize: '0.8125rem' }}>
         <span style={{ color: 'var(--text-secondary)' }}>&copy; {new Date().getFullYear()} {store.name}. All rights reserved.</span>
         <span style={{ color: 'var(--border)', margin: '0 0.5rem' }}>|</span>
-        <span style={{ color: 'var(--text-secondary)' }}>Powered by <Link href="/" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Lyn-nxy Stores</Link></span>
+        <span style={{ color: 'var(--text-secondary)' }}>Powered by <Link href="/" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Lyn-nyx Stores</Link></span>
       </div>
     </footer>
   );

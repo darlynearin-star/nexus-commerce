@@ -222,7 +222,7 @@ authRouter.post('/magic-link', async (req, res, next) => {
     await sendEmail({
       to: email,
       subject: 'Your sign-in link',
-      text: `Sign in to Lyn-nxy Stores: ${link}`,
+      text: `Sign in to Lyn-nyx Stores: ${link}`,
       html: magicLinkHtml(link),
     });
 

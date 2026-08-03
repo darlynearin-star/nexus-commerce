@@ -198,7 +198,7 @@ app.use('/api/*', (_req, res) => {
 app.use(errorHandler);
 
 app.listen(PORT, async () => {
-  logger.info(`Lyn-nxy Stores API running on port ${PORT}`);
+  logger.info(`Lyn-nyx Stores API running on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
   await runMigrations();
 });

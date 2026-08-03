@@ -107,7 +107,7 @@ body {
   padding: 0.125rem 0.625rem; border-radius: 9999px;
   font-size: 0.75rem; font-weight: 500;
 }
-.badge-gold { background: rgba(212, 168, 67, 0.15); color: var(--gold); }
+.badge-gold { background: rgba(0, 217, 163, 0.15); color: var(--gold); }
 .badge-silver { background: rgba(184, 184, 184, 0.15); color: var(--silver-dark); }
 .badge-success { background: rgba(34, 197, 94, 0.15); color: var(--success); }
 .badge-primary { background: var(--glow); color: var(--primary); }

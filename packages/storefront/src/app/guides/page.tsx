@@ -70,7 +70,7 @@ export default function GuidesPage() {
         Guides &amp; Tutorials
       </h1>
       <p style={{ color: 'var(--text-secondary)', fontSize: '1.0625rem', lineHeight: 1.6, marginBottom: '2.5rem' }}>
-        New to Lyn-nxy Stores? These step-by-step guides walk you through everything — from your first
+        New to Lyn-nyx Stores? These step-by-step guides walk you through everything — from your first
         account to running your own store.
       </p>
 

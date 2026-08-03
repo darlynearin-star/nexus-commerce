@@ -10,7 +10,7 @@ import AnnouncementBanner from '@/components/AnnouncementBanner';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    document.title = 'Lyn-nxy Stores — Shop, Sell, Scale';
+    document.title = 'Lyn-nyx Stores — Shop, Sell, Scale';
     if (!localStorage.getItem('activeStoreSlug')) localStorage.setItem('activeStoreSlug', 'adorn');
   }, []);
 
