@@ -66,7 +66,7 @@ export default function Header() {
             <button className="btn btn-ghost btn-icon" onClick={toggleDark}>
               {isDark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-            <button className="btn btn-ghost btn-icon" onClick={() => setMobileMenu(!mobileMenu)}>
+            <button className="btn btn-ghost btn-icon mobile-menu-btn" onClick={() => setMobileMenu(!mobileMenu)}>
               {mobileMenu ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
@@ -145,8 +145,8 @@ export default function Header() {
       </div>
 
       <style>{`
-        @media (max-width: 768px) { .desktop-only { display: none !important; } .desktop-nav { display: none !important; } }
-        @media (min-width: 769px) { .mobile-sidebar, .sidebar-overlay { display: none !important; } }
+        @media (max-width: 768px) { .desktop-only { display: none !important; } .desktop-nav { display: none !important; } .mobile-menu-btn { display: inline-flex; } }
+        @media (min-width: 769px) { .mobile-sidebar, .sidebar-overlay, .mobile-menu-btn { display: none !important; } }
         @media (max-width: 480px) { .user-name-header { display: none; } }
         .mobile-sidebar { position: fixed; top: 0; right: -280px; width: 280px; height: 100vh; background: var(--surface); border-left: 1px solid var(--border); z-index: 200; transition: right 0.25s ease; overflow-y: auto; }
         .mobile-sidebar.open { right: 0; }
