@@ -189,6 +189,17 @@ app.get('/api/health', (_req, res) => {
   res.json({ success: true, data: { status: 'ok', timestamp: new Date().toISOString() } });
 });
 
+// Temporary debug: report server public IP
+app.get('/api/debug/ip', async (_req, res) => {
+  try {
+    const r = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(8000) });
+    const data: any = await r.json();
+    res.json({ success: true, data: { ip: data.ip } });
+  } catch (e: any) {
+    res.json({ success: true, data: { ip: 'unknown', error: e.message } });
+  }
+});
+
 // 404 handler
 app.use('/api/*', (_req, res) => {
   res.status(404).json({ success: false, error: 'API endpoint not found' });

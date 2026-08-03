@@ -30,13 +30,15 @@ async function getGmailConfig() {
 }
 
 async function getBrevoConfig() {
-  const [user, smtpKey, fromEmail, fromName] = await Promise.all([
+  const [apiKey, user, smtpKey, fromEmail, fromName] = await Promise.all([
+    prisma.setting.findUnique({ where: { key: 'BREVO_API_KEY' } }),
     prisma.setting.findUnique({ where: { key: 'BREVO_SMTP_LOGIN' } }),
     prisma.setting.findUnique({ where: { key: 'BREVO_SMTP_KEY' } }),
     prisma.setting.findUnique({ where: { key: 'BREVO_FROM_EMAIL' } }),
     prisma.setting.findUnique({ where: { key: 'BREVO_FROM_NAME' } }),
   ]);
   return {
+    apiKey: (apiKey?.value as string) || '',
     user: (user?.value as string) || '',
     smtpKey: (smtpKey?.value as string) || '',
     fromEmail: (fromEmail?.value as string) || '',
@@ -48,6 +50,7 @@ export async function isEmailConfigured(): Promise<boolean> {
   const [resend, gmail, brevo] = await Promise.all([getResendConfig(), getGmailConfig(), getBrevoConfig()]);
   return Boolean(
     (resend.apiKey && resend.fromEmail) ||
+    (brevo.apiKey && brevo.fromEmail) ||
     (gmail.user && gmail.appPassword) ||
     (brevo.user && brevo.smtpKey)
   );
@@ -71,6 +74,25 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
       return { success: false, message: `Resend error: ${body?.message || `HTTP ${res.status}`}` };
     } catch (error: any) {
       return { success: false, message: `Resend error: ${error.message}` };
+    }
+  }
+
+  if (brevo.apiKey && brevo.fromEmail) {
+    try {
+      const sender = brevo.fromName ? { name: brevo.fromName, email: brevo.fromEmail } : { email: brevo.fromEmail };
+      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': brevo.apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ sender, to: [{ email: to }], subject, textContent: text, htmlContent: html }),
+      });
+      if (res.ok) return { success: true, message: 'Email sent via Brevo API' };
+      const body: any = await res.json().catch(() => ({}));
+      return { success: false, message: `Brevo error: ${body?.message || `HTTP ${res.status}`}` };
+    } catch (error: any) {
+      return { success: false, message: `Brevo error: ${error.message}` };
     }
   }
 
