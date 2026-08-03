@@ -1,4 +1,5 @@
 import prisma from '@nexus/database';
+import nodemailer from 'nodemailer';
 
 interface EmailOptions {
   to: string;
@@ -15,26 +16,61 @@ async function getResendConfig() {
   return { apiKey: (apiKey?.value as string) || '', fromEmail: (fromEmail?.value as string) || '' };
 }
 
-export async function sendEmail({ to, subject, text, html }: EmailOptions): Promise<{ success: boolean; message: string }> {
-  const { apiKey, fromEmail } = await getResendConfig();
-  if (!apiKey) return { success: false, message: 'Resend not configured (RESEND_API_KEY missing)' };
-  if (!fromEmail) return { success: false, message: 'Resend not configured (RESEND_FROM_EMAIL missing)' };
+async function getGmailConfig() {
+  const [user, appPassword, fromEmail] = await Promise.all([
+    prisma.setting.findUnique({ where: { key: 'GMAIL_USER' } }),
+    prisma.setting.findUnique({ where: { key: 'GMAIL_APP_PASSWORD' } }),
+    prisma.setting.findUnique({ where: { key: 'GMAIL_FROM_EMAIL' } }),
+  ]);
+  return {
+    user: (user?.value as string) || '',
+    appPassword: (appPassword?.value as string) || '',
+    fromEmail: (fromEmail?.value as string) || (user?.value as string) || '',
+  };
+}
 
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ from: fromEmail, to: [to], subject, text, html }),
-    });
-    if (res.ok) return { success: true, message: 'Email sent' };
-    const body: any = await res.json().catch(() => ({}));
-    return { success: false, message: `Resend error: ${body?.message || `HTTP ${res.status}`}` };
-  } catch (error: any) {
-    return { success: false, message: `Resend error: ${error.message}` };
+export async function isEmailConfigured(): Promise<boolean> {
+  const [resend, gmail] = await Promise.all([getResendConfig(), getGmailConfig()]);
+  return Boolean((resend.apiKey && resend.fromEmail) || (gmail.user && gmail.appPassword));
+}
+
+export async function sendEmail({ to, subject, text, html }: EmailOptions): Promise<{ success: boolean; message: string }> {
+  const [resend, gmail] = await Promise.all([getResendConfig(), getGmailConfig()]);
+
+  if (resend.apiKey && resend.fromEmail) {
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${resend.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ from: resend.fromEmail, to: [to], subject, text, html }),
+      });
+      if (res.ok) return { success: true, message: 'Email sent' };
+      const body: any = await res.json().catch(() => ({}));
+      return { success: false, message: `Resend error: ${body?.message || `HTTP ${res.status}`}` };
+    } catch (error: any) {
+      return { success: false, message: `Resend error: ${error.message}` };
+    }
   }
+
+  if (gmail.user && gmail.appPassword) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: { user: gmail.user, pass: gmail.appPassword },
+      });
+      await transporter.sendMail({ from: gmail.fromEmail, to, subject, text, html });
+      return { success: true, message: 'Email sent via Gmail' };
+    } catch (error: any) {
+      return { success: false, message: `Gmail error: ${error.message}` };
+    }
+  }
+
+  return { success: false, message: 'Email not configured (set RESEND or GMAIL keys)' };
 }
 
 export function magicLinkHtml(url: string): string {

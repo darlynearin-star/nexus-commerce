@@ -5,7 +5,7 @@ import prisma from '@nexus/database';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { logActivity } from '../utils/activity-log';
 import { authenticate, AuthRequest } from '../middleware/auth';
-import { sendEmail, magicLinkHtml } from '../utils/email';
+import { sendEmail, magicLinkHtml, isEmailConfigured } from '../utils/email';
 
 export const authRouter = Router();
 
@@ -205,8 +205,8 @@ authRouter.post('/magic-link', async (req, res, next) => {
     const emailError = validateEmail(email);
     if (emailError) return res.status(400).json({ success: false, error: emailError });
 
-    const resendConfigured = await getSetting('RESEND_API_KEY');
-    if (!resendConfigured) {
+    const emailConfigured = await isEmailConfigured();
+    if (!emailConfigured) {
       return res.status(503).json({ success: false, error: 'Email login is not configured yet' });
     }
 
