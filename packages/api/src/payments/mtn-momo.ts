@@ -2,15 +2,17 @@ import prisma from '@nexus/database';
 import { PaymentProvider, PaymentOptions, PaymentResult } from './index';
 
 async function getCredentials() {
-  const [apiKey, apiUser, baseUrl, targetEnv] = await Promise.all([
+  const [apiKey, apiUser, apiSecret, baseUrl, targetEnv] = await Promise.all([
     prisma.setting.findUnique({ where: { key: 'MTN_MOMO_API_KEY' } }),
     prisma.setting.findUnique({ where: { key: 'MTN_MOMO_API_USER' } }),
+    prisma.setting.findUnique({ where: { key: 'MTN_MOMO_API_SECRET' } }),
     prisma.setting.findUnique({ where: { key: 'MTN_MOMO_BASE_URL' } }),
     prisma.setting.findUnique({ where: { key: 'MTN_MOMO_TARGET_ENVIRONMENT' } }),
   ]);
   return {
     apiKey: (apiKey?.value as string) || '',
     apiUser: (apiUser?.value as string) || '',
+    apiSecret: (apiSecret?.value as string) || '',
     baseUrl: (baseUrl?.value as string) || 'https://sandbox.momodeveloper.mtn.com',
     targetEnv: (targetEnv?.value as string) || 'sandbox',
   };
@@ -20,12 +22,12 @@ export const mtnMomoProvider: () => PaymentProvider = () => ({
   name: 'MTN MoMo',
 
   async charge(amount: number, currency: string, options: PaymentOptions): Promise<PaymentResult> {
-    const { apiKey, apiUser, baseUrl, targetEnv } = await getCredentials();
-    if (!apiKey || !apiUser) return { success: false, status: 'ERROR', message: 'MTN MoMo not configured' };
+    const { apiKey, apiUser, apiSecret, baseUrl, targetEnv } = await getCredentials();
+    if (!apiKey || !apiUser || !apiSecret) return { success: false, status: 'ERROR', message: 'MTN MoMo not configured' };
     try {
       const authRes = await fetch(`${baseUrl}/collection/token/`, {
         method: 'POST',
-        headers: { 'Ocp-Apim-Subscription-Key': apiKey, Authorization: `Basic ${Buffer.from(`${apiUser}:`).toString('base64')}` },
+        headers: { 'Ocp-Apim-Subscription-Key': apiKey, Authorization: `Basic ${Buffer.from(`${apiUser}:${apiSecret}`).toString('base64')}` },
       });
       const auth: any = await authRes.json();
       const res = await fetch(`${baseUrl}/collection/v1_0/requesttopay`, {
@@ -56,12 +58,12 @@ export const mtnMomoProvider: () => PaymentProvider = () => ({
   },
 
   async verify(transactionId: string): Promise<PaymentResult> {
-    const { apiKey, baseUrl, targetEnv } = await getCredentials();
-    if (!apiKey) return { success: false, status: 'ERROR', message: 'MTN MoMo not configured' };
+    const { apiKey, apiUser, apiSecret, baseUrl, targetEnv } = await getCredentials();
+    if (!apiKey || !apiUser || !apiSecret) return { success: false, status: 'ERROR', message: 'MTN MoMo not configured' };
     try {
       const authRes = await fetch(`${baseUrl}/collection/token/`, {
         method: 'POST',
-        headers: { 'Ocp-Apim-Subscription-Key': apiKey, Authorization: `Basic ${Buffer.from(':' + apiKey).toString('base64')}` },
+        headers: { 'Ocp-Apim-Subscription-Key': apiKey, Authorization: `Basic ${Buffer.from(`${apiUser}:${apiSecret}`).toString('base64')}` },
       });
       const auth: any = await authRes.json();
       const res = await fetch(`${baseUrl}/collection/v1_0/requesttopay/${transactionId}`, {

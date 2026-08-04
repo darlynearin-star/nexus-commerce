@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import prisma from '@nexus/database';
 import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth';
 import { StoreRequest, requireStore } from '../middleware/resolve-store';
@@ -17,7 +18,7 @@ paymentsRouter.post('/charge', authenticate, async (req: StoreRequest, res, next
     const provider = getPaymentProvider(method);
     if (!provider) return res.status(400).json({ success: false, error: `Unsupported payment method: ${method}` });
 
-    const reference = `PAY-${order.orderNumber}-${Date.now()}`;
+    const reference = uuidv4();
     const callbackUrl = `${req.protocol}://${req.get('host')}/api/payments/callback`;
 
     const result = await provider.charge(order.total, order.currency, {
