@@ -11,14 +11,31 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState('');
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
   const [magicEmail, setMagicEmail] = useState('');
   const [magicSent, setMagicSent] = useState(false);
   const [magicLoading, setMagicLoading] = useState(false);
   const [magicError, setMagicError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); setError(''); setLoading(true);
-    try { await login(email, password); } catch (err: any) { setError(err.message); } finally { setLoading(false); }
+    e.preventDefault(); setError(''); setLoading(true); setUnverifiedEmail('');
+    try { await login(email, password); } catch (err: any) {
+      setError(err.message);
+      if (err?.status === 403 && err?.message?.includes('verify your email')) setUnverifiedEmail(email);
+    } finally { setLoading(false); }
+  };
+
+  const handleResend = async () => {
+    if (!unverifiedEmail) return;
+    setResending(true); setResent(false);
+    try {
+      await api.post('/auth/resend-verification', { email: unverifiedEmail });
+      setResent(true);
+    } catch (err: any) {
+      setError(err?.message || 'Could not resend the email');
+    } finally { setResending(false); }
   };
 
   const handleMagicLink = async (e: React.FormEvent) => {
@@ -42,6 +59,16 @@ export default function LoginPage() {
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '0.5rem' }}>Welcome Back</h1>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.9375rem' }}>Sign in to your account</p>
         {error && <div style={{ padding: '0.75rem', background: 'var(--error)', color: 'white', borderRadius: '0.5rem', marginBottom: '1rem', fontSize: '0.875rem' }}>{error}</div>}
+        {unverifiedEmail && (
+          <div style={{ padding: '0.75rem', background: 'var(--glow)', border: '1px solid var(--primary)', color: 'var(--text)', borderRadius: '0.5rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
+            <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Please verify your email</div>
+            <div style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>A verification link was sent to <strong>{unverifiedEmail}</strong>. Click it to activate your account.</div>
+            {resent && <div style={{ color: 'var(--success)', marginBottom: '0.5rem' }}>Verification email sent again. Check your inbox.</div>}
+            <button type="button" className="btn btn-ghost btn-sm" onClick={handleResend} disabled={resending}>
+              {resending ? <Loader2 size={14} className="spin" /> : <Mail size={14} />} Resend verification email
+            </button>
+          </div>
+        )}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div><label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Email</label><input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} required /></div>
           <div><label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Password</label><input className="input" type="password" value={password} onChange={e => setPassword(e.target.value)} required /></div>

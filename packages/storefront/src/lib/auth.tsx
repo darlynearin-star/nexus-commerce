@@ -62,6 +62,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (data: any) => {
     const res = await api.post<any>('/auth/register', data);
+    if (res.data?.requiresEmailVerification) {
+      router.push(`/auth/check-email?email=${encodeURIComponent(data.email)}`);
+      return;
+    }
     localStorage.setItem('accessToken', res.data.accessToken);
     localStorage.setItem('refreshToken', res.data.refreshToken);
     setUser(res.data.user);

@@ -138,3 +138,12 @@ export function magicLinkHtml(url: string): string {
   <p style="color:#6b7280;font-size:12px">If you didn't request this, you can safely ignore this email.</p>
 </div>`;
 }
+
+export function verifyEmailHtml(url: string): string {
+  return `<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px">
+  <h2 style="margin:0 0 8px;color:#111">Verify your email</h2>
+  <p style="color:#374151;font-size:14px;line-height:1.6">Welcome to Lyn-nyx Stores! Please confirm your email address to activate your account. This link expires in 24 hours.</p>
+  <a href="${url}" style="display:inline-block;margin:16px 0;padding:12px 24px;background:#00D9A3;color:#070B09;text-decoration:none;font-weight:600;border-radius:8px">Verify email</a>
+  <p style="color:#6b7280;font-size:12px">If you didn't create this account, you can safely ignore this email.</p>
+</div>`;
+}

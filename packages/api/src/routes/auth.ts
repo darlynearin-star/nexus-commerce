@@ -5,7 +5,7 @@ import prisma from '@nexus/database';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { logActivity } from '../utils/activity-log';
 import { authenticate, AuthRequest } from '../middleware/auth';
-import { sendEmail, magicLinkHtml, isEmailConfigured } from '../utils/email';
+import { sendEmail, magicLinkHtml, verifyEmailHtml, isEmailConfigured } from '../utils/email';
 
 export const authRouter = Router();
 
@@ -49,7 +49,7 @@ authRouter.post('/register', async (req, res, next) => {
     const role = (req.body.role === 'RETAILER' || req.body.role === 'DEVELOPER') ? req.body.role : 'CUSTOMER';
 
     const user = await prisma.user.create({
-      data: { email, passwordHash, firstName, lastName, role, emailVerified: true },
+      data: { email, passwordHash, firstName, lastName, role, emailVerified: false },
     });
 
     if (role === 'RETAILER') {
@@ -60,6 +60,28 @@ authRouter.post('/register', async (req, res, next) => {
 
     // All users get a customer profile (for purchasing)
     await prisma.customer.create({ data: { userId: user.id } });
+
+    // Send verification email (account not active until verified)
+    const emailConfigured = await isEmailConfigured();
+    if (emailConfigured) {
+      const token = crypto.randomBytes(32).toString('hex');
+      await prisma.magicLinkToken.create({
+        data: { token, email, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
+      });
+      const frontendUrl = (await getSetting('AUTH_REDIRECT_URL')) || 'https://nexus-storefront-dusky.vercel.app';
+      const link = `${frontendUrl}/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
+      await sendEmail({
+        to: email,
+        subject: 'Verify your email',
+        text: `Welcome to Lyn-nyx Stores! Verify your email to activate your account: ${link}`,
+        html: verifyEmailHtml(link),
+      });
+      return res.status(201).json({
+        success: true,
+        message: 'Account created. Check your inbox to verify your email before signing in.',
+        data: { user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role }, requiresEmailVerification: true },
+      });
+    }
 
     const payload = { userId: user.id, email: user.email, role: user.role };
     const accessToken = signAccessToken(payload);
@@ -84,9 +106,62 @@ authRouter.post('/register', async (req, res, next) => {
   }
 });
 
-// Login
-authRouter.post('/login', async (req, res, next) => {
+// Verify email (from the verification link sent at registration)
+authRouter.post('/verify-email', async (req, res, next) => {
   try {
+    const { token, email } = req.body;
+    if (!token || !email) return res.status(400).json({ success: false, error: 'Token and email are required' });
+
+    const record = await prisma.magicLinkToken.findUnique({ where: { token } });
+    if (!record || record.email !== email || record.usedAt || record.expiresAt < new Date()) {
+      return res.status(401).json({ success: false, error: 'Invalid or expired verification link' });
+    }
+
+    await prisma.magicLinkToken.update({ where: { id: record.id }, data: { usedAt: new Date() } });
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+    if (user.emailVerified) return res.json({ success: true, message: 'Email already verified. You can sign in.' });
+
+    await prisma.user.update({ where: { id: user.id }, data: { emailVerified: true } });
+    logActivity({ userId: user.id, action: 'user:email_verified', resource: 'auth', req: req as any });
+
+    res.json({ success: true, message: 'Email verified. You can now sign in.' });
+  } catch (error) { next(error); }
+});
+
+// Resend the verification email
+authRouter.post('/resend-verification', async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, error: 'Email is required' });
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.status(404).json({ success: false, error: 'No account found with that email' });
+    if (user.emailVerified) return res.status(400).json({ success: false, error: 'Email is already verified' });
+
+    const emailConfigured = await isEmailConfigured();
+    if (!emailConfigured) return res.status(503).json({ success: false, error: 'Email login is not configured yet' });
+
+    const token = crypto.randomBytes(32).toString('hex');
+    await prisma.magicLinkToken.create({
+      data: { token, email, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
+    });
+    const frontendUrl = (await getSetting('AUTH_REDIRECT_URL')) || 'https://nexus-storefront-dusky.vercel.app';
+    const link = `${frontendUrl}/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
+    await sendEmail({
+      to: email,
+      subject: 'Verify your email',
+      text: `Welcome to Lyn-nyx Stores! Verify your email to activate your account: ${link}`,
+      html: verifyEmailHtml(link),
+    });
+
+    res.json({ success: true, message: 'Verification email sent. Check your inbox.' });
+  } catch (error) { next(error); }
+});
+
+// Login
+authRouter.post('/login', async (req, res, next) => {  try {
     const { email, password } = req.body;
     if (!email || !password) {
       return res.status(400).json({ success: false, error: 'Email and password are required' });
@@ -99,6 +174,10 @@ authRouter.post('/login', async (req, res, next) => {
 
     if (!user.isActive) {
       return res.status(403).json({ success: false, error: 'Account is suspended' });
+    }
+
+    if (!user.emailVerified) {
+      return res.status(403).json({ success: false, error: 'Please verify your email before signing in. Check your inbox for the verification link.', code: 'EMAIL_NOT_VERIFIED' });
     }
 
     const payload = { userId: user.id, email: user.email, role: user.role };
