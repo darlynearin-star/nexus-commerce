@@ -2,12 +2,18 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import Link from 'next/link';
+import GoogleIcon from '@/components/GoogleIcon';
 
 export default function RegisterPage() {
   const { register } = useAuth();
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '', role: 'CUSTOMER' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const handleGoogle = () => {
+    const base = process.env.NEXT_PUBLIC_API_URL || 'https://nexus-api-69q5.onrender.com';
+    window.location.href = `${base}/api/auth/google`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError('');
@@ -48,6 +54,14 @@ export default function RegisterPage() {
           </div>
           <button className="btn btn-primary" style={{ justifyContent: 'center', padding: '0.75rem' }} disabled={loading}>{loading ? 'Creating...' : 'Create Account'}</button>
         </form>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1.5rem 0' }}>
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>OR</span>
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+        </div>
+        <button className="btn btn-secondary" onClick={handleGoogle} style={{ justifyContent: 'center', width: '100%', padding: '0.75rem' }}>
+          <GoogleIcon /> Sign up with Google
+        </button>
         <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
           Already have an account? <Link href="/login" style={{ color: 'var(--primary)', fontWeight: 500 }}>Sign In</Link>
         </p>

@@ -3,10 +3,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
-import { Store, Palette, Globe, Smartphone, Gift, CreditCard, ArrowRight, CheckCircle, Sparkles, Zap, Layout, Users, DollarSign, Clock, AlertTriangle, ExternalLink, ShoppingBag, BookOpen, HelpCircle, Shield, EyeOff } from 'lucide-react';
+import { Store, Palette, Globe, Smartphone, Gift, CreditCard, ArrowRight, CheckCircle, Sparkles, Zap, Layout, Users, DollarSign, Clock, AlertTriangle, ExternalLink, ShoppingBag, BookOpen, HelpCircle, Shield, EyeOff, Terminal } from 'lucide-react';
 
 const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
 const dashboardUrl = process.env.NEXT_PUBLIC_RETAILER_DASHBOARD_URL || 'https://nexus-commerce-retailer-dashboard.vercel.app';
+const devDashUrl = process.env.NEXT_PUBLIC_DEVELOPER_DASHBOARD_URL || 'https://nexus-commerce-developer-dashboard.vercel.app';
 
 function calcDaysRemaining(trialEnd: string): number {
   const end = new Date(trialEnd);
@@ -82,6 +83,11 @@ export default function LandingPage() {
                 <a href={`${dashboardUrl}/dashboard#token=${encodeURIComponent(typeof window !== 'undefined' ? localStorage.getItem('accessToken') || '' : '')}`} className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Layout size={18} /> Dashboard
                 </a>
+                {user.role === 'SUPER_DEVELOPER' && (
+                  <a href={`${devDashUrl}/dashboard`} className="btn btn-ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Terminal size={18} /> To Dev Dashboard
+                  </a>
+                )}
               </div>
             )}
           </div>
@@ -163,6 +169,13 @@ export default function LandingPage() {
         <Link href="/create-store" className="btn btn-primary" style={{ fontSize: '1.125rem', padding: '0.875rem 2.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
           <Store size={20} /> Create Your Store
         </Link>
+        {user.role === 'SUPER_DEVELOPER' && (
+          <div style={{ marginTop: '0.75rem' }}>
+            <a href={`${devDashUrl}/dashboard`} className="btn btn-ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Terminal size={18} /> To Dev Dashboard
+            </a>
+          </div>
+        )}
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: '1rem' }}>14-day free trial · 3,000 UGX/week after · Cancel anytime</p>
       </div>
     );

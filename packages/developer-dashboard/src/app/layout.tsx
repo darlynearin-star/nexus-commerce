@@ -3,7 +3,7 @@
 import './globals.css';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/lib/auth-guard';
-import { LayoutDashboard, Users, Shield, Database, Activity, Settings, AlertTriangle, LogOut, Menu, X, Terminal, Server, FileText, Flag, Store, Key, Megaphone, RefreshCw, HardDrive } from 'lucide-react';
+import { LayoutDashboard, Users, Shield, Database, Activity, Settings, AlertTriangle, LogOut, Menu, X, Terminal, Server, FileText, Flag, Store, Key, Megaphone, RefreshCw, HardDrive, Globe } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -15,6 +15,8 @@ function Sidebar({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const closeMobile = () => setMobileOpen(false);
+
+  const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
@@ -44,6 +46,9 @@ function Sidebar({ children }: { children: React.ReactNode }) {
           <button className="btn btn-ghost btn-icon" onClick={() => { if (window.innerWidth < 768) setMobileOpen(false); else setCollapsed(!collapsed); }}>{collapsed ? <Menu size={18} /> : <X size={18} />}</button>
         </div>
         <nav style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          <a href={storefrontUrl} target="_blank" rel="noreferrer" onClick={closeMobile} className="nav-item" style={{ justifyContent: collapsed ? 'center' : 'flex-start', color: 'var(--primary)' }}>
+            <Globe size={18} /> {!collapsed && 'To Main Page'}
+          </a>
           {navItems.map(item => (
             <Link key={item.href} href={item.href} onClick={closeMobile} className={`nav-item ${pathname.startsWith(item.href) ? 'active' : ''} ${item.danger ? 'danger' : ''}`} style={{ justifyContent: collapsed ? 'center' : 'flex-start' }}>
               {item.icon} {!collapsed && item.label}

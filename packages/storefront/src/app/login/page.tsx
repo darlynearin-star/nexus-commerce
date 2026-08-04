@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import Link from 'next/link';
 import { api } from '@/lib/api';
-import { Mail, ShieldCheck, Loader2, CheckCircle } from 'lucide-react';
+import { Mail, Loader2, CheckCircle } from 'lucide-react';
+import GoogleIcon from '@/components/GoogleIcon';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -82,7 +83,7 @@ export default function LoginPage() {
         </div>
 
         <button className="btn btn-secondary" onClick={handleGoogle} style={{ justifyContent: 'center', width: '100%', padding: '0.75rem', marginBottom: '1rem' }}>
-          <ShieldCheck size={18} /> Continue with Google
+          <GoogleIcon /> Continue with Google
         </button>
 
         <form onSubmit={handleMagicLink} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

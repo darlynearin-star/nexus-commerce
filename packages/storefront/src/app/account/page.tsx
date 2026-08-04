@@ -171,7 +171,7 @@ function OverviewTab({ user, orders, isStoreOwner, retailer, subscription, tierN
             <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>{retailer?.storeName || 'Your store'}</p>
             <a href={`${process.env.NEXT_PUBLIC_RETAILER_DASHBOARD_URL || 'https://nexus-commerce-retailer-dashboard.vercel.app'}/dashboard#token=${encodeURIComponent(localStorage.getItem('accessToken') || '')}`}
               target="_blank" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
-              <ExternalLink size={14} /> Open Dashboard
+              <ExternalLink size={14} /> To Demo Dashboard
             </a>
           </div>
 
