@@ -18,9 +18,8 @@ const INTEGRATIONS: IntegrationService[] = [
   {
     category: 'Payments', icon: <CreditCard size={18} />,
     services: [
-      { name: 'MTN MoMo', keys: [{ key: 'MTN_MOMO_API_KEY', label: 'API Key', type: 'password' }, { key: 'MTN_MOMO_API_USER', label: 'API User', type: 'text' }] },
-      { name: 'Airtel Money', keys: [{ key: 'AIRTEL_MONEY_API_KEY', label: 'API Key', type: 'password' }, { key: 'AIRTEL_MONEY_USERNAME', label: 'Username', type: 'text' }] },
-      { name: 'Flutterwave', keys: [{ key: 'FLUTTERWAVE_PUBLIC_KEY', label: 'Public Key', type: 'text' }, { key: 'FLUTTERWAVE_SECRET_KEY', label: 'Secret Key', type: 'password' }, { key: 'FLUTTERWAVE_WEBHOOK_SECRET', label: 'Webhook Secret', type: 'password' }] },
+      { name: 'Pesapal (MTN MoMo + Airtel + Cards)', keys: [{ key: 'PESAPAL_CONSUMER_KEY', label: 'Consumer Key', type: 'text' }, { key: 'PESAPAL_CONSUMER_SECRET', label: 'Consumer Secret', type: 'password' }, { key: 'PESAPAL_IPN_URL', label: 'IPN URL (callback)', type: 'text' }, { key: 'PESAPAL_BASE_URL', label: 'Base URL (test: https://cybqa.pesapal.com)', type: 'text' }] },
+      { name: 'Flutterwave (Cards)', keys: [{ key: 'FLUTTERWAVE_PUBLIC_KEY', label: 'Public Key', type: 'text' }, { key: 'FLUTTERWAVE_SECRET_KEY', label: 'Secret Key', type: 'password' }, { key: 'FLUTTERWAVE_WEBHOOK_SECRET', label: 'Webhook Secret', type: 'password' }] },
     ],
   },
   {

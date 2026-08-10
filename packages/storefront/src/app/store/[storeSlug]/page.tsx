@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { storeApi } from '@/lib/store-api';
 import { useStore } from '@/lib/store-context';
-import ProductCard from '@/components/ProductCard';
+import ProductCard, { ProductView } from '@/components/ProductCard';
 import { ArrowRight } from 'lucide-react';
 import { categoryIcon } from '@/lib/category-icons';
 
@@ -12,6 +12,10 @@ export default function StoreHomePage() {
   const [featured, setFeatured] = useState<any[]>([]);
   const [newArrivals, setNewArrivals] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [view, setView] = useState<ProductView>(() => {
+    if (typeof window === 'undefined') return 'grid';
+    return (localStorage.getItem('productView') as ProductView) || 'grid';
+  });
   const storeSlug: string = store?.slug || (typeof window !== 'undefined' ? (localStorage.getItem('activeStoreSlug') || '') : '');
 
   useEffect(() => {
@@ -48,9 +52,15 @@ export default function StoreHomePage() {
               <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>New Arrivals</h2>
               <Link href={`/store/${store?.slug}/shop`} style={{ color: 'var(--primary)', fontSize: '0.875rem', textDecoration: 'none' }}>View All →</Link>
             </div>
-            <div className="product-grid">
-              {newArrivals.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} />)}
-            </div>
+            {view === 'list' ? (
+                <div className="product-list">
+                  {newArrivals.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} view="list" />)}
+                </div>
+              ) : (
+                <div className={`product-grid ${view === 'compact' ? 'view-compact' : ''} ${view === 'minimal' ? 'view-minimal' : ''}`}>
+                  {newArrivals.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} view={view} />)}
+                </div>
+              )}
           </div>
         </section>
       )}
@@ -63,9 +73,15 @@ export default function StoreHomePage() {
               <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Featured</h2>
               <Link href={`/store/${store?.slug}/shop`} style={{ color: 'var(--primary)', fontSize: '0.875rem', textDecoration: 'none' }}>View All →</Link>
             </div>
-            <div className="product-grid">
-              {featured.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} />)}
-            </div>
+            {view === 'list' ? (
+                <div className="product-list">
+                  {featured.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} view="list" />)}
+                </div>
+              ) : (
+                <div className={`product-grid ${view === 'compact' ? 'view-compact' : ''} ${view === 'minimal' ? 'view-minimal' : ''}`}>
+                  {featured.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} view={view} />)}
+                </div>
+              )}
           </div>
         </section>
       )}

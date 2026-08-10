@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { compressImage } from '@/lib/compress-image';
-import { ArrowLeft, Plus, X, Upload } from 'lucide-react';
+import { ArrowLeft, Plus, X, Upload, Plug, RefreshCw, CheckCircle2, AlertTriangle } from 'lucide-react';
 import FieldInfo from '@/components/FieldInfo';
 
 interface FlatCat { id: string; label: string; slug: string; depth: number; parentId: string | null; }
@@ -20,6 +20,130 @@ export default function NewProductPage() {
   const [brokenImages, setBrokenImages] = useState<string[]>([]);
 
   const markBroken = (url: string) => setBrokenImages(p => (p.includes(url) ? p : [...p, url]));
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  const DRAFT_KEY = 'nexus_product_draft';
+
+  // Proactive session keep-alive: if access token expires within N minutes, refresh it quietly.
+  useEffect(() => {
+    const refreshIfNeeded = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (!token) return;
+        let exp = 0;
+        try { exp = JSON.parse(atob(token.split('.')[1])).exp * 1000; } catch {}
+        const minsLeft = Math.round((exp - Date.now()) / 60000);
+        if (minsLeft > 15 || !refreshToken) return;
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/auth/refresh`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          localStorage.setItem('accessToken', data.data.accessToken);
+        }
+      } catch {}
+    };
+    refreshIfNeeded();
+    const iv = setInterval(refreshIfNeeded, 60_000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const [draftInfo, setDraftInfo] = useState<{ savedAt: number } | null>(null);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const d = JSON.parse(raw);
+        const touched = d.savedAt && Object.prototype.hasOwnProperty.call(d, 'form');
+        if (touched) setDraftInfo({ savedAt: d.savedAt });
+      }
+    } catch {}
+  }, []);
+
+  const restoreDraft = () => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      setForm(d.form);
+      setImages(d.images || []);
+      setFeatures(d.features && d.features.length ? d.features : ['']);
+      setSpecs(d.specs && d.specs.length ? d.specs : [{ key: '', value: '' }]);
+      setVariants(d.variants || []);
+      setAttrValues(d.attrValues || {});
+      setMajorCatId(d.majorCatId || '');
+      try { localStorage.removeItem(DRAFT_KEY); } catch {}
+      setDraftInfo(null);
+    } catch {}
+  };
+
+  const clearDraft = () => {
+    try { localStorage.removeItem(DRAFT_KEY); } catch {}
+    setDraftInfo(null);
+  };
+
+  const runTest = async () => {
+    setTesting(true);
+    setTestResult(null);
+    let createdId: string | null = null;
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+      if (!token) {
+        setTestResult({ ok: false, message: 'No session found. Please log in first.' });
+        return;
+      }
+      let expiryNote = '';
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.exp) {
+          const minsLeft = Math.round((payload.exp * 1000 - Date.now()) / 60000);
+          expiryNote = minsLeft > 0 ? `Session expires in ~${minsLeft} min. ` : 'Session already expired. ';
+        }
+      } catch {}
+
+      // 1. Session + store resolution (also re-syncs activeStoreSlug)
+      const res: any = await api.get('/stores/mine');
+      const store = res.data;
+      if (store?.slug) localStorage.setItem('activeStoreSlug', store.slug);
+
+      // 2. Ensure a category exists to satisfy the schema
+      const catsRes: any = await api.get('/categories');
+      const cats: any[] = catsRes.data || [];
+      const catId = form.categoryId || (cats.find((c: any) => !c.parentId)?.id) || cats[0]?.id;
+      if (!catId) {
+        setTestResult({ ok: false, message: `${expiryNote}Session OK, but no category exists yet — create a category first, then re-test.` });
+        return;
+      }
+
+      // 3. Real create call (the exact endpoint the form uses)
+      const stamp = Date.now();
+      const payload = {
+        name: `System Test ${stamp}`,
+        slug: `system-test-${stamp}`,
+        sku: `SYS-TEST-${stamp}`,
+        price: 100,
+        categoryId: catId,
+        status: 'DRAFT',
+        stock: 0,
+      };
+      const created: any = await api.post('/products', payload);
+      createdId = created.data?.id || null;
+
+      // 4. Clean up the test product (real delete path)
+      if (createdId) {
+        try { await api.delete(`/products/${createdId}`); createdId = null; } catch {}
+      }
+
+      setTestResult({ ok: true, message: `${expiryNote}Product creation service is WORKING. Created and deleted a test product successfully. Store "${store?.name || store?.slug || 'your store'}" resolved. You can safely create a product (a draft is also auto-saved).` });
+    } catch (e: any) {
+      if (createdId) { try { await api.delete(`/products/${createdId}`); } catch {} }
+      setTestResult({ ok: false, message: `Product creation service FAILED: ${e?.message || 'Unknown error'}${e?.message?.toLowerCase().includes('token') ? ' — your session expired. Your draft is auto-saved; reload the page and restore it, or log out and log back in.' : ''}` });
+    } finally {
+      setTesting(false);
+    }
+  };
   const [majorCatId, setMajorCatId] = useState('');
   const [categoryAttrs, setCategoryAttrs] = useState<AttributeDef[]>([]);
   const [attrValues, setAttrValues] = useState<Record<string, string>>({});
@@ -45,6 +169,16 @@ export default function NewProductPage() {
   const [features, setFeatures] = useState<string[]>(['']);
   const [specs, setSpecs] = useState<{ key: string; value: string }[]>([{ key: '', value: '' }]);
   const [variants, setVariants] = useState<Variant[]>([]);
+
+  // Draft autosave: persist form state so an expired session never loses work.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, images, features, specs, variants, attrValues, majorCatId, savedAt: Date.now() }));
+      } catch {}
+    }, 800);
+    return () => clearTimeout(t);
+  }, [form, images, features, specs, variants, attrValues, majorCatId]);
 
   const catIdToSlug = useMemo(() => {
     const m = new Map<string, string>(); for (const c of categories) m.set(c.id, c.slug); return m;
@@ -165,6 +299,7 @@ export default function NewProductPage() {
       delete payload.categorySlug;
       const res = await api.post('/products', payload);
       if (cleanedVariants.length > 0) await api.put(`/products/${res.data.id}/variants`, { variants: cleanedVariants });
+      try { localStorage.removeItem(DRAFT_KEY); } catch {}
       router.push(`/products/${res.data.id}/edit`);
     } catch (e: any) { setErrors([e.message || 'Failed to save product']); } finally { setSaving(false); }
   };
@@ -215,10 +350,29 @@ export default function NewProductPage() {
 
   return (
     <div style={{ padding: '2rem', maxWidth: 960, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
         <button className="btn btn-ghost btn-icon" onClick={() => router.push('/products')}><ArrowLeft size={18} /></button>
-        <div><h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>New Product</h1><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Create a new product for your store</p></div>
+        <div style={{ flex: 1 }}><h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>New Product</h1><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Create a new product for your store</p></div>
+        <button className="btn btn-secondary" onClick={runTest} disabled={testing} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}>
+          {testing ? <RefreshCw size={16} className="animate-spin" /> : <Plug size={16} />} {testing ? 'Testing...' : 'Test Product Service'}
+        </button>
       </div>
+
+      {testResult && (
+        <div style={{ padding: '0.75rem 1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.875rem', background: testResult.ok ? '#052e16' : '#2e0505', color: testResult.ok ? '#4ade80' : '#f87171', border: `1px solid ${testResult.ok ? '#4ade80' : '#f87171'}` }}>
+          {testResult.ok ? <CheckCircle2 size={16} style={{ marginTop: 2, flexShrink: 0 }} /> : <AlertTriangle size={16} style={{ marginTop: 2, flexShrink: 0 }} />}
+          <span>{testResult.message}</span>
+        </div>
+      )}
+
+      {draftInfo && (
+        <div style={{ padding: '0.75rem 1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem', background: '#0f172a', color: '#93c5fd', border: '1px solid #3b82f6', flexWrap: 'wrap' }}>
+          <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+          <span style={{ flex: 1, minWidth: 200 }}>A saved draft from {new Date(draftInfo.savedAt).toLocaleTimeString()} was found (auto-saved in case your session expired).</span>
+          <button className="btn btn-secondary btn-sm" onClick={restoreDraft}>Restore Draft</button>
+          <button className="btn btn-ghost btn-sm" onClick={clearDraft}>Discard</button>
+        </div>
+      )}
 
       {errors.length > 0 && (
         <div style={{ padding: '0.75rem 1rem', background: '#2e0505', border: '1px solid #f87171', borderRadius: '0.5rem', marginBottom: '1.5rem' }}>

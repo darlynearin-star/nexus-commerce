@@ -6,12 +6,11 @@ import { logActivity } from '../utils/activity-log';
 
 export const apiConfigRouter = Router();
 
-const KEY_PREFIXES = ['MTN_', 'AIRTEL_', 'FLUTTERWAVE_', 'RESEND_', 'BREVO_', 'GMAIL_', 'GOOGLE_', 'AUTH_'];
+const KEY_PREFIXES = ['FLUTTERWAVE_', 'PESAPAL_', 'RESEND_', 'BREVO_', 'GMAIL_', 'GOOGLE_', 'AUTH_'];
 
 const ALL_KEYS = [
-  'MTN_MOMO_API_KEY', 'MTN_MOMO_API_USER', 'MTN_MOMO_API_SECRET', 'MTN_MOMO_BASE_URL', 'MTN_MOMO_TARGET_ENVIRONMENT',
-  'AIRTEL_MONEY_API_KEY', 'AIRTEL_MONEY_USERNAME',
   'FLUTTERWAVE_PUBLIC_KEY', 'FLUTTERWAVE_SECRET_KEY', 'FLUTTERWAVE_WEBHOOK_SECRET',
+  'PESAPAL_CONSUMER_KEY', 'PESAPAL_CONSUMER_SECRET', 'PESAPAL_IPN_URL', 'PESAPAL_BASE_URL',
   'RESEND_API_KEY', 'RESEND_FROM_EMAIL',
   'BREVO_API_KEY', 'BREVO_SMTP_LOGIN', 'BREVO_SMTP_KEY', 'BREVO_FROM_EMAIL', 'BREVO_FROM_NAME',
   'GMAIL_USER', 'GMAIL_APP_PASSWORD', 'GMAIL_FROM_EMAIL',
@@ -53,6 +52,24 @@ apiConfigRouter.post('/test/:key', authenticate, requirePermission(Permission.MA
         result.success = r.status === 200;
         result.message = r.ok ? 'Connected to Flutterwave API' : `HTTP ${r.status}`;
       } else result.message = 'Secret key not configured';
+    } else if (key === 'PESAPAL_CONSUMER_KEY') {
+      const consumerKey = await prisma.setting.findUnique({ where: { key: 'PESAPAL_CONSUMER_KEY' } });
+      const consumerSecret = await prisma.setting.findUnique({ where: { key: 'PESAPAL_CONSUMER_SECRET' } });
+      if (consumerKey?.value && consumerSecret?.value) {
+        try {
+          const base = process.env.PESAPAL_BASE_URL || 'https://pay.pesapal.com';
+          const r = await fetch(`${base}/v3/api/Auth/RequestToken`, {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ consumer_key: consumerKey.value, consumer_secret: consumerSecret.value }),
+          });
+          const data: any = await r.json();
+          result.success = r.ok && !!data.token;
+          result.message = result.success ? 'Connected to Pesapal API' : `HTTP ${r.status}: ${data.error?.message || data.message || 'Invalid credentials'}`;
+        } catch (e: any) {
+          result.message = `Connection failed: ${e.message}`;
+        }
+      } else result.message = 'Consumer key and secret required';
     } else if (key === 'RESEND_API_KEY') {
       const value = await prisma.setting.findUnique({ where: { key: 'RESEND_API_KEY' } });
       if (value?.value) {

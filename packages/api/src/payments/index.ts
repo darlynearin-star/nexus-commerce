@@ -10,6 +10,7 @@ export interface PaymentOptions {
   phone?: string;
   reference: string;
   callbackUrl?: string;
+  network?: string;
   metadata?: Record<string, any>;
 }
 
@@ -24,16 +25,15 @@ export interface PaymentResult {
 export function getPaymentProvider(method: string): PaymentProvider | null {
   const providers: Record<string, () => PaymentProvider> = {};
   try {
+    const { pesapalProvider } = require('./pesapal');
+    // Pesapal covers Uganda mobile money for both MTN and Airtel
+    providers['mtn_momo'] = pesapalProvider;
+    providers['airtel_money'] = pesapalProvider;
+    providers['pesapal'] = pesapalProvider;
+  } catch {}
+  try {
     const { flutterwaveProvider } = require('./flutterwave');
     providers['flutterwave'] = flutterwaveProvider;
-  } catch {}
-  try {
-    const { mtnMomoProvider } = require('./mtn-momo');
-    providers['mtn_momo'] = mtnMomoProvider;
-  } catch {}
-  try {
-    const { airtelMoneyProvider } = require('./airtel-money');
-    providers['airtel_money'] = airtelMoneyProvider;
   } catch {}
 
   const key = method.toLowerCase().replace(/\s+/g, '_');

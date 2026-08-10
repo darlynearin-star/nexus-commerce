@@ -7,6 +7,8 @@ import { getPaymentProvider } from '../payments';
 
 export const subscriptionsRouter = Router();
 
+const RETAILER_URL = process.env.RETAILER_DASHBOARD_URL || 'https://nexus-commerce-retailer-dashboard.vercel.app';
+
 subscriptionsRouter.get('/', authenticate, requireRole(UserRole.RETAILER), async (req: AuthRequest, res, next) => {
   try {
     const retailer = await prisma.retailer.findUnique({ where: { userId: req.user!.userId }, include: { subscription: { include: { payments: { orderBy: { createdAt: 'desc' }, take: 10 } } } } });
@@ -37,8 +39,8 @@ subscriptionsRouter.post('/subscribe', authenticate, requireRole(UserRole.RETAIL
     const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
     if (!user) return res.status(404).json({ success: false, error: 'User not found' });
 
-    const provider = getPaymentProvider('flutterwave');
-    if (!provider) return res.status(503).json({ success: false, error: 'Flutterwave is not configured yet' });
+    const provider = getPaymentProvider('pesapal');
+    if (!provider) return res.status(503).json({ success: false, error: 'Pesapal is not configured yet' });
 
     const nextBilling = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const subscription = await prisma.retailerSubscription.upsert({
@@ -48,14 +50,16 @@ subscriptionsRouter.post('/subscribe', authenticate, requireRole(UserRole.RETAIL
     });
 
     const reference = `SUB-${subscription.id}-${Date.now()}`;
-    const callbackUrl = `${req.protocol}://${req.get('host')}/api/subscriptions/callback`;
+    const base = `${req.protocol}://${req.get('host')}`;
+    const callbackUrl = `${base}/api/subscriptions/callback/pesapal`;
+    const ipnUrl = `${base}/api/subscriptions/ipn/pesapal?pesapal_notification_type=CHANGE&pesapal_transaction_tracking_id=`;
 
     const result = await provider.charge(subscription.weeklyAmount, subscription.currency, {
       email: user.email,
       phone: user.phone || undefined,
       reference,
       callbackUrl,
-      metadata: { subscriptionId: subscription.id, retailerId: retailer.id },
+      metadata: { subscriptionId: subscription.id, retailerId: retailer.id, description: 'Lyn-nyx Stores weekly subscription', ipnUrl },
     });
 
     if (!result.success) {
@@ -67,7 +71,7 @@ subscriptionsRouter.post('/subscribe', authenticate, requireRole(UserRole.RETAIL
         subscriptionId: subscription.id,
         amount: subscription.weeklyAmount,
         currency: subscription.currency,
-        method: 'flutterwave',
+        method: 'pesapal',
         status: 'PENDING',
         transactionId: result.transactionId,
         periodStart: new Date(),
@@ -75,8 +79,8 @@ subscriptionsRouter.post('/subscribe', authenticate, requireRole(UserRole.RETAIL
       },
     });
 
-    logActivity({ userId: req.user!.userId, action: 'subscription:payment_initiated', resource: 'subscription', resourceId: subscription.id, details: { amount: subscription.weeklyAmount, method: 'flutterwave' }, req: req as any });
-    res.json({ success: true, data: { ...subscription, checkoutUrl: result.data?.link || null } });
+    logActivity({ userId: req.user!.userId, action: 'subscription:payment_initiated', resource: 'subscription', resourceId: subscription.id, details: { amount: subscription.weeklyAmount, method: 'pesapal' }, req: req as any });
+    res.json({ success: true, data: { ...subscription, checkoutUrl: result.data?.redirect_url || result.data?.link || null } });
   } catch (error) { next(error); }
 });
 
@@ -96,18 +100,22 @@ subscriptionsRouter.post('/cancel', authenticate, requireRole(UserRole.RETAILER)
 });
 
 async function verifySubscriptionPayment(transactionId: string) {
-  const provider = getPaymentProvider('flutterwave');
-  if (!provider) return { ok: false as const, message: 'Flutterwave not configured' };
+  const provider = getPaymentProvider('pesapal');
+  if (!provider) return { ok: false as const, message: 'Pesapal not configured' };
 
   const result = await provider.verify(transactionId);
   if (!result.success || result.status !== 'PAID') {
     return { ok: false as const, message: result.message || 'Payment not confirmed yet' };
   }
 
-  const payment = await prisma.subscriptionPayment.findFirst({ where: { transactionId } });
+  const payment = await prisma.subscriptionPayment.findFirst({
+    where: {
+      OR: [{ transactionId: result.transactionId }, { transactionId }],
+    },
+  });
   if (!payment) return { ok: false as const, message: 'Payment record not found' };
 
-  await prisma.subscriptionPayment.update({ where: { id: payment.id }, data: { status: 'PAID' } });
+  await prisma.subscriptionPayment.update({ where: { id: payment.id }, data: { status: 'PAID', transactionId: result.transactionId || transactionId } });
   await prisma.retailerSubscription.update({
     where: { id: payment.subscriptionId },
     data: { status: 'ACTIVE', lastBillingDate: new Date(), nextBillingDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
@@ -115,13 +123,52 @@ async function verifySubscriptionPayment(transactionId: string) {
   return { ok: true as const, payment, subscriptionId: payment.subscriptionId };
 }
 
-// Flutterwave redirects the browser back here after payment
+// Pesapal redirects the browser back here after payment
+subscriptionsRouter.get('/callback/pesapal', async (req, res, next) => {
+  try {
+    const transactionId = (req.query.OrderTrackingId as string) || (req.query.pesapal_transaction_tracking_id as string);
+    const merchantReference = (req.query.OrderMerchantReference as string) || (req.query.pesapal_merchant_reference as string);
+
+    if (!transactionId && !merchantReference) return res.redirect(`${RETAILER_URL}/subscription?payment=error&message=missing_transaction`);
+
+    const verified = await verifySubscriptionPayment(transactionId || merchantReference);
+    if (verified.ok) {
+      logActivity({ userId: 'system', action: 'subscription:renewed', resource: 'subscription', resourceId: verified.subscriptionId, req: req as any });
+      return res.redirect(`${RETAILER_URL}/subscription?payment=success`);
+    }
+    res.redirect(`${RETAILER_URL}/subscription?payment=error`);
+  } catch (error) { next(error); }
+});
+
+// Pesapal IPN — server-to-server, must NOT require auth
+subscriptionsRouter.get('/ipn/pesapal', async (req, res, next) => {
+  try {
+    const transactionId = (req.query.pesapal_transaction_tracking_id as string) || (req.query.pesapal_merchant_reference as string);
+    if (transactionId && req.query.pesapal_notification_type === 'CHANGE') {
+      await verifySubscriptionPayment(transactionId);
+    }
+    res.status(200).send('OK');
+  } catch (error) { next(error); }
+});
+
+subscriptionsRouter.post('/ipn/pesapal', async (req, res, next) => {
+  try {
+    const body = req.body || {};
+    const transactionId = (body.pesapal_transaction_tracking_id as string) || (body.pesapal_merchant_reference as string);
+    if (transactionId && body.pesapal_notification_type === 'CHANGE') {
+      await verifySubscriptionPayment(transactionId);
+    }
+    res.status(200).send('OK');
+  } catch (error) { next(error); }
+});
+
+// Legacy Flutterwave redirect fallback
 subscriptionsRouter.get('/callback', async (req, res, next) => {
   try {
     const transactionId = (req.query.transaction_id as string) || (req.query.transactionId as string);
     const txRef = req.query.tx_ref as string | undefined;
 
-    if (!transactionId && !txRef) return res.redirect(`/?payment=error&message=missing_transaction`);
+    if (!transactionId && !txRef) return res.redirect(`${RETAILER_URL}/subscription?payment=error&message=missing_transaction`);
 
     const provider = getPaymentProvider('flutterwave');
     const result = await provider!.verify(transactionId || txRef!);
@@ -130,10 +177,10 @@ subscriptionsRouter.get('/callback', async (req, res, next) => {
       const verified = await verifySubscriptionPayment(transactionId || txRef!);
       if (verified.ok) {
         logActivity({ userId: 'system', action: 'subscription:renewed', resource: 'subscription', resourceId: verified.subscriptionId, req: req as any });
-        return res.redirect(`/?payment=success`);
+        return res.redirect(`${RETAILER_URL}/subscription?payment=success`);
       }
     }
-    res.redirect(`/?payment=error`);
+    res.redirect(`${RETAILER_URL}/subscription?payment=error`);
   } catch (error) { next(error); }
 });
 
