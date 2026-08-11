@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push('/create-store');
       }
     } else if (role === 'DEVELOPER' || role === 'SUPER_DEVELOPER') {
-      window.location.href = (process.env.NEXT_PUBLIC_DEVELOPER_DASHBOARD_URL || 'https://nexus-commerce-developer-dashboard.vercel.app') + '/dashboard';
+      window.location.href = (process.env.NEXT_PUBLIC_DEVELOPER_DASHBOARD_URL || 'https://nexus-commerce-developer-dashboard.vercel.app') + '/dashboard#token=' + encodeURIComponent(res.accessToken);
     } else {
       router.push('/account');
     }

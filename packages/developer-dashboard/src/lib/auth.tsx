@@ -8,12 +8,38 @@ interface AuthContextType { user: User | null; loading: boolean; login: (email: 
 const AuthContext = createContext<AuthContextType>({} as any);
 export const useAuth = () => useContext(AuthContext);
 
+function decodeJwt(token: string): any {
+  try { return JSON.parse(atob(token.split('.')[1])); } catch { return null; }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => { const token = localStorage.getItem('accessToken'); if (token) loadUser(); else setLoading(false); }, []);
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    const hashParams = new URLSearchParams(hash);
+    const tokenParam = hashParams.get('token');
+    if (tokenParam) {
+      localStorage.setItem('accessToken', tokenParam);
+      window.history.replaceState({}, '', window.location.pathname);
+      const payload = decodeJwt(tokenParam);
+      if (payload) {
+        setUser({ id: payload.userId, email: payload.email, role: payload.role, firstName: '', lastName: '' });
+      }
+      setLoading(false);
+      return;
+    }
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      const payload = decodeJwt(token);
+      if (payload) {
+        setUser({ id: payload.userId, email: payload.email, role: payload.role, firstName: '', lastName: '' });
+      }
+    }
+    setLoading(false);
+  }, []);
 
   async function loadUser() {
     try { const res = await api.get<any>('/auth/me'); setUser(res.data); } catch (e: any) { if (e?.status === 401) { localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); } } finally { setLoading(false); }
