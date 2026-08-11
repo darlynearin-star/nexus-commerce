@@ -5,12 +5,14 @@ import { api } from '@/lib/api';
 
 export default function DatabasePage() {
   const [status, setStatus] = useState('Checking...');
+  const [source, setSource] = useState<string | null>(null);
   const [working, setWorking] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     api.get('/system/health').then((r: any) => {
       setStatus(r.data?.database?.status === 'connected' ? 'Connected' : 'Disconnected');
+      setSource(r.data?.database?.source ?? null);
     }).catch(() => setStatus('Error'));
   }, []);
 
@@ -44,6 +46,16 @@ export default function DatabasePage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
         <div className="card"><div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}><Database size={20} color="var(--primary)" /><h3 style={{ fontWeight: 600 }}>Status</h3></div>
           <span className={`badge ${status === 'Connected' ? 'badge-success' : 'badge-error'}`} style={{ fontSize: '1rem' }}>{status}</span>
+          <div style={{ marginTop: '0.75rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+            Active source: {source ? (
+              <span className={`badge ${source === 'primary' ? 'badge-success' : 'badge-error'}`} style={{ textTransform: 'uppercase' }}>{source}</span>
+            ) : 'Unknown'}
+          </div>
+          {source === 'fallback' && (
+            <p style={{ marginTop: '0.5rem', fontSize: '0.8125rem', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <AlertTriangle size={14} /> Primary database unreachable — running on fallback
+            </p>
+          )}
         </div>
         <div className="card"><h3 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Backup</h3>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Create a snapshot of all database tables</p>

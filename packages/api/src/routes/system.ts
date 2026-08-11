@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import prisma from '@nexus/database';
+import prisma, { getDbStatus } from '@nexus/database';
 import { authenticate, requirePermission, AuthRequest } from '../middleware/auth';
 import { Permission } from '@nexus/shared';
 
@@ -10,6 +10,7 @@ systemRouter.get('/health', authenticate, async (req, res, next) => {
     const start = Date.now();
     await prisma.$queryRaw`SELECT 1`;
     const dbLatency = Date.now() - start;
+    const db = getDbStatus();
 
     const cpuUsage = process.cpuUsage();
     const memUsage = process.memoryUsage();
@@ -20,7 +21,7 @@ systemRouter.get('/health', authenticate, async (req, res, next) => {
         status: 'healthy',
         cpu: { usage: (cpuUsage.user + cpuUsage.system) / 1000000, cores: 1 },
         memory: { total: 0, used: memUsage.heapUsed, free: 0, usagePercent: memUsage.heapUsed / memUsage.heapTotal * 100 },
-        database: { status: 'connected', latency: dbLatency },
+        database: { status: 'connected', latency: dbLatency, source: db.usingFallback ? 'fallback' : 'primary' },
         api: { uptime: process.uptime() },
         lastChecked: new Date().toISOString(),
       },

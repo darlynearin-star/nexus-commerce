@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { Activity, Server, Database, Cpu, HardDrive, Wifi, RefreshCw } from 'lucide-react';
+import { Activity, Server, Database, Cpu, HardDrive, Wifi, RefreshCw, AlertTriangle } from 'lucide-react';
 
 export default function SystemHealthPage() {
   const [health, setHealth] = useState<any>({});
@@ -19,6 +19,7 @@ export default function SystemHealthPage() {
     { label: 'CPU Usage', value: health?.cpu ? `${(health.cpu.usage || 0).toFixed(1)}%` : 'N/A', icon: <Cpu size={20} /> },
     { label: 'Memory', value: health?.memory ? `${(health.memory.usagePercent || 0).toFixed(1)}%` : 'N/A', icon: <HardDrive size={20} /> },
     { label: 'Database', value: health?.database?.status || 'N/A', icon: <Database size={20} />, status: true },
+    { label: 'DB Source', value: health?.database?.source || 'N/A', icon: <Database size={20} />, status: true, badge: true },
     { label: 'DB Latency', value: health?.database?.latency ? `${health.database.latency}ms` : 'N/A', icon: <Wifi size={20} /> },
     { label: 'API Uptime', value: health?.api ? `${Math.round(health.api.uptime / 60)} min` : 'N/A', icon: <Server size={20} /> },
   ];
@@ -40,7 +41,7 @@ export default function SystemHealthPage() {
               <div style={{ color: 'var(--primary)', opacity: 0.7 }}>{m.icon}</div>
             </div>
             {m.status ? (
-              <span className={`badge ${m.value === 'connected' ? 'badge-success' : 'badge-error'}`} style={{ fontSize: '1rem' }}>{m.value}</span>
+              <span className={`badge ${m.badge ? (m.value === 'fallback' ? 'badge-error' : 'badge-success') : (m.value === 'connected' ? 'badge-success' : 'badge-error')}`} style={{ fontSize: '1rem', textTransform: 'uppercase' }}>{m.value}</span>
             ) : (
               <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{m.value}</span>
             )}
@@ -54,6 +55,11 @@ export default function SystemHealthPage() {
           <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>{health?.status || 'Unknown'}</span>
           <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Last checked: {health?.lastChecked ? new Date(health.lastChecked).toLocaleString() : 'N/A'}</span>
         </div>
+        {health?.database?.source === 'fallback' && (
+          <p style={{ marginTop: '0.75rem', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', background: '#2e0505', color: '#f87171', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <AlertTriangle size={14} /> PRIMARY DATABASE UNREACHABLE — running on the fallback database
+          </p>
+        )}
       </div>
     </div>
   );

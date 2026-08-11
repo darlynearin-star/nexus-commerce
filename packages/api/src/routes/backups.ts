@@ -3,6 +3,7 @@ import prisma from '@nexus/database';
 import { UserRole } from '@nexus/shared';
 import { authenticate, requireRole } from '../middleware/auth';
 import { logActivity } from '../utils/activity-log';
+import { mirrorToFallback } from '../utils/db-mirror';
 
 export const backupsRouter = Router();
 
@@ -49,6 +50,8 @@ backupsRouter.post('/create', authenticate, requireRole(UserRole.DEVELOPER, User
 
     logActivity({ userId: (req as any).user!.userId, action: 'backup:created', resource: 'backup', resourceId: backup.id, details: { rowCount: backup.rowCount }, req: req as any });
     res.json({ success: true, data: { id: backup.id, createdAt: backup.createdAt, tableCount: backup.tableCount, rowCount: backup.rowCount, size: backup.size, data: dump } });
+
+    mirrorToFallback(prisma).catch(() => {});
   } catch (error) { next(error); }
 });
 

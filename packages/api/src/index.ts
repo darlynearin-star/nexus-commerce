@@ -36,9 +36,10 @@ import { uploadRouter } from './routes/upload';
 import { resolveStore } from './middleware/resolve-store';
 import { errorHandler } from './middleware/error-handler';
 import { checkKillSwitch } from './middleware/kill-switch';
-import prisma from '@nexus/database';
+import prisma, { initDatabase, getDbStatus } from '@nexus/database';
 import { logger } from './utils/logger';
 import type { JijiCategory } from '@nexus/database';
+import { mirrorToFallback, restoreFallbackIfEmpty, getFallbackClient } from './utils/db-mirror';
 
 // Startup migration: sync DB columns that Prisma schema needs
 async function runMigrations() {
@@ -200,7 +201,28 @@ app.use(errorHandler);
 app.listen(PORT, async () => {
   logger.info(`Lyn-nyx Stores API running on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  await initDatabase();
+  const db = getDbStatus();
+  logger.info(`Database: ${db.usingFallback ? 'FALLBACK ACTIVE' : 'primary'} (${db.activeUrl ? db.activeUrl.split('@').pop() : 'unset'})`);
   await runMigrations();
+
+  if (db.usingFallback) {
+    try {
+      const result = await restoreFallbackIfEmpty(prisma);
+      if (result.restored) logger.info(`Fallback restored ${result.tables.length} tables from mirrored snapshot`);
+      else if (result.skipped) logger.info('Fallback already has data - restore skipped');
+      else logger.warn('No mirrored snapshot found on fallback - running empty');
+    } catch (e: any) {
+      logger.warn(`Fallback restore failed: ${e?.message || e}`);
+    }
+  } else if (getFallbackClient()) {
+    try {
+      await mirrorToFallback(prisma);
+      logger.info('Mirrored current database snapshot to fallback');
+    } catch (e: any) {
+      logger.warn(`Fallback mirror failed: ${e?.message || e}`);
+    }
+  }
 });
 
 export default app;
