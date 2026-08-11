@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useSearchParams, useParams } from 'next/navigation';
+import { useSearchParams, useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { storeApi } from '@/lib/store-api';
 import ProductCard, { ProductView } from '@/components/ProductCard';
@@ -16,6 +16,7 @@ interface AttributeDef {
 export default function StoreShopPage() {
   const searchParams = useSearchParams();
   const params = useParams();
+  const router = useRouter();
   const storeSlug = params.storeSlug as string;
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -296,17 +297,32 @@ export default function StoreShopPage() {
           </div>
         )}
 
-        {/* Top-level category chips */}
-        {!selectedParent && !selectedCategory && (
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        {/* Category dropdown */}
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+          <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Category</label>
+          <select
+            className="input"
+            style={{ width: 'auto', minWidth: 220, fontSize: '0.875rem' }}
+            value={(() => {
+              if (selectedParent) return selectedParent.slug;
+              if (selectedCategory) {
+                let cur = selectedCategory;
+                while (cur.parentId) { const p = catMap.get(cur.parentId); if (!p) break; cur = p; }
+                return cur.slug;
+              }
+              return '';
+            })()}
+            onChange={(e) => {
+              const v = e.target.value;
+              router.push(v ? `/store/${storeSlug}/shop?parent=${v}` : `/store/${storeSlug}/shop`);
+            }}
+          >
+            <option value="">All Categories</option>
             {topCategories.map((cat: any) => (
-              <Link key={cat.id} href={`/store/${storeSlug}/shop?parent=${cat.slug}`} className="btn btn-ghost btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', textDecoration: 'none' }}>
-                <span>{categoryIcon(cat.slug, cat.name)}</span>
-                {cat.name}
-              </Link>
+              <option key={cat.id} value={cat.slug}>{categoryIcon(cat.slug, cat.name)} {cat.name}</option>
             ))}
-          </div>
-        )}
+          </select>
+        </div>
 
         {/* Search + Sort + Filter toggle bar */}
         <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -396,11 +412,11 @@ export default function StoreShopPage() {
                 <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>{productCount} product{productCount !== 1 ? 's' : ''} found</p>
                 {view === 'list' ? (
                   <div className="product-list">
-                    {products.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} view="list" />)}
+                    {products.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} view="list" showAddToCart={false} />)}
                   </div>
                 ) : (
                   <div className={`product-grid ${view === 'compact' ? 'view-compact' : ''} ${view === 'minimal' ? 'view-minimal' : ''}`}>
-                    {products.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} view={view} />)}
+                    {products.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} view={view} showAddToCart={false} />)}
                   </div>
                 )}
               </>

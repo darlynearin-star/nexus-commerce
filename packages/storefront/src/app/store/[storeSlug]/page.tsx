@@ -54,11 +54,11 @@ export default function StoreHomePage() {
             </div>
             {view === 'list' ? (
                 <div className="product-list">
-                  {newArrivals.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} view="list" />)}
+                  {newArrivals.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} view="list" showAddToCart={false} />)}
                 </div>
               ) : (
                 <div className={`product-grid ${view === 'compact' ? 'view-compact' : ''} ${view === 'minimal' ? 'view-minimal' : ''}`}>
-                  {newArrivals.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} view={view} />)}
+                  {newArrivals.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} view={view} showAddToCart={false} />)}
                 </div>
               )}
           </div>
@@ -75,11 +75,11 @@ export default function StoreHomePage() {
             </div>
             {view === 'list' ? (
                 <div className="product-list">
-                  {featured.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} view="list" />)}
+                  {featured.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} view="list" showAddToCart={false} />)}
                 </div>
               ) : (
                 <div className={`product-grid ${view === 'compact' ? 'view-compact' : ''} ${view === 'minimal' ? 'view-minimal' : ''}`}>
-                  {featured.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} view={view} />)}
+                  {featured.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} view={view} showAddToCart={false} />)}
                 </div>
               )}
           </div>

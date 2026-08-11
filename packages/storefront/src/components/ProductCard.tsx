@@ -121,8 +121,8 @@ export default function ProductCard({ product, showAddToCart = true, storeSlug: 
           <img src={firstImage(product)} alt={product.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = img((product as any).id); }} />
         </div>
         <div style={{ padding: '0 0.25rem' }}>
-          <h3 style={{ fontSize: '0.8125rem', fontWeight: 600, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</h3>
-          <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--primary)' }}>UGX {product.price.toLocaleString()}</span>
+          <h3 style={{ fontSize: '0.75rem', fontWeight: 600, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</h3>
+          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--primary)' }}>UGX {product.price.toLocaleString()}</span>
         </div>
       </Link>
     );
@@ -137,10 +137,10 @@ export default function ProductCard({ product, showAddToCart = true, storeSlug: 
           <img src={firstImage(product)} alt={product.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = img((product as any).id); }} />
         </div>
         <div>
-          <p style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', marginBottom: '0.125rem' }}>{product.brand}</p>
-          <h3 style={{ fontSize: '0.8125rem', fontWeight: 600, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</h3>
+          <p style={{ fontSize: '0.625rem', color: 'var(--text-secondary)', marginBottom: '0.125rem' }}>{product.brand}</p>
+          <h3 style={{ fontSize: '0.75rem', fontWeight: 600, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginTop: '0.125rem' }}>
-            <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--primary)' }}>UGX {product.price.toLocaleString()}</span>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--primary)' }}>UGX {product.price.toLocaleString()}</span>
           </div>
         </div>
         {showAddToCart && <AddToCartButton product={product} cartSlug={storeSlug} />}
@@ -156,8 +156,8 @@ export default function ProductCard({ product, showAddToCart = true, storeSlug: 
         <img src={firstImage(product)} alt={product.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = img((product as any).id); }} />
       </div>
       <div>
-        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>{product.brand}</p>
-        <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, lineHeight: 1.3 }}>{product.name}</h3>
+        <p style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>{product.brand}</p>
+        <h3 style={{ fontSize: '0.875rem', fontWeight: 600, lineHeight: 1.3 }}>{product.name}</h3>
         {(product.averageRating || product.reviewCount) && (
           <div style={{ marginTop: '0.375rem' }}>
             <StarRating rating={product.averageRating || 4} count={product.reviewCount || 0} size={12} />
@@ -165,7 +165,7 @@ export default function ProductCard({ product, showAddToCart = true, storeSlug: 
         )}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary)' }}>UGX {product.price.toLocaleString()}</span>
+        <span style={{ fontSize: '1.0625rem', fontWeight: 700, color: 'var(--primary)' }}>UGX {product.price.toLocaleString()}</span>
       </div>
       {showAddToCart && <AddToCartButton product={product} cartSlug={storeSlug} />}
     </Link>
