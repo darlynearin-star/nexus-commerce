@@ -3,9 +3,9 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useSearchParams, useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { storeApi } from '@/lib/store-api';
-import ProductCard, { ProductView } from '@/components/ProductCard';
+import ProductCard from '@/components/ProductCard';
 import { categoryIcon } from '@/lib/category-icons';
-import { Search, SlidersHorizontal, X, ChevronRight, Filter, RotateCcw, LayoutGrid, Rows3, LayoutList, } from 'lucide-react';
+import { Search, SlidersHorizontal, X, ChevronRight, Filter, RotateCcw, } from 'lucide-react';
 
 interface AttributeDef {
   key: string; label: string;
@@ -32,22 +32,6 @@ export default function StoreShopPage() {
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [view, setView] = useState<ProductView>(() => {
-    if (typeof window === 'undefined') return 'grid';
-    return (localStorage.getItem('productView') as ProductView) || 'grid';
-  });
-
-  const changeView = (v: ProductView) => {
-    setView(v);
-    try { localStorage.setItem('productView', v); } catch {}
-  };
-
-  const VIEW_OPTIONS: { key: ProductView; label: string; icon: any }[] = [
-    { key: 'grid', label: 'Grid', icon: <LayoutGrid size={16} /> },
-    { key: 'compact', label: 'Compact', icon: <LayoutList size={16} /> },
-    { key: 'minimal', label: 'Minimal', icon: <Rows3 size={16} /> },
-    { key: 'list', label: 'List', icon: <LayoutList size={16} /> },
-  ];
 
   // Overlay draft state (committed only on Apply)
   const [draftCategory, setDraftCategory] = useState('');
@@ -339,18 +323,6 @@ export default function StoreShopPage() {
             <option value="name_asc">Name: A to Z</option>
             <option value="name_desc">Name: Z to A</option>
           </select>
-          <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', background: 'var(--bg-secondary)', borderRadius: '0.5rem', padding: '0.25rem' }}>
-            {VIEW_OPTIONS.map(opt => (
-              <button
-                key={opt.key}
-                onClick={() => changeView(opt.key)}
-                title={opt.label}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 0.6rem', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', fontSize: '0.75rem', background: view === opt.key ? 'var(--primary)' : 'transparent', color: view === opt.key ? 'white' : 'var(--text-secondary)' }}
-              >
-                {opt.icon} {opt.label}
-              </button>
-            ))}
-          </div>
           {(category || parentSlug) && (
             <button className="btn btn-ghost btn-sm" onClick={openFilters} style={{ position: 'relative' }}>
               <Filter size={16} />
@@ -410,15 +382,9 @@ export default function StoreShopPage() {
             ) : (
               <>
                 <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>{productCount} product{productCount !== 1 ? 's' : ''} found</p>
-                {view === 'list' ? (
-                  <div className="product-list">
-                    {products.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} view="list" showAddToCart={false} />)}
-                  </div>
-                ) : (
-                  <div className={`product-grid ${view === 'compact' ? 'view-compact' : ''} ${view === 'minimal' ? 'view-minimal' : ''}`}>
-                    {products.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} view={view} showAddToCart={false} />)}
-                  </div>
-                )}
+                <div className="product-grid">
+                  {products.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} showAddToCart={false} />)}
+                </div>
               </>
             )}
 
