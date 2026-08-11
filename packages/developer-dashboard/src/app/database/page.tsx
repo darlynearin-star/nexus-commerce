@@ -1,20 +1,37 @@
 'use client';
-import { Database, Download, RefreshCw, Check, AlertTriangle } from 'lucide-react';
+import { Database, Download, RefreshCw, Check, AlertTriangle, ArrowLeftRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 
 export default function DatabasePage() {
   const [status, setStatus] = useState('Checking...');
   const [source, setSource] = useState<string | null>(null);
+  const [manualSwitch, setManualSwitch] = useState<boolean | null>(null);
   const [working, setWorking] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  useEffect(() => {
+  const refresh = () => {
+    api.get('/system/database').then((r: any) => {
+      setSource(r.data?.source ?? null);
+      setManualSwitch(r.data?.manualSwitch ?? null);
+    }).catch(() => {});
     api.get('/system/health').then((r: any) => {
       setStatus(r.data?.database?.status === 'connected' ? 'Connected' : 'Disconnected');
-      setSource(r.data?.database?.source ?? null);
     }).catch(() => setStatus('Error'));
-  }, []);
+  };
+
+  useEffect(refresh, []);
+
+  const switchDb = async (target: string) => {
+    setWorking(`switch-${target}`); setMessage(null);
+    try {
+      const r: any = await api.post('/system/database/switch', { target });
+      setSource(r.data?.source ?? null);
+      setMessage({ type: 'success', text: r.data?.sync || `Switched to ${target} database` });
+      api.get('/system/health').then((h: any) => setStatus(h.data?.database?.status === 'connected' ? 'Connected' : 'Disconnected')).catch(() => {});
+    } catch (e: any) { setMessage({ type: 'error', text: e?.message || 'Switch failed' }); }
+    finally { setWorking(''); }
+  };
 
   const createBackup = async () => {
     setWorking('backup'); setMessage(null);
@@ -56,6 +73,22 @@ export default function DatabasePage() {
               <AlertTriangle size={14} /> Primary database unreachable — running on fallback
             </p>
           )}
+        </div>
+        <div className="card"><h3 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Switch Database</h3>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+            Mode: {manualSwitch === null ? '...' : manualSwitch ? 'Manual (dashboard controlled)' : 'Automatic'}
+          </p>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+            Force the API to use either database. Switching to fallback restores data from the last mirrored snapshot if empty.
+          </p>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button className="btn btn-primary btn-sm" onClick={() => switchDb('primary')} disabled={working !== '' || source === 'primary'}>
+              <ArrowLeftRight size={14} /> {working === 'switch-primary' ? 'Switching...' : 'Switch to Primary'}
+            </button>
+            <button className="btn btn-secondary btn-sm" onClick={() => switchDb('fallback')} disabled={working !== '' || source === 'fallback'}>
+              <ArrowLeftRight size={14} /> {working === 'switch-fallback' ? 'Switching...' : 'Switch to Fallback'}
+            </button>
+          </div>
         </div>
         <div className="card"><h3 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Backup</h3>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Create a snapshot of all database tables</p>

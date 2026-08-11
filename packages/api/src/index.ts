@@ -204,6 +204,7 @@ app.listen(PORT, async () => {
   await initDatabase();
   const db = getDbStatus();
   logger.info(`Database: ${db.usingFallback ? 'FALLBACK ACTIVE' : 'primary'} (${db.activeUrl ? db.activeUrl.split('@').pop() : 'unset'})`);
+  logger.info(`Database switching: ${db.manualSwitch ? 'MANUAL (dashboard controlled)' : 'AUTO'}`);
   await runMigrations();
 
   if (db.usingFallback) {

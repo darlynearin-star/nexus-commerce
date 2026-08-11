@@ -13,6 +13,8 @@ let client: PrismaClient = buildClient(primaryUrl);
 let activeUrl: string = primaryUrl;
 let usingFallback = false;
 let switchInProgress: Promise<void> | null = null;
+// Manual mode: never auto-switch on failures; switching is driven by the dashboard.
+const manualSwitch: boolean = process.env.DB_MANUAL_SWITCH !== 'false';
 
 function isConnectionError(err: any): boolean {
   if (!err) return false;
@@ -58,13 +60,44 @@ export async function initDatabase(): Promise<void> {
   try {
     await client.$connect();
     await client.$queryRaw`SELECT 1`;
-  } catch {
+  } catch (e: any) {
+    if (manualSwitch) {
+      console.error(`[database] PRIMARY database unreachable at boot (${e?.message || e}). Manual switch mode: staying on primary - switch via the dashboard.`);
+      return;
+    }
     await switchToFallback();
   }
 }
 
 export function getDbStatus() {
-  return { activeUrl, usingFallback };
+  return { activeUrl, usingFallback, manualSwitch };
+}
+
+export function isManualSwitch(): boolean {
+  return manualSwitch;
+}
+
+export async function switchDatabase(target: 'primary' | 'fallback'): Promise<{ ok: boolean; usingFallback: boolean; error?: string }> {
+  const url = target === 'fallback' ? fallbackUrl : primaryUrl;
+  if (!url) return { ok: false, usingFallback, error: `${target} database URL not configured` };
+  if (target === 'fallback' && usingFallback) return { ok: true, usingFallback };
+  if (target === 'primary' && !usingFallback) return { ok: true, usingFallback };
+
+  const candidate = buildClient(url);
+  try {
+    await candidate.$connect();
+    await candidate.$queryRaw`SELECT 1`;
+    const old = client;
+    client = candidate;
+    activeUrl = url;
+    usingFallback = target === 'fallback';
+    await old.$disconnect().catch(() => {});
+    console.error(`[database] switched to ${target} database`);
+    return { ok: true, usingFallback };
+  } catch (e: any) {
+    await candidate.$disconnect().catch(() => {});
+    return { ok: false, usingFallback, error: e?.message || String(e) };
+  }
 }
 
 function makeDelegate(prop: string): any {
@@ -84,7 +117,7 @@ function makeDelegate(prop: string): any {
           try {
             return await attempt();
           } catch (e: any) {
-            if (!usingFallback && fallbackUrl && isConnectionError(e)) {
+            if (!manualSwitch && !usingFallback && fallbackUrl && isConnectionError(e)) {
               if (await switchToFallback()) return await attempt();
             }
             throw e;
@@ -109,7 +142,7 @@ const prisma: PrismaClient = new Proxy({} as PrismaClient, {
         try {
           return await attempt();
         } catch (e: any) {
-          if (!usingFallback && fallbackUrl && isConnectionError(e)) {
+          if (!manualSwitch && !usingFallback && fallbackUrl && isConnectionError(e)) {
             if (await switchToFallback()) return await attempt();
           }
           throw e;

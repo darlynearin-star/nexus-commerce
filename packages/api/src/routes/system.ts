@@ -1,7 +1,8 @@
 import { Router } from 'express';
-import prisma, { getDbStatus } from '@nexus/database';
+import prisma, { getDbStatus, switchDatabase } from '@nexus/database';
 import { authenticate, requirePermission, AuthRequest } from '../middleware/auth';
 import { Permission } from '@nexus/shared';
+import { restoreFallbackIfEmpty, mirrorToFallback } from '../utils/db-mirror';
 
 export const systemRouter = Router();
 
@@ -29,6 +30,45 @@ systemRouter.get('/health', authenticate, async (req, res, next) => {
   } catch (error) {
     res.json({ success: true, data: { status: 'degraded', database: { status: 'error' }, lastChecked: new Date().toISOString() } });
   }
+});
+
+systemRouter.get('/database', authenticate, requirePermission(Permission.MANAGE_SYSTEM), async (req, res, next) => {
+  try {
+    const db = getDbStatus();
+    res.json({
+      success: true,
+      data: {
+        source: db.usingFallback ? 'fallback' : 'primary',
+        manualSwitch: db.manualSwitch,
+        primaryHost: db.activeUrl ? db.activeUrl.split('@').pop() : null,
+      },
+    });
+  } catch (error) { next(error); }
+});
+
+systemRouter.post('/database/switch', authenticate, requirePermission(Permission.MANAGE_SYSTEM), async (req, res, next) => {
+  const target = req.body?.target;
+  if (target !== 'primary' && target !== 'fallback') {
+    return res.status(400).json({ success: false, error: 'target must be "primary" or "fallback"' });
+  }
+  try {
+    const result = await switchDatabase(target);
+    if (!result.ok) {
+      return res.status(502).json({ success: false, error: `Could not connect to ${target} database: ${result.error || 'unknown error'}` });
+    }
+    let sync: string | null = null;
+    if (target === 'fallback') {
+      const restore = await restoreFallbackIfEmpty(prisma).catch((e: any) => ({ error: e?.message || String(e) }));
+      if ('error' in (restore as any)) sync = `Connected to fallback, but restore check failed: ${(restore as any).error}`;
+      else if ((restore as any).restored) sync = `Connected to fallback. Restored ${(restore as any).tables.length} tables from mirrored snapshot`;
+      else if ((restore as any).skipped) sync = 'Connected to fallback. Already has data - restore skipped';
+      else sync = 'Connected to fallback. No mirrored snapshot found';
+    } else {
+      await mirrorToFallback(prisma).catch((e: any) => { sync = `Connected to primary, but mirror failed: ${e?.message || e}`; });
+      if (!sync) sync = 'Connected to primary. Mirrored snapshot to fallback';
+    }
+    res.json({ success: true, data: { source: target, sync } });
+  } catch (error) { next(error); }
 });
 
 systemRouter.get('/feature-flags', authenticate, async (req, res, next) => {
