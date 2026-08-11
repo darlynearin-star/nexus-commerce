@@ -84,7 +84,7 @@ export default function LandingPage() {
                   <Layout size={18} /> Dashboard
                 </a>
                 {user.role === 'SUPER_DEVELOPER' && (
-                  <a href={`${devDashUrl}/dashboard`} className="btn btn-ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <a href={`${devDashUrl}/dashboard#token=${encodeURIComponent(typeof window !== 'undefined' ? localStorage.getItem('accessToken') || '' : '')}`} className="btn btn-ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Terminal size={18} /> To Dev Dashboard
                   </a>
                 )}

@@ -9,7 +9,24 @@ const AuthContext = createContext<AuthContextType>({} as any);
 export const useAuth = () => useContext(AuthContext);
 
 function decodeJwt(token: string): any {
-  try { return JSON.parse(atob(token.split('.')[1])); } catch { return null; }
+  try {
+    const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+    return JSON.parse(atob(padded));
+  } catch { return null; }
+}
+
+function captureTokenFromUrl(): string | null {
+  if (typeof window === 'undefined') return null;
+  const hash = window.location.hash.slice(1);
+  const hashParams = new URLSearchParams(hash);
+  const tokenParam = hashParams.get('token');
+  if (tokenParam) {
+    localStorage.setItem('accessToken', tokenParam);
+    window.history.replaceState({}, '', window.location.pathname);
+    return tokenParam;
+  }
+  return null;
 }
 
 async function ensureStore() {
@@ -30,22 +47,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  const urlToken = captureTokenFromUrl();
+
   useEffect(() => {
-    const hash = window.location.hash.slice(1);
-    const hashParams = new URLSearchParams(hash);
-    const tokenParam = hashParams.get('token');
-    if (tokenParam) {
-      localStorage.setItem('accessToken', tokenParam);
-      window.history.replaceState({}, '', window.location.pathname);
-      const payload = decodeJwt(tokenParam);
-      if (payload) {
-        setUser({ id: payload.userId, email: payload.email, role: payload.role, firstName: '', lastName: '', avatar: undefined });
-        if (payload.role === 'RETAILER') ensureStore();
-      }
-      setLoading(false);
-      return;
-    }
-    const token = localStorage.getItem('accessToken');
+    const token = urlToken || localStorage.getItem('accessToken');
     if (token) {
       const payload = decodeJwt(token);
       if (payload) {
