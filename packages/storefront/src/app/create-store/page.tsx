@@ -85,7 +85,7 @@ export default function CreateStorePage() {
     return (
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '3rem 1rem', position: 'relative', zIndex: 1, textAlign: 'center' }}>
         <div style={{ color: 'var(--primary)', marginBottom: '2rem' }}>{slide.icon}</div>
-        <h2 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '1rem' }}>{slide.title}</h2>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 700, marginBottom: '1rem' }}>{slide.title}</h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: 1.7, marginBottom: '1.5rem' }}>{slide.desc}</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem', textAlign: 'left', maxWidth: 400, margin: '0 auto 2rem' }}>
           {slide.feat.map((f, i) => (
@@ -142,7 +142,7 @@ export default function CreateStorePage() {
       {/* Step 1: Pick Template */}
       {step === 1 && (
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem' }}>Choose a template</h2>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem' }}>Choose a template</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Pick a starting design. You can customize colors in the next step.</p>
           <div style={{ display: 'grid', gap: '1rem' }}>
             {TEMPLATES.map(t => (
@@ -163,7 +163,7 @@ export default function CreateStorePage() {
       {/* Step 2: Customize Colors */}
       {step === 2 && (
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '2rem' }}>Customize colors</h2>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 600, marginBottom: '2rem' }}>Customize colors</h2>
           {Object.entries(colors).map(([key, val]) => (
             <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
               <label style={{ width: 100, fontSize: '0.875rem', fontWeight: 500, textTransform: 'capitalize' }}>{key}</label>
@@ -181,7 +181,7 @@ export default function CreateStorePage() {
       {/* Step 3: Name & Slug */}
       {step === 3 && (
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '2rem' }}>Store details</h2>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 600, marginBottom: '2rem' }}>Store details</h2>
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.375rem' }}>Store Name</label>
             <input className="input" value={name} onChange={e => { setName(e.target.value); setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')); }} placeholder="My Store" />

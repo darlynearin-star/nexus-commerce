@@ -85,11 +85,11 @@ export default function ProductPage() {
         {/* Product Info */}
         <div>
           <p style={{ fontSize: '0.875rem', color: 'var(--primary)', fontWeight: 500, marginBottom: '0.5rem' }}>{product.brand}</p>
-          <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem' }}>{product.name}</h1>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 700, letterSpacing: '-0.01em', marginBottom: '0.5rem' }}>{product.name}</h1>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>SKU: {product.sku}</p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-            {[1,2,3,4,5].map(i => <Star key={i} size={18} fill={i <= 4 ? 'var(--warning)' : 'none'} color={i <= 4 ? 'var(--warning)' : 'var(--border)'} />)}
+            {[1,2,3,4,5].map(i => <Star key={i} size={18} fill={i <= 4 ? 'var(--gold)' : 'none'} color={i <= 4 ? 'var(--gold)' : 'var(--border)'} />)}
             <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>4.2 (23 reviews)</span>
           </div>
 
@@ -151,14 +151,14 @@ export default function ProductPage() {
 
           {/* Description */}
           <div style={{ marginBottom: '2rem' }}>
-            <h3 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Description</h3>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, marginBottom: '0.75rem' }}>Description</h3>
             <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7, fontSize: '0.9375rem' }}>{product.description}</p>
           </div>
 
           {/* Features */}
           {product.features?.length > 0 && (
             <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Features</h3>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, marginBottom: '0.75rem' }}>Features</h3>
               <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {product.features.map((f: string, i: number) => (
                   <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
@@ -172,7 +172,7 @@ export default function ProductPage() {
           {/* Specifications */}
           {product.specifications && Object.keys(product.specifications).length > 0 && (
             <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Specifications</h3>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, marginBottom: '0.75rem' }}>Specifications</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                 {Object.entries(product.specifications).map(([key, val]: [string, any]) => (
                   <div key={key} style={{ padding: '0.5rem', borderBottom: '1px solid var(--border)', fontSize: '0.875rem' }}>
@@ -188,12 +188,12 @@ export default function ProductPage() {
       {/* Reviews */}
       {product.reviews?.length > 0 && (
         <div style={{ marginTop: '3rem' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Customer Reviews</h2>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Customer Reviews</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {product.reviews.map((r: any) => (
               <div key={r.id} className="card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  {[1,2,3,4,5].map(i => <Star key={i} size={14} fill={i <= r.rating ? 'var(--warning)' : 'none'} color={i <= r.rating ? 'var(--warning)' : 'var(--border)'} />)}
+                  {[1,2,3,4,5].map(i => <Star key={i} size={14} fill={i <= r.rating ? 'var(--gold)' : 'none'} color={i <= r.rating ? 'var(--gold)' : 'var(--border)'} />)}
                   <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{r.title}</span>
                 </div>
                 <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{r.content}</p>
@@ -207,7 +207,7 @@ export default function ProductPage() {
       {/* Related Products */}
       {product.related?.length > 0 && (
         <div style={{ marginTop: '3rem' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Related Products</h2>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Related Products</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1rem' }}>
             {product.related.map((p: any) => (
               <Link key={p.id} href={`/product/${p.slug}`} className="card" style={{ textDecoration: 'none', color: 'inherit' }}>

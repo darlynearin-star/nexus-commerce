@@ -66,7 +66,7 @@ const guides = [
 export default function GuidesPage() {
   return (
     <div className="container" style={{ padding: 'clamp(2rem, 5vw, 3.5rem) 1rem', maxWidth: 920 }}>
-      <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', fontWeight: 700, marginBottom: '0.5rem' }}>
+      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', fontWeight: 700, letterSpacing: '-0.01em', marginBottom: '0.5rem' }}>
         Guides &amp; Tutorials
       </h1>
       <p style={{ color: 'var(--text-secondary)', fontSize: '1.0625rem', lineHeight: 1.6, marginBottom: '2.5rem' }}>
@@ -77,7 +77,7 @@ export default function GuidesPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         {guides.map((g, i) => (
           <div key={i} className="card" style={{ padding: 'clamp(1.25rem, 3vw, 1.75rem)' }}>
-            <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.25rem', fontWeight: 600, marginBottom: '1rem' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.25rem', fontWeight: 600, marginBottom: '1rem' }}>
               <span style={{ fontSize: '1.5rem' }}>{g.icon}</span> {g.title}
             </h2>
             <ol style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', paddingLeft: '1.25rem', color: 'var(--text)', lineHeight: 1.5 }}>
@@ -93,7 +93,7 @@ export default function GuidesPage() {
       </div>
 
       <div className="card" style={{ marginTop: '2rem', padding: '1.5rem', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.5rem' }}>Still stuck?</h2>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.5rem' }}>Still stuck?</h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', marginBottom: '1rem' }}>
           Reach out to our support team and we&apos;ll help you out.
         </p>

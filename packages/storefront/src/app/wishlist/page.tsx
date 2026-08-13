@@ -18,7 +18,8 @@ export default function WishlistPage() {
 
   return (
     <div className="container" style={{ padding: '2rem 0' }}>
-      <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '2rem' }}>My Wishlist</h1>
+      <p className="eyebrow">Saved</p>
+      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', fontWeight: 700, letterSpacing: '-0.01em', marginBottom: '2rem' }}>My Wishlist</h1>
       {items.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem' }}>
           <Heart size={64} style={{ margin: '0 auto 1rem', opacity: 0.3, color: 'var(--primary)' }} />

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Gem } from 'lucide-react';
+import { useStore } from '@/lib/store-context';
 import { useTheme } from '@/lib/theme';
 
 export default function Footer() {
@@ -15,28 +15,28 @@ export default function Footer() {
   if (isStorePage) return null;
 
   return (
-    <footer style={{ borderTop: '1px solid var(--border)', padding: 'clamp(1.5rem, 4vw, 3rem) 0', marginTop: '3rem' }}>
+    <footer style={{ borderTop: '1px solid var(--border)', padding: 'clamp(2rem, 5vw, 3.5rem) 0', marginTop: '3rem' }}>
       <div className="container">
         <div className="footer-grid">
           <div>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '1rem' }}>
-              <Gem size={24} />
-              <span className={isDark ? 'gold-shimmer' : ''}>Lyn-nyx Stores</span>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.0625rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.75rem' }}>
+              <span style={{ width: 24, height: 24, borderRadius: 7, background: 'var(--primary)', color: 'var(--bg)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8125rem' }}>N</span>
+              <span className={isDark ? '' : ''}>Lyn-nyx Stores</span>
             </h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>Shop, sell, and scale. Premium products, smart commerce.</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6, maxWidth: 260 }}>Shop, sell, and scale. Premium products, smart commerce — powered by local makers.</p>
           </div>
-          <div><h4 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Shop</h4>
+          <div><h4 style={{ fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.875rem' }}>Shop</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
               <Link href="/store/adorn/shop" style={{ color: 'inherit', textDecoration: 'none' }}>Demo Shop</Link>
               <Link href="/categories" style={{ color: 'inherit', textDecoration: 'none' }}>Categories</Link>
             </div>
           </div>
-          <div><h4 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Support</h4>
+          <div><h4 style={{ fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.875rem' }}>Support</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
               <span>Contact Us</span><span>Shipping Info</span><span>Returns</span><Link href="/guides" style={{ color: 'inherit', textDecoration: 'none' }}>Guides &amp; Tutorials</Link>
             </div>
           </div>
-          <div><h4 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Account</h4>
+          <div><h4 style={{ fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.875rem' }}>Account</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
               <Link href="/login" style={{ color: 'inherit', textDecoration: 'none' }}>Sign In</Link>
               <Link href="/register" style={{ color: 'inherit', textDecoration: 'none' }}>Register</Link>

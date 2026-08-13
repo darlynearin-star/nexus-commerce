@@ -40,14 +40,14 @@ export default function AuthCallbackPage() {
         {status === 'verifying' && (
           <>
             <Loader2 size={40} style={{ color: 'var(--primary)', marginBottom: '1rem' }} className="spin" />
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Completing sign-in...</h1>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Completing sign-in...</h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>Please wait</p>
           </>
         )}
         {status === 'error' && (
           <>
             <AlertCircle size={40} style={{ color: 'var(--error)', marginBottom: '1rem' }} />
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Something went wrong</h1>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Something went wrong</h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', marginBottom: '1.5rem' }}>{error}</p>
             <Link href="/login" className="btn btn-primary" style={{ justifyContent: 'center' }}>Back to login</Link>
           </>

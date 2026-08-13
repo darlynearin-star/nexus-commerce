@@ -40,21 +40,21 @@ export default function MagicLinkPage() {
         {status === 'verifying' && (
           <>
             <MailCheck size={40} style={{ color: 'var(--primary)', marginBottom: '1rem' }} />
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Signing you in...</h1>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Signing you in...</h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>Verifying your sign-in link</p>
           </>
         )}
         {status === 'success' && (
           <>
             <MailCheck size={40} style={{ color: 'var(--success)', marginBottom: '1rem' }} />
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>You&apos;re in!</h1>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>You&apos;re in!</h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>Redirecting to your account...</p>
           </>
         )}
         {status === 'error' && (
           <>
             <AlertCircle size={40} style={{ color: 'var(--error)', marginBottom: '1rem' }} />
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Link expired</h1>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Link expired</h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', marginBottom: '1.5rem' }}>{error}</p>
             <Link href="/login" className="btn btn-primary" style={{ justifyContent: 'center' }}>Request a new link</Link>
           </>

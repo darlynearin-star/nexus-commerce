@@ -152,7 +152,7 @@ export default function AccountPage() {
 function OverviewTab({ user, orders, isStoreOwner, retailer, subscription, tierName, tierProgress }: any) {
   return (
     <div>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>Welcome back, {user.firstName}</h1>
+      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>Welcome back, {user.firstName}</h1>
       <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>Here&apos;s your account overview</p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -202,7 +202,7 @@ function OverviewTab({ user, orders, isStoreOwner, retailer, subscription, tierN
 function OrdersTab({ orders, loading }: any) {
   return (
     <div className="orders-tab">
-      <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>Order History</h2>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>Order History</h2>
       {loading ? (
         <p style={{ color: 'var(--text-secondary)' }}>Loading orders...</p>
       ) : orders.length === 0 ? (
@@ -254,7 +254,7 @@ function CartTab({ cart, loading }: any) {
   );
   return (
     <div className="account-cart">
-      <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>Shopping Cart</h2>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>Shopping Cart</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
         {cart.items.map((item: any) => (
           <div key={item.id} className="card account-cart-item">
@@ -297,7 +297,7 @@ function MailboxTab({ notifications, unreadCount, markAllRead, markRead, loading
   return (
     <div className="mailbox-tab">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Mail size={20} /> Mailbox
           {unreadCount > 0 && <span className="badge badge-primary" style={{ fontSize: '0.75rem' }}>{unreadCount} unread</span>}
         </h2>
@@ -349,7 +349,7 @@ function MailboxTab({ notifications, unreadCount, markAllRead, markRead, loading
 function SettingsTab({ user }: any) {
   return (
     <div>
-      <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>Account Settings</h2>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>Account Settings</h2>
       <div className="card" style={{ padding: '1.25rem' }}>
         <div className="settings-grid">
           <span style={{ color: 'var(--text-secondary)' }}>Name</span><span style={{ fontWeight: 500 }}>{user.firstName} {user.lastName}</span>

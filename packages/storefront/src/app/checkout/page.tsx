@@ -49,7 +49,7 @@ export default function CheckoutPage() {
       <div className="container" style={{ padding: 'clamp(1rem, 3vw, 2rem) 1rem', maxWidth: 600 }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <CheckCircle size={64} style={{ color: 'var(--success)', margin: '0 auto 1rem' }} />
-          <h1 style={{ fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', fontWeight: 700, marginBottom: '0.5rem' }}>Order Placed!</h1>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 700, letterSpacing: '-0.01em', marginBottom: '0.5rem' }}>Order Placed!</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Your order has been placed. Pay on delivery after confirming with the seller.</p>
         </div>
 
@@ -97,7 +97,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="container" style={{ padding: 'clamp(1rem, 3vw, 2rem) 1rem', maxWidth: 800 }}>
-      <h1 style={{ fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', fontWeight: 700, marginBottom: '1.5rem' }}>Checkout</h1>
+      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 700, letterSpacing: '-0.01em', marginBottom: '1.5rem' }}>Checkout</h1>
       {message && (
         <div style={{ padding: '0.75rem 1rem', borderRadius: '0.5rem', marginBottom: '1rem', background: message.includes('failed') ? 'var(--bg-secondary)' : 'var(--bg-secondary)', color: message.includes('failed') ? 'var(--error)' : 'var(--success)' }}>
           {message}
@@ -108,7 +108,7 @@ export default function CheckoutPage() {
       ) : (
         <div className="checkout-grid">
           <div>
-            <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Delivery Information</h3>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, marginBottom: '1rem' }}>Delivery Information</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div className="checkout-name-fields">
                 <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>First Name</label><input className="input" value={user?.firstName || ''} disabled /></div>
@@ -134,7 +134,7 @@ export default function CheckoutPage() {
           </div>
           <div>
             <div className="card checkout-summary">
-              <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Order Summary</h3>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, marginBottom: '1rem' }}>Order Summary</h3>
               {cart.items?.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.9375rem' }}>
                   {cart.items.map((item: any, i: number) => (

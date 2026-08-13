@@ -38,13 +38,13 @@ export default function VerifyEmailPage() {
         {status === 'verifying' && (
           <>
             <Loader2 size={40} style={{ color: 'var(--primary)', marginBottom: '1rem' }} className="spin" />
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Verifying your email...</h1>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Verifying your email...</h1>
           </>
         )}
         {status === 'success' && (
           <>
             <MailCheck size={40} style={{ color: 'var(--success)', marginBottom: '1rem' }} />
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Email verified!</h1>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Email verified!</h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', marginBottom: '1.5rem' }}>{message} You can now sign in.</p>
             <Link href="/login" className="btn btn-primary" style={{ justifyContent: 'center' }}>Sign In</Link>
           </>
@@ -52,7 +52,7 @@ export default function VerifyEmailPage() {
         {status === 'error' && (
           <>
             <AlertCircle size={40} style={{ color: 'var(--error)', marginBottom: '1rem' }} />
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Verification failed</h1>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Verification failed</h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', marginBottom: '1.5rem' }}>{message}</p>
             <Link href="/login" className="btn btn-primary" style={{ justifyContent: 'center' }}>Back to Sign In</Link>
           </>

@@ -26,27 +26,33 @@ export default function StoreHomePage() {
     <div style={{ position: 'relative', zIndex: 1 }}>
 
       {/* Hero */}
-      <section className="hero-overlay" style={{ textAlign: 'center', padding: '5rem 1rem 4rem' }}>
-        <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: 700, lineHeight: 1.15, marginBottom: '0.75rem' }}>
-          Welcome to <span className="gradient-gold">{storeName}</span>
-        </h1>
-        <p style={{ fontSize: '1.125rem', color: 'var(--text-secondary)', maxWidth: 500, margin: '0 auto 2rem' }}>
-          Discover curated fashion, accessories, and body ornaments crafted for every occasion.
-        </p>
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link href={`/store/${store?.slug}/shop`} className="btn btn-primary" style={{ fontSize: '1rem', padding: '0.75rem 2rem' }}>
-            Shop Now <ArrowRight size={18} />
-          </Link>
+      <section className="hero-overlay" style={{ padding: 'clamp(3.5rem, 8vw, 5.5rem) 0' }}>
+        <div className="container">
+          <div style={{ maxWidth: 620 }}>
+            <p className="eyebrow">Store</p>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2.25rem, 5.5vw, 3.75rem)', lineHeight: 1.1, letterSpacing: '-0.02em', marginBottom: '1.25rem' }}>
+              Welcome to {storeName}
+            </h1>
+            <p style={{ fontSize: '1.125rem', color: 'var(--text-secondary)', maxWidth: 480, lineHeight: 1.65, marginBottom: '2rem' }}>
+              Discover curated fashion, accessories, and body ornaments crafted for every occasion.
+            </p>
+            <Link href={`/store/${store?.slug}/shop`} className="btn btn-primary" style={{ fontSize: '1rem', padding: '0.75rem 2rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+              Shop Now <ArrowRight size={18} />
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* New Arrivals */}
       {newArrivals.length > 0 && (
-        <section style={{ padding: '3rem 1rem' }}>
+        <section className="section">
           <div className="container">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>New Arrivals</h2>
-              <Link href={`/store/${store?.slug}/shop`} style={{ color: 'var(--primary)', fontSize: '0.875rem', textDecoration: 'none' }}>View All →</Link>
+            <div className="section-head">
+              <div>
+                <p className="eyebrow">Just in</p>
+                <h2 className="section-title" style={{ fontSize: '1.5rem' }}>New Arrivals</h2>
+              </div>
+              <Link href={`/store/${store?.slug}/shop`} className="section-link">View All →</Link>
             </div>
             <div className="product-grid">
               {newArrivals.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} showAddToCart={false} />)}
@@ -57,11 +63,14 @@ export default function StoreHomePage() {
 
       {/* Featured Products */}
       {featured.length > 0 && (
-        <section style={{ padding: '3rem 1rem', background: 'var(--bg-secondary)' }}>
+        <section className="section" style={{ background: 'var(--bg-secondary)' }}>
           <div className="container">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Featured</h2>
-              <Link href={`/store/${store?.slug}/shop`} style={{ color: 'var(--primary)', fontSize: '0.875rem', textDecoration: 'none' }}>View All →</Link>
+            <div className="section-head">
+              <div>
+                <p className="eyebrow">Curated</p>
+                <h2 className="section-title" style={{ fontSize: '1.5rem' }}>Featured</h2>
+              </div>
+              <Link href={`/store/${store?.slug}/shop`} className="section-link">View All →</Link>
             </div>
             <div className="product-grid">
               {featured.map((p: any) => <ProductCard key={p.id} product={p} storeSlug={storeSlug} showAddToCart={false} />)}
@@ -72,15 +81,20 @@ export default function StoreHomePage() {
 
       {/* Quick Browse — top-level categories sorted by product count */}
       {categories.length > 0 && (
-        <section style={{ padding: '3rem 1rem' }}>
+        <section className="section">
           <div className="container">
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '1.5rem' }}>Quick Browse</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1rem' }}>
+            <div className="section-head">
+              <div>
+                <p className="eyebrow">Browse</p>
+                <h2 className="section-title" style={{ fontSize: '1.5rem' }}>Quick Browse</h2>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '1.25rem' }}>
               {categories.filter((c: any) => !c.parentId).map((cat: any) => (
-                <Link key={cat.id} href={`/store/${store?.slug}/shop?parent=${cat.slug}`} className="card" style={{ textDecoration: 'none', color: 'inherit', textAlign: 'center', padding: '1.5rem 1rem' }}>
-                  <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{categoryIcon(cat.slug, cat.name)}</div>
-                  <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{cat.name}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{cat.productCount || 0} items</div>
+                <Link key={cat.id} href={`/store/${store?.slug}/shop?parent=${cat.slug}`} className="card" style={{ textDecoration: 'none', color: 'inherit', textAlign: 'center', padding: '1.75rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ fontSize: '2rem', lineHeight: 1 }}>{categoryIcon(cat.slug, cat.name)}</div>
+                  <div style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{cat.name}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{cat.productCount || 0} items</div>
                 </Link>
               ))}
             </div>

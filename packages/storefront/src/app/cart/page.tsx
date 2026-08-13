@@ -38,7 +38,7 @@ export default function CartPage() {
 
   return (
     <div className="container" style={{ padding: 'clamp(1rem, 3vw, 2rem) 1rem' }}>
-      <h1 style={{ fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', fontWeight: 700, marginBottom: '1.5rem' }}>Shopping Cart</h1>
+      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 700, letterSpacing: '-0.01em', marginBottom: '1.5rem' }}>Shopping Cart</h1>
       {items.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
           <ShoppingBag size={64} style={{ margin: '0 auto 1rem', color: 'var(--text-secondary)', opacity: 0.5 }} />
@@ -71,7 +71,7 @@ export default function CartPage() {
           </div>
           <div>
             <div className="card cart-summary">
-              <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Order Summary</h3>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, marginBottom: '1rem' }}>Order Summary</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.9375rem' }}>
                 <div className="summary-row"><span style={{ color: 'var(--text-secondary)' }}>Subtotal</span><span>UGX {subtotal.toLocaleString()}</span></div>
                 <div className="summary-row total-row">

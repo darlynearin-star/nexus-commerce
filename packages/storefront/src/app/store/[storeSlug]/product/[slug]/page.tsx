@@ -64,7 +64,7 @@ export default function StoreProductPage() {
 
         <div>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{product.brand}</p>
-          <h1 style={{ fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', fontWeight: 700, marginBottom: '0.75rem' }}>{product.name}</h1>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 4vw, 2.125rem)', fontWeight: 700, letterSpacing: '-0.01em', marginBottom: '0.75rem' }}>{product.name}</h1>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
             <StarRating rating={4.5} count={product.reviews?.length || 0} />
@@ -131,7 +131,7 @@ export default function StoreProductPage() {
 
       {product.related?.length > 0 && (
         <section style={{ marginTop: '3rem' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '1.5rem' }}>You May Also Like</h2>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 600, marginBottom: '1.5rem' }}>You May Also Like</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1rem' }}>
             {product.related.map((p: any) => (
               <Link key={p.id} href={`/store/${storeSlug}/product/${p.slug}`} className="card" style={{ textDecoration: 'none', color: 'inherit' }}>

@@ -13,7 +13,8 @@ export default function CategoriesPage() {
 
   return (
     <div className="container" style={{ padding: '2rem 0' }}>
-      <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '2rem' }}>Categories</h1>
+      <p className="eyebrow">Browse</p>
+      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', fontWeight: 700, letterSpacing: '-0.01em', marginBottom: '2rem' }}>Categories</h1>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
         {categories.map((cat: any) => (
           <Link key={cat.id} href={`/shop?category=${cat.slug}`} className="card" style={{ textDecoration: 'none', color: 'inherit' }}>

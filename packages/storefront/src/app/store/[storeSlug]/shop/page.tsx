@@ -264,6 +264,11 @@ export default function StoreShopPage() {
   return (
     <div style={{ position: 'relative', zIndex: 1, padding: '2rem 0' }}>
       <div className="container">
+        {/* Page header */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <p className="eyebrow">Collections</p>
+          <h1 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.25rem)', marginBottom: '0.375rem' }}>Shop</h1>
+        </div>
         {/* Breadcrumb */}
         {breadcrumb.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1rem', flexWrap: 'wrap' }}>
@@ -272,7 +277,7 @@ export default function StoreShopPage() {
               <span key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                 <ChevronRight size={12} />
                 {i === breadcrumb.length - 1 ? (
-                  <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{c.name}</span>
+                  <span style={{ color: 'var(--text)', fontWeight: 600 }}>{c.name}</span>
                 ) : (
                   <Link href={`/store/${storeSlug}/shop?parent=${c.slug}`} style={{ color: 'inherit', textDecoration: 'none' }}>{c.name}</Link>
                 )}
@@ -372,11 +377,12 @@ export default function StoreShopPage() {
                 {Array.from({ length: 8 }).map((_, i) => <div key={i} className="skeleton" style={{ aspectRatio: '1', borderRadius: '0.75rem' }} />)}
               </div>
             ) : products.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-secondary)' }}>
-                <SlidersHorizontal size={48} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
-                <p>No products found</p>
+              <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
+                <SlidersHorizontal size={40} style={{ margin: '0 auto 0.75rem', color: 'var(--text-secondary)', opacity: 0.4 }} />
+                <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.25rem' }}>No products found</p>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Try adjusting your filters or search terms.</p>
                 {activeFilterCount > 0 && (
-                  <button className="btn btn-secondary btn-sm" style={{ marginTop: '0.75rem' }} onClick={clearAllFilters}>Clear all filters</button>
+                  <button className="btn btn-secondary btn-sm" onClick={clearAllFilters}>Clear all filters</button>
                 )}
               </div>
             ) : (
