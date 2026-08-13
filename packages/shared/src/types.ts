@@ -57,7 +57,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.MANAGE_CUSTOMERS,
     Permission.MANAGE_MARKETING,
     Permission.VIEW_REPORTS,
-    Permission.MANAGE_SETTINGS,
     Permission.MANAGE_MEDIA,
   ],
   [UserRole.DEVELOPER]: Object.values(Permission),

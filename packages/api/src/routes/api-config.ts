@@ -1,8 +1,13 @@
 import { Router } from 'express';
 import prisma from '@nexus/database';
-import { authenticate, requirePermission, AuthRequest } from '../middleware/auth';
-import { Permission } from '@nexus/shared';
+import { authenticate, requireRole, AuthRequest } from '../middleware/auth';
+import { UserRole } from '@nexus/shared';
 import { logActivity } from '../utils/activity-log';
+
+// Provider credentials (GMAIL/BREVO/GOOGLE/FLUTTERWAVE etc.) are platform
+// secrets. Only developers may view/update/test them. Retailers manage their
+// own store settings via /store-settings.
+const requireProviderAdmin = requireRole(UserRole.SUPER_DEVELOPER, UserRole.DEVELOPER);
 
 export const apiConfigRouter = Router();
 
@@ -20,7 +25,7 @@ const ALL_KEYS = [
   ...KEY_PREFIXES.map(p => `${p}LAST_TESTED`),
 ];
 
-apiConfigRouter.get('/', authenticate, requirePermission(Permission.MANAGE_SETTINGS), async (_req: AuthRequest, res, next) => {
+apiConfigRouter.get('/', authenticate, requireProviderAdmin, async (_req: AuthRequest, res, next) => {
   try {
     const settings = await prisma.setting.findMany({ where: { key: { in: ALL_KEYS } } });
     const config: Record<string, any> = {};
@@ -29,7 +34,7 @@ apiConfigRouter.get('/', authenticate, requirePermission(Permission.MANAGE_SETTI
   } catch (error) { next(error); }
 });
 
-apiConfigRouter.put('/', authenticate, requirePermission(Permission.MANAGE_SETTINGS), async (req: AuthRequest, res, next) => {
+apiConfigRouter.put('/', authenticate, requireProviderAdmin, async (req: AuthRequest, res, next) => {
   try {
     const bodyKeys = Object.keys(req.body).filter(k => ALL_KEYS.includes(k));
     for (const key of bodyKeys) {
@@ -40,7 +45,7 @@ apiConfigRouter.put('/', authenticate, requirePermission(Permission.MANAGE_SETTI
   } catch (error) { next(error); }
 });
 
-apiConfigRouter.post('/test/:key', authenticate, requirePermission(Permission.MANAGE_SETTINGS), async (req: AuthRequest, res, next) => {
+apiConfigRouter.post('/test/:key', authenticate, requireProviderAdmin, async (req: AuthRequest, res, next) => {
   try {
     const { key } = req.params;
     const result = { key, success: false, message: 'Test not implemented for this provider', timestamp: new Date().toISOString() };

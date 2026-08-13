@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import prisma from '@nexus/database';
-import { authenticate, requirePermission, AuthRequest } from '../middleware/auth';
-import { Permission } from '@nexus/shared';
+import { authenticate, requireRole, AuthRequest } from '../middleware/auth';
+import { UserRole } from '@nexus/shared';
 import { logActivity } from '../utils/activity-log';
 
 export const settingsRouter = Router();
 
-settingsRouter.get('/', authenticate, requirePermission(Permission.MANAGE_SETTINGS), async (req: AuthRequest, res, next) => {
+// Global platform settings (incl. secrets/backups view) — developer-only.
+// RETAILER's own store settings live under /store-settings (requireStoreOwner).
+settingsRouter.get('/', authenticate, requireRole(UserRole.SUPER_DEVELOPER, UserRole.DEVELOPER), async (req: AuthRequest, res, next) => {
   try {
     const settings = await prisma.setting.findMany();
     const result: Record<string, any> = {};
@@ -15,7 +17,7 @@ settingsRouter.get('/', authenticate, requirePermission(Permission.MANAGE_SETTIN
   } catch (error) { next(error); }
 });
 
-settingsRouter.put('/', authenticate, requirePermission(Permission.MANAGE_SETTINGS), async (req: AuthRequest, res, next) => {
+settingsRouter.put('/', authenticate, requireRole(UserRole.SUPER_DEVELOPER, UserRole.DEVELOPER), async (req: AuthRequest, res, next) => {
   try {
     const updates = req.body;
     for (const [key, value] of Object.entries(updates)) {

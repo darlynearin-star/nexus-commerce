@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import prisma from '@nexus/database';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { logActivity } from '../utils/activity-log';
@@ -9,7 +9,16 @@ export const ordersRouter = Router();
 ordersRouter.use(requireStore);
 ordersRouter.use(requireActiveSubscription);
 
-ordersRouter.get('/', authenticate, async (req: StoreRequest, res, next) => {
+const safeUser = { select: { id: true, email: true, firstName: true, lastName: true, avatar: true, phone: true, isActive: true, createdAt: true } };
+
+// Retailers/devs may only view orders of stores they own (dev roles bypass via
+// requireStoreOwner). Customers always see only their own orders.
+function ownerOrCustomer(req: StoreRequest, res: Response, next: NextFunction) {
+  if ((req as AuthRequest).user!.role === 'CUSTOMER') return next();
+  return requireStoreOwner(req as StoreRequest & AuthRequest, res, next);
+}
+
+ordersRouter.get('/', authenticate, ownerOrCustomer, async (req: StoreRequest, res, next) => {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
@@ -19,16 +28,21 @@ ordersRouter.get('/', authenticate, async (req: StoreRequest, res, next) => {
       if (customer) where.customerId = customer.id;
     }
     const [orders, total] = await Promise.all([
-      prisma.order.findMany({ where, include: { items: true, customer: { include: { user: true } } }, skip: (page - 1) * limit, take: limit, orderBy: { createdAt: 'desc' } }),
+      prisma.order.findMany({ where, include: { items: true, customer: { include: { user: safeUser } } }, skip: (page - 1) * limit, take: limit, orderBy: { createdAt: 'desc' } }),
       prisma.order.count({ where }),
     ]);
     res.json({ success: true, data: orders, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (error) { next(error); }
 });
 
-ordersRouter.get('/:id', authenticate, async (req: StoreRequest, res, next) => {
+ordersRouter.get('/:id', authenticate, ownerOrCustomer, async (req: StoreRequest, res, next) => {
   try {
-    const order = await prisma.order.findFirst({ where: { id: req.params.id, storeId: req.storeId! }, include: { items: true, customer: { include: { user: true } } } });
+    const where: any = { id: req.params.id, storeId: req.storeId! };
+    if ((req as any).user!.role === 'CUSTOMER') {
+      const customer = await prisma.customer.findUnique({ where: { userId: (req as any).user!.userId } });
+      if (customer) where.customerId = customer.id;
+    }
+    const order = await prisma.order.findFirst({ where, include: { items: true, customer: { include: { user: safeUser } } } });
     if (!order) return res.status(404).json({ success: false, error: 'Order not found' });
     res.json({ success: true, data: order });
   } catch (error) { next(error); }

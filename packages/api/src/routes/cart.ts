@@ -74,15 +74,47 @@ cartRouter.post('/add', authenticate, async (req: any, res, next) => {
   } catch (error) { next(error); }
 });
 
-cartRouter.put('/item/:id', optionalAuth, async (req, res, next) => {
+// Resolves a cart item only if it belongs to the caller's cart (authenticated
+// user or x-session-id guest). Prevents cross-cart item tampering.
+async function findOwnedItem(req: any, res: any) {
+  const item = await prisma.cartItem.findUnique({
+    where: { id: req.params.id },
+    include: { cart: { select: { id: true, customerId: true, sessionId: true } } },
+  });
+  if (!item) {
+    res.status(404).json({ success: false, error: 'Cart item not found' });
+    return null;
+  }
+  const sessionId = req.headers['x-session-id'] as string;
+  const owned = req.user
+    ? item.cart.customerId === req.user.userId
+    : (sessionId && item.cart.sessionId === sessionId);
+  if (!owned) {
+    res.status(403).json({ success: false, error: 'You do not have permission to modify this cart item' });
+    return null;
+  }
+  return item;
+}
+
+cartRouter.put('/item/:id', optionalAuth, async (req: any, res, next) => {
   try {
+    if (!req.user && !req.headers['x-session-id']) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+    const owned = await findOwnedItem(req, res);
+    if (!owned) return;
     const item = await prisma.cartItem.update({ where: { id: req.params.id }, data: { quantity: req.body.quantity } });
     res.json({ success: true, data: item });
   } catch (error) { next(error); }
 });
 
-cartRouter.delete('/item/:id', optionalAuth, async (req, res, next) => {
+cartRouter.delete('/item/:id', optionalAuth, async (req: any, res, next) => {
   try {
+    if (!req.user && !req.headers['x-session-id']) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+    const owned = await findOwnedItem(req, res);
+    if (!owned) return;
     await prisma.cartItem.delete({ where: { id: req.params.id } });
     res.json({ success: true, message: 'Item removed' });
   } catch (error) { next(error); }
