@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '@nexus/database';
+import { AuthRequest } from './auth';
 
 export interface StoreRequest extends Request {
   storeId?: string;
@@ -32,4 +33,17 @@ export async function requireStore(req: StoreRequest, res: Response, next: NextF
     if (!req.storeId) return res.status(400).json({ success: false, error: 'x-store-slug header is required' });
     next();
   });
+}
+
+// Guards store-scoped management routes: only the store owner (or a platform
+// developer/admin) may mutate records. Must run AFTER authenticate +
+// resolveStore so req.user and req.store are populated.
+export async function requireStoreOwner(req: StoreRequest & AuthRequest, res: Response, next: NextFunction) {
+  if (!req.user) return res.status(401).json({ success: false, error: 'Authentication required' });
+  if (req.user.role === 'DEVELOPER' || req.user.role === 'SUPER_DEVELOPER') return next();
+  if (!req.store) return res.status(400).json({ success: false, error: 'x-store-slug header is required' });
+  if (req.store.ownerId !== req.user.userId) {
+    return res.status(403).json({ success: false, error: 'You do not have permission to manage this store' });
+  }
+  next();
 }

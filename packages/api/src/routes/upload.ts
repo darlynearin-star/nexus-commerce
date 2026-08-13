@@ -5,7 +5,7 @@ import fs from 'fs';
 import prisma from '@nexus/database';
 import { authenticate, requirePermission, AuthRequest } from '../middleware/auth';
 import { Permission } from '@nexus/shared';
-import { StoreRequest, requireStore } from '../middleware/resolve-store';
+import { StoreRequest, requireStore, requireStoreOwner } from '../middleware/resolve-store';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 
@@ -36,7 +36,7 @@ const upload = multer({
 export const uploadRouter = Router();
 uploadRouter.use(requireStore);
 
-uploadRouter.post(['/', ''], authenticate, requirePermission(Permission.MANAGE_MEDIA), upload.single('file'), async (req: StoreRequest, res, next) => {
+uploadRouter.post(['/', ''], authenticate, requireStoreOwner, requirePermission(Permission.MANAGE_MEDIA), upload.single('file'), async (req: StoreRequest, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
     const { originalname, filename, size, mimetype } = req.file;
@@ -58,7 +58,7 @@ uploadRouter.post(['/', ''], authenticate, requirePermission(Permission.MANAGE_M
   } catch (error) { next(error); }
 });
 
-uploadRouter.post(['/url', 'url'], authenticate, requirePermission(Permission.MANAGE_MEDIA), async (req: StoreRequest, res, next) => {
+uploadRouter.post(['/url', 'url'], authenticate, requireStoreOwner, requirePermission(Permission.MANAGE_MEDIA), async (req: StoreRequest, res, next) => {
   try {
     const { url, alt, folder, productId } = req.body;
     if (!url) return res.status(400).json({ success: false, error: 'URL is required' });

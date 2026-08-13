@@ -2,7 +2,7 @@ import { Router } from 'express';
 import prisma from '@nexus/database';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { logActivity } from '../utils/activity-log';
-import { StoreRequest, requireStore } from '../middleware/resolve-store';
+import { StoreRequest, requireStore, requireStoreOwner } from '../middleware/resolve-store';
 import { requireActiveSubscription } from '../middleware/subscription-check';
 
 export const ordersRouter = Router();
@@ -77,7 +77,7 @@ ordersRouter.post('/', authenticate, async (req: StoreRequest, res, next) => {
   } catch (error) { next(error); }
 });
 
-ordersRouter.put('/:id/status', authenticate, async (req: StoreRequest, res, next) => {
+ordersRouter.put('/:id/status', authenticate, requireStoreOwner, async (req: StoreRequest, res, next) => {
   try {
     const order = await prisma.order.findFirst({ where: { id: req.params.id, storeId: req.storeId! } });
     if (!order) return res.status(404).json({ success: false, error: 'Order not found' });

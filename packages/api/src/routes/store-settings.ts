@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import prisma from '@nexus/database';
 import { authenticate } from '../middleware/auth';
-import { StoreRequest, requireStore } from '../middleware/resolve-store';
+import { StoreRequest, requireStore, requireStoreOwner } from '../middleware/resolve-store';
 
 export const storeSettingsRouter = Router();
 storeSettingsRouter.use(authenticate);
 storeSettingsRouter.use(requireStore);
+storeSettingsRouter.use(requireStoreOwner);
 
 storeSettingsRouter.get('/', async (req: StoreRequest, res, next) => {
   try {

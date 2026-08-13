@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import prisma from '@nexus/database';
 import { authenticate } from '../middleware/auth';
-import { StoreRequest, requireStore } from '../middleware/resolve-store';
+import { StoreRequest, requireStore, requireStoreOwner } from '../middleware/resolve-store';
 import { logger } from '../utils/logger';
 import { getAttributesForCategory } from '../config/category-attributes';
 
@@ -304,7 +304,7 @@ export async function seedStoreCategories(storeId: string): Promise<number> {
   return created;
 }
 
-categoriesRouter.post('/', authenticate, async (req: StoreRequest, res, next) => {
+categoriesRouter.post('/', authenticate, requireStoreOwner, async (req: StoreRequest, res, next) => {
   try {
     const { name, slug, description, image, parentId } = req.body;
     if (!name || !slug) return res.status(400).json({ success: false, error: 'name and slug are required' });
@@ -313,16 +313,20 @@ categoriesRouter.post('/', authenticate, async (req: StoreRequest, res, next) =>
   } catch (error) { next(error); }
 });
 
-categoriesRouter.put('/:id', authenticate, async (req: StoreRequest, res, next) => {
+categoriesRouter.put('/:id', authenticate, requireStoreOwner, async (req: StoreRequest, res, next) => {
   try {
     const { name, slug, description, image, parentId } = req.body;
+    const existing = await prisma.category.findFirst({ where: { id: req.params.id, storeId: req.storeId! } });
+    if (!existing) return res.status(404).json({ success: false, error: 'Category not found' });
     const category = await prisma.category.update({ where: { id: req.params.id }, data: { name, slug, description, image, parentId } });
     res.json({ success: true, data: category });
   } catch (error) { next(error); }
 });
 
-categoriesRouter.delete('/:id', authenticate, async (req: StoreRequest, res, next) => {
+categoriesRouter.delete('/:id', authenticate, requireStoreOwner, async (req: StoreRequest, res, next) => {
   try {
+    const existing = await prisma.category.findFirst({ where: { id: req.params.id, storeId: req.storeId! } });
+    if (!existing) return res.status(404).json({ success: false, error: 'Category not found' });
     await prisma.category.delete({ where: { id: req.params.id } });
     res.json({ success: true, message: 'Category deleted' });
   } catch (error) { next(error); }

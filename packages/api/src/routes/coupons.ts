@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import prisma from '@nexus/database';
 import { authenticate } from '../middleware/auth';
-import { StoreRequest, requireStore } from '../middleware/resolve-store';
+import { StoreRequest, requireStore, requireStoreOwner } from '../middleware/resolve-store';
 
 export const couponsRouter = Router();
 couponsRouter.use(requireStore);
@@ -13,7 +13,7 @@ couponsRouter.get('/', async (req: StoreRequest, res, next) => {
   } catch (error) { next(error); }
 });
 
-couponsRouter.post('/', authenticate, async (req: StoreRequest, res, next) => {
+couponsRouter.post('/', authenticate, requireStoreOwner, async (req: StoreRequest, res, next) => {
   try {
     const { code, discountType, discountValue, minPurchase, maxUses, expiresAt } = req.body;
     const coupon = await prisma.coupon.create({
@@ -23,8 +23,10 @@ couponsRouter.post('/', authenticate, async (req: StoreRequest, res, next) => {
   } catch (error) { next(error); }
 });
 
-couponsRouter.put('/:id', authenticate, async (req: StoreRequest, res, next) => {
+couponsRouter.put('/:id', authenticate, requireStoreOwner, async (req: StoreRequest, res, next) => {
   try {
+    const existing = await prisma.coupon.findFirst({ where: { id: req.params.id, storeId: req.storeId! } });
+    if (!existing) return res.status(404).json({ success: false, error: 'Coupon not found' });
     const { code, discountType, discountValue, minPurchase, maxUses, isActive, expiresAt } = req.body;
     const data: any = {};
     if (code !== undefined) data.code = code;
@@ -39,8 +41,10 @@ couponsRouter.put('/:id', authenticate, async (req: StoreRequest, res, next) => 
   } catch (error) { next(error); }
 });
 
-couponsRouter.delete('/:id', authenticate, async (req: StoreRequest, res, next) => {
+couponsRouter.delete('/:id', authenticate, requireStoreOwner, async (req: StoreRequest, res, next) => {
   try {
+    const existing = await prisma.coupon.findFirst({ where: { id: req.params.id, storeId: req.storeId! } });
+    if (!existing) return res.status(404).json({ success: false, error: 'Coupon not found' });
     await prisma.coupon.delete({ where: { id: req.params.id } });
     res.json({ success: true, message: 'Coupon deleted' });
   } catch (error) { next(error); }
