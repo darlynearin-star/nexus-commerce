@@ -16,7 +16,16 @@ export default function ProductPage() {
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
   const [cartError, setCartError] = useState('');
+  const [saved, setSaved] = useState(false);
   const [mainImg, setMainImg] = useState('');
+
+  const toggleWishlist = async () => {
+    if (!user) { router.push('/login'); return; }
+    try {
+      await api.post('/wishlist/add', { productId: product.id });
+      setSaved(true);
+    } catch { /* ignore */ }
+  };
 
   useEffect(() => {
     api.get(`/products/${slug}`).then((res: any) => {
@@ -123,7 +132,7 @@ export default function ProductPage() {
                 <ShoppingCart size={20} /> Sign In to Purchase
               </Link>
             )}
-            <button className="btn btn-secondary btn-icon"><Heart size={20} /></button>
+            <button className="btn btn-secondary btn-icon" onClick={toggleWishlist} aria-label="Save to wishlist"><Heart size={20} fill={saved ? 'currentColor' : 'none'} /></button>
             <button className="btn btn-secondary btn-icon"><Share2 size={20} /></button>
           </div>
           {cartError && <p style={{ color: 'var(--error)', fontSize: '0.875rem', marginTop: '-1rem', marginBottom: '1rem' }}>{cartError}</p>}

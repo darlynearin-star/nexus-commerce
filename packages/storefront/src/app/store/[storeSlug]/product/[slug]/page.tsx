@@ -15,8 +15,18 @@ export default function StoreProductPage() {
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
   const [cartError, setCartError] = useState('');
+  const [saved, setSaved] = useState(false);
   const [mainImg, setMainImg] = useState('');
   const { user } = useAuth();
+
+  const toggleWishlist = async () => {
+    if (!user) { router.push('/login'); return; }
+    try {
+      setSaved(s => s ? s : !s);
+      await storeApi.post('/wishlist/add', { productId: product.id }).catch(() => {});
+      setSaved(true);
+    } catch { /* ignore */ }
+  };
 
   useEffect(() => {
     if (!slug) return;
@@ -94,7 +104,7 @@ export default function StoreProductPage() {
                 <ShoppingCart size={16} /> Sign In to Purchase
               </Link>
             )}
-            <button className="btn btn-secondary btn-icon"><Heart size={16} /></button>
+            <button className="btn btn-secondary btn-icon" onClick={toggleWishlist} aria-label="Save to wishlist"><Heart size={16} fill={saved ? 'currentColor' : 'none'} /></button>
           </div>
           {cartError && <p style={{ color: 'var(--error)', fontSize: '0.8125rem', marginTop: '-0.75rem' }}>{cartError}</p>}
 

@@ -42,6 +42,17 @@ export async function checkKillSwitch(req: Request, res: Response, next: NextFun
       return res.status(503).json({ success: false, error: 'Checkout is disabled.', maintenance: true });
     }
 
+    if (
+      killSwitch.payments &&
+      (req.path.startsWith('/api/payments/charge') ||
+        req.path.startsWith('/api/payments/verify') ||
+        req.path.startsWith('/api/subscriptions/subscribe') ||
+        req.path.startsWith('/api/subscriptions/verify') ||
+        req.path.startsWith('/api/subscriptions/cancel'))
+    ) {
+      return res.status(503).json({ success: false, error: 'Payments are disabled.', maintenance: true });
+    }
+
     if (killSwitch.search && req.path.startsWith('/api/search')) {
       return res.status(503).json({ success: false, error: 'Search is disabled.', maintenance: true });
     }

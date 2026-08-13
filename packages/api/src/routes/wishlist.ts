@@ -38,3 +38,17 @@ wishlistRouter.delete('/item/:id', authenticate, async (req, res, next) => {
     res.json({ success: true, message: 'Removed from wishlist' });
   } catch (error) { next(error); }
 });
+
+// Remove by productId within the caller's own wishlist for the current store.
+// Used by card/product "heart" remove toggles.
+wishlistRouter.post('/remove', authenticate, async (req: StoreRequest, res, next) => {
+  try {
+    const { productId } = req.body;
+    const customer = await prisma.customer.findUnique({ where: { userId: (req as any).user!.userId } });
+    if (!customer) return res.status(400).json({ success: false, error: 'Customer not found' });
+    await prisma.wishlistItem.deleteMany({
+      where: { productId, wishlist: { customerId: customer.id, storeId: req.storeId! } },
+    });
+    res.json({ success: true, message: 'Removed from wishlist' });
+  } catch (error) { next(error); }
+});
