@@ -39,7 +39,7 @@ import { checkKillSwitch } from './middleware/kill-switch';
 import prisma, { initDatabase, getDbStatus } from '@nexus/database';
 import { logger } from './utils/logger';
 import type { JijiCategory } from '@nexus/database';
-import { mirrorToFallback, restoreFallbackIfEmpty, getFallbackClient } from './utils/db-mirror';
+import { mirrorToFallbackIfChanged, restoreFallbackIfEmpty, getFallbackClient } from './utils/db-mirror';
 
 // Startup migration: sync DB columns that Prisma schema needs
 async function runMigrations() {
@@ -218,8 +218,9 @@ app.listen(PORT, async () => {
     }
   } else if (getFallbackClient()) {
     try {
-      await mirrorToFallback(prisma);
-      logger.info('Mirrored current database snapshot to fallback');
+      const result = await mirrorToFallbackIfChanged(prisma);
+      if (result.mirrored) logger.info('Mirrored current database snapshot to fallback');
+      else logger.info('Fallback snapshot already up to date - mirror skipped');
     } catch (e: any) {
       logger.warn(`Fallback mirror failed: ${e?.message || e}`);
     }

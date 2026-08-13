@@ -110,19 +110,59 @@ export async function buildTableSql(prisma: PrismaClient): Promise<Record<string
   return out;
 }
 
+export async function computeDigest(prisma: PrismaClient): Promise<Record<string, number>> {
+  const digest: Record<string, number> = {};
+  for (const table of BACKUP_TABLES) {
+    try {
+      const rows: any[] = await prisma.$queryRawUnsafe(`SELECT count(*) AS c FROM "${table}"`);
+      digest[table] = Number(rows[0]?.c || 0);
+    } catch {
+      // table missing on this database - skip
+    }
+  }
+  return digest;
+}
+
 export async function mirrorToFallback(prisma: PrismaClient): Promise<void> {
   const fb = getFallbackClient();
   if (!fb) return;
   const sql = await buildTableSql(prisma);
+  const digest = await computeDigest(prisma);
   const payload = {
     createdAt: new Date().toISOString(),
     tables: sql,
+    digest,
   };
   await fb.setting.upsert({
     where: { key: 'fallback_mirror' },
     update: { value: payload },
     create: { key: 'fallback_mirror', value: payload },
   });
+}
+
+export async function mirrorToFallbackIfChanged(prisma: PrismaClient): Promise<{ mirrored: boolean; skipped: boolean }> {
+  const fb = getFallbackClient();
+  if (!fb) return { mirrored: false, skipped: false };
+  const digest = await computeDigest(prisma);
+  const stored = await fb.setting.findUnique({ where: { key: 'fallback_mirror' } }).catch(() => null);
+  const storedDigest = stored?.value && typeof stored.value === 'object'
+    ? (stored.value as any)?.digest
+    : null;
+  if (storedDigest && JSON.stringify(storedDigest) === JSON.stringify(digest)) {
+    return { mirrored: false, skipped: true };
+  }
+  const sql = await buildTableSql(prisma);
+  const payload = {
+    createdAt: new Date().toISOString(),
+    tables: sql,
+    digest,
+  };
+  await fb.setting.upsert({
+    where: { key: 'fallback_mirror' },
+    update: { value: payload },
+    create: { key: 'fallback_mirror', value: payload },
+  });
+  return { mirrored: true, skipped: false };
 }
 
 export async function hasData(prisma: PrismaClient): Promise<boolean> {
