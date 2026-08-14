@@ -36,6 +36,7 @@ import { uploadRouter } from './routes/upload';
 import { resolveStore } from './middleware/resolve-store';
 import { errorHandler } from './middleware/error-handler';
 import { checkKillSwitch } from './middleware/kill-switch';
+import { authenticate } from './middleware/auth';
 import prisma, { initDatabase, getDbStatus } from '@nexus/database';
 import { logger } from './utils/logger';
 import type { JijiCategory } from '@nexus/database';
@@ -53,6 +54,8 @@ async function runMigrations() {
     logger.info('Migration: added shortCode column to products');
     await prisma.$executeRawUnsafe("ALTER TABLE products ADD COLUMN IF NOT EXISTS images TEXT[] DEFAULT '{}'");
     logger.info('Migration: added images column to products');
+    await prisma.$executeRawUnsafe('ALTER TABLE media ADD COLUMN IF NOT EXISTS data TEXT');
+    logger.info('Migration: added data column to media (DB-backed uploads)');
     await prisma.$executeRawUnsafe('DO $$ BEGIN ALTER TABLE products ALTER COLUMN "categoryId" DROP NOT NULL; EXCEPTION WHEN others THEN NULL; END $$');
     logger.info('Migration: made categoryId nullable on products');
     // Order table columns
@@ -145,14 +148,32 @@ app.use('/api', checkKillSwitch);
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));
 
+// DB-backed uploads survive ephemeral host disks (Render wipes files on deploy).
+app.get('/uploads/:storeId/:mediaId', async (req, res) => {
+  try {
+    const media = await prisma.media.findFirst({ where: { id: req.params.mediaId, storeId: req.params.storeId } });
+    if (!media || !media.data) return res.status(404).send('Not found');
+    const buf = Buffer.from(media.data, 'base64');
+    res.setHeader('Content-Type', media.mimeType || 'application/octet-stream');
+    res.setHeader('Content-Length', buf.length);
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.send(buf);
+  } catch {
+    res.status(500).send('Server error');
+  }
+});
+
 // Store-scoped routes (require x-store-slug header)
 app.use('/api/products', resolveStore, productsRouter);
 app.use('/api/orders', resolveStore, ordersRouter);
 app.use('/api/categories', resolveStore, categoriesRouter);
-app.get('/api/reseed-categories/:slug', async (req, res, next) => {
+app.get('/api/reseed-categories/:slug', authenticate, async (req, res, next) => {
   try {
     const store = await prisma.store.findUnique({ where: { slug: req.params.slug } });
     if (!store) return res.status(404).json({ success: false, error: 'Store not found' });
+    const user = (req as any).user;
+    const isOwnerOrDev = user && (user.role === 'DEVELOPER' || user.role === 'SUPER_DEVELOPER' || store.ownerId === user.userId);
+    if (!isOwnerOrDev) return res.status(403).json({ success: false, error: 'Forbidden' });
     await prisma.$executeRawUnsafe(`UPDATE "products" SET "categoryId" = NULL WHERE "storeId" = $1`, store.id);
     await prisma.category.deleteMany({ where: { storeId: store.id } });
     const count = await seedStoreCategories(store.id);

@@ -1,30 +1,18 @@
-import { Router, Request } from 'express';
+import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
 import prisma from '@nexus/database';
 import { authenticate, requirePermission, AuthRequest } from '../middleware/auth';
 import { Permission } from '@nexus/shared';
 import { StoreRequest, requireStore, requireStoreOwner } from '../middleware/resolve-store';
 
-const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
-
-const storage = multer.diskStorage({
-  destination: (req: any, _file, cb) => {
-    const storeId = req.storeId || 'common';
-    const dir = path.join(UPLOAD_DIR, storeId);
-    fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
-    cb(null, name);
-  },
-});
+// Uploads are stored in the database (Media.data as base64) and served through
+// /uploads/:storeId/:mediaId. This survives ephemeral host filesystems (Render
+// recreates the disk on every deploy, which used to wipe uploaded images).
+const API_BASE = process.env.RENDER_EXTERNAL_URL || 'https://nexus-api-69q5.onrender.com';
 
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowed = /jpeg|jpg|png|gif|webp|svg|mp4|pdf|doc|docx/;
@@ -39,22 +27,24 @@ uploadRouter.use(requireStore);
 uploadRouter.post(['/', ''], authenticate, requireStoreOwner, requirePermission(Permission.MANAGE_MEDIA), upload.single('file'), async (req: StoreRequest, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
-    const { originalname, filename, size, mimetype } = req.file;
-    const url = `${process.env.RENDER_EXTERNAL_URL || 'https://nexus-api-69q5.onrender.com'}/uploads/${req.storeId}/${filename}`;
+    const { originalname, buffer, size, mimetype } = req.file;
     const media = await prisma.media.create({
       data: {
         storeId: req.storeId!,
-        url,
-        thumbnailUrl: url,
+        url: '',
+        thumbnailUrl: '',
         alt: originalname,
         type: mimetype.startsWith('image/') ? 'image' : 'document',
         mimeType: mimetype,
         size,
+        data: buffer.toString('base64'),
         folder: req.body.folder || 'general',
         productId: req.body.productId || null,
       },
     });
-    res.status(201).json({ success: true, data: media });
+    const url = `${API_BASE}/uploads/${req.storeId}/${media.id}`;
+    await prisma.media.update({ where: { id: media.id }, data: { url, thumbnailUrl: url } });
+    res.status(201).json({ success: true, data: { ...media, url, thumbnailUrl: url } });
   } catch (error) { next(error); }
 });
 

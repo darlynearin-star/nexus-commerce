@@ -3,7 +3,7 @@
 import './globals.css';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/lib/auth-guard';
-import { LayoutDashboard, Users, Shield, Database, Activity, Settings, AlertTriangle, LogOut, Menu, X, Terminal, Server, FileText, Flag, Store, Key, Megaphone, RefreshCw, HardDrive, Globe } from 'lucide-react';
+import { LayoutDashboard, Users, Shield, Database, Activity, Settings, AlertTriangle, LogOut, Menu, X, Terminal, Server, FileText, Flag, Store, Key, Megaphone, RefreshCw, HardDrive, Globe, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -23,6 +23,7 @@ function Sidebar({ children }: { children: React.ReactNode }) {
     { href: '/users', label: 'User Management', icon: <Users size={18} /> },
     { href: '/security', label: 'Security', icon: <Shield size={18} /> },
     { href: '/stores', label: 'Stores', icon: <Store size={18} /> },
+    { href: '/subscriptions', label: 'Subscriptions', icon: <CreditCard size={18} /> },
     { href: '/database', label: 'Database', icon: <Database size={18} /> },
     { href: '/system', label: 'System Health', icon: <Activity size={18} /> },
     { href: '/kill-switch', label: 'Kill Switch', icon: <AlertTriangle size={18} />, danger: true },

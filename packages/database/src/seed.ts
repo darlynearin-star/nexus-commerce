@@ -6,6 +6,18 @@ import { jijiCategories, JijiCategory } from './jiji-categories';
 async function main() {
   console.log('Seeding database...');
 
+  // SAFETY GUARD: never wipe an existing database unless explicitly forced.
+  // The block below deleteMany()s every table, so running it against a live DB
+  // silently destroys all real user data. Skip unless SEED_FORCE=1.
+  const force = process.env.SEED_FORCE === '1' || process.env.SEED_RESET === '1';
+  const existingStores = await prisma.store.count();
+  if (existingStores > 0 && !force) {
+    console.log('Database already contains data (stores found).');
+    console.log('Refusing to wipe it. If you really want to reset everything, run:');
+    console.log('  SEED_FORCE=1 npm run db:seed');
+    process.exit(0);
+  }
+
   await prisma.ticketMessage.deleteMany();
   await prisma.supportTicket.deleteMany();
   await prisma.activityLog.deleteMany();

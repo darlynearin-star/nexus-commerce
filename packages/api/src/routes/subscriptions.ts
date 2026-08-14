@@ -245,7 +245,86 @@ subscriptionsRouter.post('/webhook/flutterwave', async (req, res, next) => {
 
 subscriptionsRouter.get('/all', authenticate, requireRole(UserRole.SUPER_DEVELOPER), async (_req: AuthRequest, res, next) => {
   try {
-    const subscriptions = await prisma.retailerSubscription.findMany({ include: { retailer: { include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } } } }, orderBy: { createdAt: 'desc' } });
-    res.json({ success: true, data: subscriptions });
+    const subscriptions = await prisma.retailerSubscription.findMany({
+      include: { retailer: { include: { user: { select: { id: true, email: true, firstName: true, lastName: true, isActive: true } } } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    const slugs = Array.from(new Set(subscriptions.map(s => s.retailer?.storeSlug).filter(Boolean))) as string[];
+    const stores = await prisma.store.findMany({ where: { slug: { in: slugs } }, select: { id: true, name: true, slug: true, isActive: true, createdAt: true } });
+    const storeBySlug = new Map(stores.map(st => [st.slug, st]));
+    res.json({
+      success: true,
+      data: subscriptions.map(s => ({ ...s, store: s.retailer?.storeSlug ? storeBySlug.get(s.retailer.storeSlug) || null : null })),
+    });
+  } catch (error) { next(error); }
+});
+
+// DEV: reset a retailer's subscription to a fresh paid week
+subscriptionsRouter.post('/:id/reset-week', authenticate, requireRole(UserRole.SUPER_DEVELOPER), async (req: AuthRequest, res, next) => {
+  try {
+    const sub = await prisma.retailerSubscription.findUnique({ where: { id: req.params.id } });
+    if (!sub) return res.status(404).json({ success: false, error: 'Subscription not found' });
+    const now = new Date();
+    const nextBilling = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const updated = await prisma.retailerSubscription.update({
+      where: { id: sub.id },
+      data: { status: 'ACTIVE', lastBillingDate: now, nextBillingDate: nextBilling },
+    });
+    await prisma.subscriptionPayment.create({
+      data: {
+        subscriptionId: sub.id,
+        amount: sub.weeklyAmount,
+        currency: sub.currency,
+        method: 'manual_dev_reset',
+        status: 'PAID',
+        periodStart: now,
+        periodEnd: nextBilling,
+      },
+    });
+    logActivity({ userId: req.user!.userId, action: 'subscription:dev_reset', resource: 'subscription', resourceId: sub.id, req: req as any });
+    res.json({ success: true, data: updated });
+  } catch (error) { next(error); }
+});
+
+// DEV: lock an account whose subscription has expired (suspends user, store, subscription)
+subscriptionsRouter.post('/:id/lock', authenticate, requireRole(UserRole.SUPER_DEVELOPER), async (req: AuthRequest, res, next) => {
+  try {
+    const sub = await prisma.retailerSubscription.findUnique({ where: { id: req.params.id }, include: { retailer: true } });
+    if (!sub) return res.status(404).json({ success: false, error: 'Subscription not found' });
+    const retailer = sub.retailer;
+    if (retailer?.storeSlug) {
+      await prisma.store.updateMany({ where: { slug: retailer.storeSlug }, data: { isActive: false } });
+    }
+    if (retailer) {
+      await prisma.user.update({ where: { id: retailer.userId }, data: { isActive: false } });
+      await prisma.session.updateMany({ where: { userId: retailer.userId, isActive: true }, data: { isActive: false } });
+    }
+    await prisma.retailerSubscription.update({ where: { id: sub.id }, data: { status: 'SUSPENDED' } });
+    logActivity({ userId: req.user!.userId, action: 'subscription:dev_lock', resource: 'subscription', resourceId: sub.id, req: req as any });
+    res.json({ success: true, message: 'Account locked' });
+  } catch (error) { next(error); }
+});
+
+// DEV: unlock/reactivate a previously locked account
+subscriptionsRouter.post('/:id/unlock', authenticate, requireRole(UserRole.SUPER_DEVELOPER), async (req: AuthRequest, res, next) => {
+  try {
+    const sub = await prisma.retailerSubscription.findUnique({ where: { id: req.params.id }, include: { retailer: true } });
+    if (!sub) return res.status(404).json({ success: false, error: 'Subscription not found' });
+    const retailer = sub.retailer;
+    if (retailer?.storeSlug) {
+      await prisma.store.updateMany({ where: { slug: retailer.storeSlug }, data: { isActive: true } });
+    }
+    if (retailer) {
+      await prisma.user.update({ where: { id: retailer.userId }, data: { isActive: true } });
+    }
+    if (sub.status === 'SUSPENDED') {
+      const now = new Date();
+      await prisma.retailerSubscription.update({
+        where: { id: sub.id },
+        data: { status: 'ACTIVE', lastBillingDate: now, nextBillingDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+      });
+    }
+    logActivity({ userId: req.user!.userId, action: 'subscription:dev_unlock', resource: 'subscription', resourceId: sub.id, req: req as any });
+    res.json({ success: true, message: 'Account unlocked' });
   } catch (error) { next(error); }
 });

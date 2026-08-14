@@ -398,6 +398,7 @@ model Media {
   type         String   @default("image")
   mimeType     String   @default("image/jpeg")
   size         Int      @default(0)
+  data         String?
   width        Int      @default(0)
   height       Int      @default(0)
   folder       String   @default("general")
