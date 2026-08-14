@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { useParams, useRouter } from 'next/navigation';
 import { Star, ShoppingCart, Heart, Share2, Check, Truck, Shield, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import ReviewsSection from '@/components/ReviewsSection';
 
 export default function ProductPage() {
   const { slug } = useParams();
@@ -54,6 +55,8 @@ export default function ProductPage() {
   if (!product) return <div className="container" style={{ padding: '3rem 0', textAlign: 'center' }}><h2>Product not found</h2></div>;
 
   const price = selectedVariant?.price || product.price;
+  const approvedReviews = product.reviews || [];
+  const avgRating = approvedReviews.length ? Math.round((approvedReviews.reduce((s: any, r: any) => s + (r.rating || 0), 0) / approvedReviews.length) * 10) / 10 : 0;
 
   return (
     <div className="container" style={{ padding: '2rem 0' }}>
@@ -89,8 +92,10 @@ export default function ProductPage() {
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>SKU: {product.sku}</p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-            {[1,2,3,4,5].map(i => <Star key={i} size={18} fill={i <= 4 ? 'var(--gold)' : 'none'} color={i <= 4 ? 'var(--gold)' : 'var(--border)'} />)}
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>4.2 (23 reviews)</span>
+            {[1,2,3,4,5].map(i => <Star key={i} size={18} fill={i <= Math.round(avgRating) ? 'var(--gold)' : 'none'} color={i <= Math.round(avgRating) ? 'var(--gold)' : 'var(--border)'} />)}
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+              {avgRating ? `${avgRating.toFixed(1)} (${approvedReviews.length} review${approvedReviews.length === 1 ? '' : 's'})` : 'No reviews yet'}
+            </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -186,23 +191,9 @@ export default function ProductPage() {
       </div>
 
       {/* Reviews */}
-      {product.reviews?.length > 0 && (
-        <div style={{ marginTop: '3rem' }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Customer Reviews</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {product.reviews.map((r: any) => (
-              <div key={r.id} className="card">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  {[1,2,3,4,5].map(i => <Star key={i} size={14} fill={i <= r.rating ? 'var(--gold)' : 'none'} color={i <= r.rating ? 'var(--gold)' : 'var(--border)'} />)}
-                  <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{r.title}</span>
-                </div>
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{r.content}</p>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>- {r.customerName}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <div style={{ marginTop: '3rem' }}>
+        <ReviewsSection productId={product.id} initialReviews={approvedReviews} isAuthenticated={!!user} />
+      </div>
 
       {/* Related Products */}
       {product.related?.length > 0 && (
@@ -212,7 +203,7 @@ export default function ProductPage() {
             {product.related.map((p: any) => (
               <Link key={p.id} href={`/product/${p.slug}`} className="card" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: '0.5rem', overflow: 'hidden', marginBottom: '0.75rem' }}>
-                  <img src={p.images?.[0] || `https://picsum.photos/seed/${p.id}/300/300`} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={p.images?.[0] || `https://picsum.photos/seed/${p.id}/300/300`} alt={p.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{p.brand}</p>
                 <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{p.name}</p>

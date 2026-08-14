@@ -12,6 +12,7 @@ reviewsRouter.get('/product/:productId', async (req: StoreRequest, res, next) =>
     const reviews = await prisma.review.findMany({
       where: { productId: req.params.productId, storeId: req.storeId!, isApproved: true },
       orderBy: { createdAt: 'desc' }, take: 20,
+      include: { customer: { select: { user: { select: { firstName: true, lastName: true } } } } },
     });
     const stats = await prisma.review.groupBy({ by: ['rating'], where: { productId: req.params.productId, storeId: req.storeId!, isApproved: true }, _count: true });
     const avg = await prisma.review.aggregate({ where: { productId: req.params.productId, storeId: req.storeId!, isApproved: true }, _avg: { rating: true } });

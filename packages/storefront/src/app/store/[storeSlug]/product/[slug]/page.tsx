@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth';
 import Link from 'next/link';
 import { Star, ShoppingCart, Heart, ChevronRight, Info } from 'lucide-react';
 import StarRating from '@/components/StarRating';
+import ReviewsSection from '@/components/ReviewsSection';
 
 export default function StoreProductPage() {
   const { slug, storeSlug } = useParams();
@@ -38,6 +39,8 @@ export default function StoreProductPage() {
   if (!product) return <div className="container" style={{ padding: '4rem 1rem', textAlign: 'center', color: 'var(--error)' }}>Product not found</div>;
 
   const imgs = product.images?.length > 0 ? product.images : [`https://picsum.photos/seed/${product.id}/600/600`];
+  const approvedReviews = product.reviews || [];
+  const avgRating = approvedReviews.length ? Math.round((approvedReviews.reduce((s: any, r: any) => s + (r.rating || 0), 0) / approvedReviews.length) * 10) / 10 : 0;
 
   return (
     <div className="container" style={{ padding: '2rem 0', position: 'relative', zIndex: 1 }}>
@@ -67,7 +70,7 @@ export default function StoreProductPage() {
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 4vw, 2.125rem)', fontWeight: 700, letterSpacing: '-0.01em', marginBottom: '0.75rem' }}>{product.name}</h1>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-            <StarRating rating={4.5} count={product.reviews?.length || 0} />
+            <StarRating rating={avgRating} count={approvedReviews.length} />
           </div>
 
           <div style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', fontWeight: 700, color: 'var(--primary)', marginBottom: '1.5rem' }}>
@@ -129,6 +132,10 @@ export default function StoreProductPage() {
         </div>
       </div>
 
+      <div style={{ marginTop: '3rem' }}>
+        <ReviewsSection productId={product.id} initialReviews={approvedReviews} isAuthenticated={!!user} />
+      </div>
+
       {product.related?.length > 0 && (
         <section style={{ marginTop: '3rem' }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 600, marginBottom: '1.5rem' }}>You May Also Like</h2>
@@ -136,7 +143,7 @@ export default function StoreProductPage() {
             {product.related.map((p: any) => (
               <Link key={p.id} href={`/store/${storeSlug}/product/${p.slug}`} className="card" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: '0.5rem', overflow: 'hidden', marginBottom: '0.75rem' }}>
-                  <img src={p.images?.[0] || `https://picsum.photos/seed/${p.id}/300/300`} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${p.id}/300/300`; }} />
+                  <img src={p.images?.[0] || `https://picsum.photos/seed/${p.id}/300/300`} alt={p.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${p.id}/300/300`; }} />
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>{p.brand}</p>
                 <p style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.25rem' }}>{p.name}</p>

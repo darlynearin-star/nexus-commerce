@@ -131,7 +131,7 @@ productsRouter.get('/:slug', optionalAuth, async (req: StoreRequest & AuthReques
     if (!req.user) where.status = 'PUBLISHED';
     const product = await prisma.product.findFirst({
       where,
-      include: { category: true, variants: true, downloads: true, reviews: { where: { isApproved: true }, orderBy: { createdAt: 'desc' }, take: 20 } },
+      include: { category: true, variants: true, downloads: true, reviews: { where: { isApproved: true }, orderBy: { createdAt: 'desc' }, take: 20, include: { customer: { select: { user: { select: { firstName: true, lastName: true } } } } } } },
     });
     if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
 
