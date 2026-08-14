@@ -129,7 +129,7 @@ export default function CheckoutPage() {
             </div>
 
             <button className="btn btn-primary checkout-btn" disabled={submitting || cart.items.length === 0 || !phone} onClick={placeOrder}>
-              {submitting ? 'Placing Order...' : `Place Order — Pay UGX ${(cart.total || 0).toLocaleString()} on Delivery`}
+              {submitting ? 'Placing Order...' : `Place Order: Pay UGX ${(cart.total || 0).toLocaleString()} on Delivery`}
             </button>
           </div>
           <div>

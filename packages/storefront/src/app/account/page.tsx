@@ -259,7 +259,7 @@ function CartTab({ cart, loading }: any) {
         {cart.items.map((item: any) => (
           <div key={item.id} className="card account-cart-item">
             <div className="account-cart-img">
-              {item.product?.images?.[0] ? <img src={item.product.images[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Package size={24} />}
+              {item.product?.images?.[0] ? <img src={item.product.images[0]} alt={item.product.name || 'Product'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Package size={24} />}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <Link href={`/product/${item.product?.slug}`} style={{ fontWeight: 600, fontSize: '0.875rem' }}>{item.product?.name || 'Product'}</Link>

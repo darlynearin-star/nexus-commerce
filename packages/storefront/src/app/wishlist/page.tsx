@@ -33,7 +33,7 @@ export default function WishlistPage() {
             <div key={item.id} className="card">
               <Link href={`/product/${item.product.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: '0.5rem', overflow: 'hidden', marginBottom: '0.75rem' }}>
-                  <img src={`https://picsum.photos/seed/${item.product.id}/300/300`} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={`https://picsum.photos/seed/${item.product.id}/300/300`} alt={item.product.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{item.product.brand}</p>
                 <p style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{item.product.name}</p>

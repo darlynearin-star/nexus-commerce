@@ -6,17 +6,17 @@ import { setStoreSlug } from '@/lib/store-api';
 import { ArrowRight, Check, Store, Palette, CreditCard, Shield, Gem, Smartphone, ChevronRight } from 'lucide-react';
 
 const TEMPLATES = [
-  { id: 'elegance', name: 'Elegance', desc: 'Gold accents on dark — timeless luxury', colors: { primary: '#D4A843', secondary: '#A8822E', bg: '#0A0A0A', surface: '#141414', text: '#FAFAFA', accent: '#F0D48A' } },
-  { id: 'minimal', name: 'Minimal', desc: 'Clean whites, soft grays — modern simplicity', colors: { primary: '#2D2D2D', secondary: '#6B6B6B', bg: '#FFFFFF', surface: '#F8F8F6', text: '#1A1A1A', accent: '#B8B8B8' } },
-  { id: 'bold', name: 'Bold', desc: 'High contrast red on dark — energetic edge', colors: { primary: '#FF4433', secondary: '#CC3322', bg: '#0A0A0A', surface: '#1A1A1A', text: '#FAFAFA', accent: '#FF6655' } },
-  { id: 'nature', name: 'Nature', desc: 'Earthy greens, warm browns — organic feel', colors: { primary: '#5B8C5A', secondary: '#4A7349', bg: '#F8F6F0', surface: '#F0EDE4', text: '#2C2C2C', accent: '#7DAD7C' } },
+  { id: 'elegance', name: 'Elegance', desc: 'Gold accents on dark, timeless luxury', colors: { primary: '#D4A843', secondary: '#A8822E', bg: '#0A0A0A', surface: '#141414', text: '#FAFAFA', accent: '#F0D48A' } },
+  { id: 'minimal', name: 'Minimal', desc: 'Clean whites, soft grays, modern simplicity', colors: { primary: '#2D2D2D', secondary: '#6B6B6B', bg: '#FFFFFF', surface: '#F8F8F6', text: '#1A1A1A', accent: '#B8B8B8' } },
+  { id: 'bold', name: 'Bold', desc: 'High contrast red on dark, energetic edge', colors: { primary: '#FF4433', secondary: '#CC3322', bg: '#0A0A0A', surface: '#1A1A1A', text: '#FAFAFA', accent: '#FF6655' } },
+  { id: 'nature', name: 'Nature', desc: 'Earthy greens, warm browns, organic feel', colors: { primary: '#5B8C5A', secondary: '#4A7349', bg: '#F8F6F0', surface: '#F0EDE4', text: '#2C2C2C', accent: '#7DAD7C' } },
 ];
 
 const slides = [
   {
     icon: <Store size={48} />,
     title: 'Sell Your Fashion Online',
-    desc: 'Create a personalized storefront for your brand in minutes. No coding, no hassle — just pick a design, add your products, and start selling across Uganda.',
+    desc: 'Create a personalized storefront for your brand in minutes. No coding, no hassle. Just pick a design, add your products, and start selling across Uganda.',
     feat: ['4 professional templates', 'Custom branding & colors', 'Your own store URL'],
   },
   {
@@ -28,7 +28,7 @@ const slides = [
   {
     icon: <Smartphone size={48} />,
     title: 'Accept UGX Payments Instantly',
-    desc: 'Your customers can pay with MTN Mobile Money and Airtel Money from day one. Everything in Uganda Shillings — local shipping, local rates, local payments.',
+    desc: 'Your customers can pay with MTN Mobile Money and Airtel Money from day one. Everything in Uganda Shillings: local shipping, local rates, local payments.',
     feat: ['MTN MoMo & Airtel Money', 'Flutterwave card payments', '14-day free trial, then 3,000 UGX/week'],
   },
 ];

@@ -79,7 +79,7 @@ export default function StoreHomePage() {
         </section>
       )}
 
-      {/* Quick Browse — top-level categories sorted by product count */}
+      {/* Quick Browse: top-level categories sorted by product count */}
       {categories.length > 0 && (
         <section className="section">
           <div className="container">

@@ -52,7 +52,7 @@ export default function CartPage() {
             {items.map((item: any) => (
               <div key={item.id} className="card cart-item">
                 <div className="cart-item-img">
-                  <img src={item.product.images?.[0] || `https://picsum.photos/seed/${item.product.id}/200/200`} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={item.product.images?.[0] || `https://picsum.photos/seed/${item.product.id}/200/200`} alt={item.product.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div className="cart-item-body">
                   <Link href={`/store/${storeSlug}/product/${item.product.slug}`} className="cart-item-name">{item.product.name}</Link>

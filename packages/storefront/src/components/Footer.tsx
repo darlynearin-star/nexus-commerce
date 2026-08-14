@@ -23,7 +23,7 @@ export default function Footer() {
               <span style={{ width: 24, height: 24, borderRadius: 7, background: 'var(--primary)', color: 'var(--bg)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8125rem' }}>N</span>
               <span className={isDark ? '' : ''}>Lyn-nyx Stores</span>
             </h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6, maxWidth: 260 }}>Shop, sell, and scale. Premium products, smart commerce — powered by local makers.</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6, maxWidth: 260 }}>Shop, sell, and scale. Premium products, smart commerce, powered by local makers.</p>
           </div>
           <div><h4 style={{ fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.875rem' }}>Shop</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
@@ -33,7 +33,7 @@ export default function Footer() {
           </div>
           <div><h4 style={{ fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.875rem' }}>Support</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-              <span>Contact Us</span><span>Shipping Info</span><span>Returns</span><Link href="/guides" style={{ color: 'inherit', textDecoration: 'none' }}>Guides &amp; Tutorials</Link>
+              <span>Contact Us</span><span>Shipping Info</span><span>Returns</span><Link href="/guides" style={{ color: 'inherit', textDecoration: 'none' }}>Guides &amp; Tutorials</Link><Link href="/privacy" style={{ color: 'inherit', textDecoration: 'none' }}>Privacy Policy</Link>
             </div>
           </div>
           <div><h4 style={{ fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.875rem' }}>Account</h4>

@@ -6,10 +6,10 @@ import { ThemeProvider } from '@/lib/theme';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
+import SeoManager from '@/components/SeoManager';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    document.title = 'Lyn-nyx Stores — Shop, Sell, Scale';
     if (!localStorage.getItem('activeStoreSlug')) localStorage.setItem('activeStoreSlug', 'adorn');
   }, []);
 
@@ -20,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://nexus-api-69q5.onrender.com" />
       </head>
       <body>
+        <SeoManager />
         <ThemeProvider>
           <AuthProvider>
             <AnnouncementBanner />

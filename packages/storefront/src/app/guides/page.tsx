@@ -9,7 +9,7 @@ const guides = [
       'Fill in your name, email, and a strong password (or use "Continue with Google").',
       'Verify your email using the magic link we send you, then you\'re in.',
     ],
-    tip: 'Your account works across the whole platform — storefront, retailer, and developer apps.',
+    tip: 'Your account works across the whole platform: storefront, retailer, and developer apps.',
   },
   {
     icon: '🛍️',
@@ -37,9 +37,9 @@ const guides = [
     steps: [
       'At checkout, pick MTN Mobile Money or Airtel Money.',
       'You\'ll be asked to approve the payment from your phone.',
-      'Confirm on your phone — the order goes through automatically.',
+      'Confirm on your phone, and the order goes through automatically.',
     ],
-    tip: 'Double-check the phone number you enter — it must be the one registered on the wallet.',
+    tip: 'Double-check the phone number you enter. It must be the one registered on the wallet.',
   },
   {
     icon: '🏪',
@@ -70,7 +70,7 @@ export default function GuidesPage() {
         Guides &amp; Tutorials
       </h1>
       <p style={{ color: 'var(--text-secondary)', fontSize: '1.0625rem', lineHeight: 1.6, marginBottom: '2.5rem' }}>
-        New to Lyn-nyx Stores? These step-by-step guides walk you through everything — from your first
+        New to Lyn-nyx Stores? These step-by-step guides walk you through everything, from your first
         account to running your own store.
       </p>
 

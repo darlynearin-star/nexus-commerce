@@ -64,7 +64,7 @@ export default function LandingPage() {
               <div style={{ color: status.color }}>{status.icon}</div>
               <div>
                 <p style={{ fontWeight: 600, fontSize: '1rem' }}>{storeName}</p>
-                <p style={{ fontSize: '0.875rem', color: status.color }}>{status.label} — {status.message}</p>
+                <p style={{ fontSize: '0.875rem', color: status.color }}>{status.label}: {status.message}</p>
               </div>
             </div>
             {store.isActive && (
@@ -143,7 +143,7 @@ export default function LandingPage() {
           <p className="eyebrow">Get started</p>
           <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', marginBottom: '0.75rem' }}>You don&apos;t have a store yet</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.0625rem', lineHeight: 1.6, maxWidth: 520 }}>
-            Create your personalized online fashion store in minutes. Pick a template, set your colors, add your products — and start selling across Uganda. No coding needed.
+            Create your personalized online fashion store in minutes. Pick a template, set your colors, add your products, and start selling across Uganda. No coding needed.
           </p>
         </div>
 
@@ -194,7 +194,7 @@ export default function LandingPage() {
               Launch your fashion store in minutes.
             </h1>
             <p style={{ fontSize: '1.125rem', color: 'var(--text-secondary)', maxWidth: 520, lineHeight: 1.65, marginBottom: '1.75rem' }}>
-              Pick a template, set your colors, add your products — and start selling. No coding, no hassle. MTN MoMo &amp; Airtel Money built in.
+              Pick a template, set your colors, add your products, and start selling. No coding, no hassle. MTN MoMo &amp; Airtel Money built in.
             </p>
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
               <Link href="/register" className="btn btn-primary" style={{ fontSize: '1rem', padding: '0.6875rem 1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -242,7 +242,7 @@ export default function LandingPage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.25rem' }}>
             {[
-              { icon: <Layout size={20} />, title: '4 Templates', desc: 'Elegance, Minimal, Bold, Nature — pick the look that fits your brand.' },
+              { icon: <Layout size={20} />, title: '4 Templates', desc: 'Elegance, Minimal, Bold, Nature: pick the look that fits your brand.' },
               { icon: <Palette size={20} />, title: 'Custom Branding', desc: 'Set your colors, upload your logo and banner. Your store, your identity.' },
               { icon: <Globe size={20} />, title: 'Your Own URL', desc: 'Get a unique Lyn-nyx Stores URL for your store. Share it everywhere.' },
               { icon: <Store size={20} />, title: 'Own Products', desc: 'List your items, set UGX prices, organize categories, manage stock.' },

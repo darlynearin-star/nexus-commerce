@@ -88,7 +88,7 @@ export default function ProductCard({ product, showAddToCart = true, storeSlug: 
     position: 'relative' as const,
   };
 
-  // LIST: horizontal layout — image left, details right. Best for scanning many products.
+  // LIST: horizontal layout, image left, details right. Best for scanning many products.
   if (view === 'list') {
     return (
       <Link href={href} className="card" style={{ display: 'flex', gap: '1rem', textDecoration: 'none', color: 'inherit', position: 'relative', padding: '0.75rem', alignItems: 'stretch', borderRadius: 10 }}>
@@ -112,7 +112,7 @@ export default function ProductCard({ product, showAddToCart = true, storeSlug: 
     );
   }
 
-  // MINIMAL: image, name, price only — cleanest, most lightweight.
+  // MINIMAL: image, name, price only: cleanest, most lightweight.
   if (view === 'minimal') {
     return (
       <Link href={href} className="card" style={{ ...base, display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.5rem', borderRadius: 10 }}>
