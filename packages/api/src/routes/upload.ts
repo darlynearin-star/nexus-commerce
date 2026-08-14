@@ -44,7 +44,8 @@ uploadRouter.post(['/', ''], authenticate, requireStoreOwner, requirePermission(
     });
     const url = `${API_BASE}/uploads/${req.storeId}/${media.id}`;
     await prisma.media.update({ where: { id: media.id }, data: { url, thumbnailUrl: url } });
-    res.status(201).json({ success: true, data: { ...media, url, thumbnailUrl: url } });
+    const { data: _data, ...safeMedia } = media;
+    res.status(201).json({ success: true, data: { ...safeMedia, url, thumbnailUrl: url } });
   } catch (error) { next(error); }
 });
 

@@ -57,7 +57,7 @@ export async function checkKillSwitch(req: Request, res: Response, next: NextFun
       return res.status(503).json({ success: false, error: 'Search is disabled.', maintenance: true });
     }
 
-    if (killSwitch.uploads && (req.method === 'POST' || req.method === 'PUT') && req.path.startsWith('/api/media')) {
+    if (killSwitch.uploads && (req.method === 'POST' || req.method === 'PUT') && (req.path.startsWith('/api/media') || req.path.startsWith('/api/upload'))) {
       return res.status(503).json({ success: false, error: 'Uploads are disabled.', maintenance: true });
     }
 

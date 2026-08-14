@@ -10,7 +10,7 @@ mediaRouter.use(requireStore);
 mediaRouter.get('/', authenticate, async (req: StoreRequest, res, next) => {
   try {
     const media = await prisma.media.findMany({ where: { storeId: req.storeId! }, orderBy: { createdAt: 'desc' } });
-    res.json({ success: true, data: media });
+    res.json({ success: true, data: media.map(({ data: _data, ...rest }) => rest) });
   } catch (error) { next(error); }
 });
 
