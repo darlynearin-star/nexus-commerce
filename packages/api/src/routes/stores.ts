@@ -7,7 +7,7 @@ import { logActivity } from '../utils/activity-log';
 
 export const storesRouter = Router();
 
-const CONTACT_MESSAGE = 'Service is under maintenance. Please contact Mr.Dev at +256740157510 (call/WhatsApp) or email darlenzai01@gmail.com to request a store reservation.';
+const CONTACT_MESSAGE = 'Service is under maintenance. Please contact Mr.Dev at +256740157510 (call/WhatsApp) or email lyn.nyx.store@gmail.com to request a store reservation.';
 const MAX_STORES = 50;
 
 // Get current user's store

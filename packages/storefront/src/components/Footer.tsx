@@ -33,7 +33,7 @@ export default function Footer() {
           </div>
           <div><h4 style={{ fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.875rem' }}>Support</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-              <a href="mailto:darlenzai01@gmail.com" style={{ color: 'inherit', textDecoration: 'none' }}>Contact Us</a><Link href="/guides" style={{ color: 'inherit', textDecoration: 'none' }}>Guides &amp; Tutorials</Link><Link href="/privacy" style={{ color: 'inherit', textDecoration: 'none' }}>Privacy Policy</Link>
+              <a href="mailto:lyn.nyx.store@gmail.com" style={{ color: 'inherit', textDecoration: 'none' }}>Contact Us</a><Link href="/guides" style={{ color: 'inherit', textDecoration: 'none' }}>Guides &amp; Tutorials</Link><Link href="/privacy" style={{ color: 'inherit', textDecoration: 'none' }}>Privacy Policy</Link>
             </div>
           </div>
           <div><h4 style={{ fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.875rem' }}>Account</h4>

@@ -60,7 +60,7 @@ function Sidebar({ children }: { children: React.ReactNode }) {
           {!collapsed && (
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '0.25rem' }}>
               Questions or errors? Email Mr.Dev<br />
-              <a href="mailto:darlenzai01@gmail.com" style={{ color: 'var(--primary)', textDecoration: 'none' }}>darlenzai01@gmail.com</a>
+              <a href="mailto:lyn.nyx.store@gmail.com" style={{ color: 'var(--primary)', textDecoration: 'none' }}>lyn.nyx.store@gmail.com</a>
             </div>
           )}
         </div>

@@ -79,7 +79,7 @@ const guides = [
     title: 'Getting help',
     steps: [
       'Run into an error? Note the message and the page you were on.',
-      'Email support with details at darlenzai01@gmail.com.',
+      'Email support with details at lyn.nyx.store@gmail.com.',
       'Keep your store link handy so we can help faster.',
     ],
     tip: 'Mention what you were doing when the problem happened — it speeds up the fix.',
@@ -127,7 +127,7 @@ function GuidesContent() {
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1rem' }}>
           Contact support and we&apos;ll walk you through anything.
         </p>
-        <a href="mailto:darlenzai01@gmail.com" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+        <a href="mailto:lyn.nyx.store@gmail.com" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
           Email Support <ChevronRight size={16} />
         </a>
       </div>

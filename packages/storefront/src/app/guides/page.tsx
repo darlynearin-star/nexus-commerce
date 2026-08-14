@@ -98,7 +98,7 @@ export default function GuidesPage() {
           Reach out to our support team and we&apos;ll help you out.
         </p>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a href="mailto:darlenzai01@gmail.com" className="btn btn-primary">Email Support</a>
+          <a href="mailto:lyn.nyx.store@gmail.com" className="btn btn-primary">Email Support</a>
           <Link href="/register" className="btn btn-secondary">Get Started</Link>
         </div>
       </div>

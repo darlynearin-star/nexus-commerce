@@ -219,10 +219,10 @@ export default function CreateStorePage() {
                   <>
                     <a href="tel:+256740157510" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>📞 Call</a>
                     <a href="https://wa.me/256740157510" target="_blank" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>💬 WhatsApp</a>
-                    <a href="mailto:darlenzai01@gmail.com" className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>✉️ Email</a>
+                    <a href="mailto:lyn.nyx.store@gmail.com" className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>✉️ Email</a>
                   </>
                 ) : (
-                  <a href="mailto:darlenzai01@gmail.com" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>✉️ Email Mr.Dev</a>
+                  <a href="mailto:lyn.nyx.store@gmail.com" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>✉️ Email Mr.Dev</a>
                 )}
               </div>
             </div>

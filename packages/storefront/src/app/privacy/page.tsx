@@ -9,7 +9,7 @@ export const metadata = {
 const sections = [
   {
     title: 'Who we are',
-    body: 'Lyn-nyx Stores is an online marketplace where retailers in Uganda create their own storefronts and customers buy fashion, accessories, and body ornaments. The platform is operated by Mr. Dev (darlenzai01@gmail.com).',
+    body: 'Lyn-nyx Stores is an online marketplace where retailers in Uganda create their own storefronts and customers buy fashion, accessories, and body ornaments. The platform is operated by Mr. Dev (lyn.nyx.store@gmail.com).',
   },
   {
     title: 'What we collect',
@@ -37,7 +37,7 @@ const sections = [
   },
   {
     title: 'Your rights',
-    body: 'You can request a copy of the personal data we hold about you, ask us to correct inaccurate information, or ask us to delete your account and data. To exercise any of these rights, email Mr. Dev at darlenzai01@gmail.com and we will respond within a reasonable time.',
+    body: 'You can request a copy of the personal data we hold about you, ask us to correct inaccurate information, or ask us to delete your account and data. To exercise any of these rights, email Mr. Dev at lyn.nyx.store@gmail.com and we will respond within a reasonable time.',
   },
   {
     title: 'Cookies and local storage',
@@ -53,7 +53,7 @@ const sections = [
   },
   {
     title: 'Contact',
-    body: 'Questions about this policy or your data can be sent to darlenzai01@gmail.com. We are happy to clarify anything before you sign up.',
+    body: 'Questions about this policy or your data can be sent to lyn.nyx.store@gmail.com. We are happy to clarify anything before you sign up.',
   },
 ];
 
@@ -76,7 +76,7 @@ export default function PrivacyPage() {
       <div className="card" style={{ marginTop: '2.5rem', padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
         <Mail size={18} style={{ color: 'var(--primary)', flexShrink: 0 }} />
         <span style={{ fontSize: '0.9375rem' }}>
-          Questions or data requests: <a href="mailto:darlenzai01@gmail.com" style={{ color: 'var(--primary)', fontWeight: 500 }}>darlenzai01@gmail.com</a>
+          Questions or data requests: <a href="mailto:lyn.nyx.store@gmail.com" style={{ color: 'var(--primary)', fontWeight: 500 }}>lyn.nyx.store@gmail.com</a>
         </span>
       </div>
 
