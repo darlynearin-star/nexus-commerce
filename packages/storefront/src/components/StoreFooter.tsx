@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useStore } from '@/lib/store-context';
 
@@ -14,7 +15,7 @@ export default function StoreFooter() {
           <div>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.0625rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.75rem' }}>
               {store.logoUrl ? (
-                <img src={store.logoUrl} alt={store.name} style={{ height: 28, maxWidth: 160, objectFit: 'contain' }} />
+                <Image src={store.logoUrl} alt={store.name} width={160} height={28} style={{ height: 28, maxWidth: 160, width: 'auto', objectFit: 'contain' }} />
               ) : (
                 store.name
               )}

@@ -32,18 +32,23 @@ interface StoreContextValue {
 
 const StoreContext = createContext<StoreContextValue>({ store: null, loading: true, slug: null });
 
-export function StoreProvider({ slug, children }: { slug: string; children: ReactNode }) {
-  const [store, setStore] = useState<StoreData | null>(null);
-  const [loading, setLoading] = useState(true);
+export function StoreProvider({ slug, children, initialStore }: { slug: string; children: ReactNode; initialStore?: StoreData | null }) {
+  const [store, setStore] = useState<StoreData | null>(initialStore ?? null);
+  const [loading, setLoading] = useState(!initialStore);
 
   useEffect(() => {
     if (!slug) return;
+    if (initialStore) {
+      setStore(initialStore);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     api.get(`/stores/public/${slug}`)
       .then((res: any) => setStore(res.data))
       .catch(() => setStore(null))
       .finally(() => setLoading(false));
-  }, [slug]);
+  }, [slug, initialStore]);
 
   return <StoreContext.Provider value={{ store, loading, slug }}>{children}</StoreContext.Provider>;
 }

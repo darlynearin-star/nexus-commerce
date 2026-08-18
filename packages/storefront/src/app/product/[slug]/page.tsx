@@ -1,11 +1,14 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { api } from '@/lib/api';
+import { storeApi } from '@/lib/store-api';
 import { useAuth } from '@/lib/auth';
 import { useParams, useRouter } from 'next/navigation';
 import { Star, ShoppingCart, Heart, Share2, Check, Truck, Shield, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import ReviewsSection from '@/components/ReviewsSection';
+import ProductSeo from '@/components/ProductSeo';
 
 export default function ProductPage() {
   const { slug } = useParams();
@@ -23,8 +26,13 @@ export default function ProductPage() {
   const toggleWishlist = async () => {
     if (!user) { router.push('/login'); return; }
     try {
-      await api.post('/wishlist/add', { productId: product.id });
-      setSaved(true);
+      if (saved) {
+        await api.post('/wishlist/remove', { productId: product.id });
+        setSaved(false);
+      } else {
+        await api.post('/wishlist/add', { productId: product.id });
+        setSaved(true);
+      }
     } catch { /* ignore */ }
   };
 
@@ -34,13 +42,19 @@ export default function ProductPage() {
       const imgs = res.data.images?.length > 0 ? res.data.images : [`https://picsum.photos/seed/${res.data.id}/600/600`];
       setMainImg(imgs[0]);
       if (res.data.variants?.length) setSelectedVariant(res.data.variants[0]);
+      if (user) {
+        api.get('/wishlist').then((w: any) => {
+          const lists = Array.isArray(w.data) ? w.data : [];
+          setSaved(lists.some((l: any) => l.items?.some((it: any) => it.productId === res.data.id)));
+        }).catch(() => {});
+      }
     }).finally(() => setLoading(false));
-  }, [slug]);
+  }, [slug, user]);
 
   const addToCart = async () => {
     try {
       setCartError('');
-      await api.post('/cart/add', { productId: product.id, variantId: selectedVariant?.id, quantity });
+      await storeApi.post('/cart/add', { productId: product.id, variantId: selectedVariant?.id, quantity });
       setAddedToCart(true);
       setTimeout(() => setAddedToCart(false), 2000);
     } catch (e: any) { setCartError(e.message || 'Cart error'); }
@@ -60,6 +74,7 @@ export default function ProductPage() {
 
   return (
     <div className="container" style={{ padding: '2rem 0' }}>
+      <ProductSeo product={product} />
       {/* Breadcrumb */}
       <nav style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '2rem' }}>
         <Link href="/" style={{ color: 'inherit', textDecoration: 'none' }}>Home</Link>
@@ -72,14 +87,14 @@ export default function ProductPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
         {/* Image Gallery */}
         <div>
-          <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: '0.75rem', overflow: 'hidden', marginBottom: '0.75rem' }}>
-            <img src={mainImg} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: '0.75rem', overflow: 'hidden', marginBottom: '0.75rem', position: 'relative' }}>
+            <Image src={mainImg} alt={product.name} fill priority sizes="(max-width: 768px) 100vw, 600px" style={{ objectFit: 'cover' }} />
           </div>
           {(() => { const imgs = product.images?.length > 0 ? product.images : [1,2,3,4].map(i => `https://picsum.photos/seed/${product.id}-${i}/160/160`); return (
           <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
             {imgs.map((url: string, i: number) => (
-              <img key={i} src={url} alt="" onClick={() => setMainImg(url)} loading="lazy"
-                style={{ width: 64, height: 64, borderRadius: '0.5rem', objectFit: 'cover', cursor: 'pointer', flexShrink: 0, border: mainImg === url ? '2px solid var(--primary)' : '2px solid transparent' }} />
+              <Image key={i} src={url} alt="" width={64} height={64} onClick={() => setMainImg(url)} loading="lazy"
+                style={{ borderRadius: '0.5rem', objectFit: 'cover', cursor: 'pointer', flexShrink: 0, border: mainImg === url ? '2px solid var(--primary)' : '2px solid transparent' }} />
             ))}
           </div>
           );})()}
@@ -128,17 +143,11 @@ export default function ProductPage() {
               <span style={{ padding: '0.5rem 1rem', minWidth: 40, textAlign: 'center' }}>{quantity}</span>
               <button className="btn btn-ghost btn-sm" onClick={() => setQuantity(quantity + 1)}>+</button>
             </div>
-            {user ? (
-              <button className="btn btn-primary" style={{ flex: 1, padding: '0.875rem', fontSize: '1rem' }} onClick={addToCart}>
-                {addedToCart ? <><Check size={20} /> Added!</> : <><ShoppingCart size={20} /> Add to Cart</>}
-              </button>
-            ) : (
-              <Link href="/login" className="btn btn-primary" style={{ flex: 1, padding: '0.875rem', fontSize: '1rem', justifyContent: 'center' }}>
-                <ShoppingCart size={20} /> Sign In to Purchase
-              </Link>
-            )}
+            <button className="btn btn-primary" style={{ flex: 1, padding: '0.875rem', fontSize: '1rem' }} onClick={addToCart}>
+              {addedToCart ? <><Check size={20} /> Added!</> : <><ShoppingCart size={20} /> Add to Cart</>}
+            </button>
             <button className="btn btn-secondary btn-icon" onClick={toggleWishlist} aria-label="Save to wishlist"><Heart size={20} fill={saved ? 'currentColor' : 'none'} /></button>
-            <button className="btn btn-secondary btn-icon"><Share2 size={20} /></button>
+            <button className="btn btn-secondary btn-icon" aria-label="Share product"><Share2 size={20} /></button>
           </div>
           {cartError && <p style={{ color: 'var(--error)', fontSize: '0.875rem', marginTop: '-1rem', marginBottom: '1rem' }}>{cartError}</p>}
 
@@ -202,8 +211,8 @@ export default function ProductPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1rem' }}>
             {product.related.map((p: any) => (
               <Link key={p.id} href={`/product/${p.slug}`} className="card" style={{ textDecoration: 'none', color: 'inherit' }}>
-                <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: '0.5rem', overflow: 'hidden', marginBottom: '0.75rem' }}>
-                  <img src={p.images?.[0] || `https://picsum.photos/seed/${p.id}/300/300`} alt={p.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: '0.5rem', overflow: 'hidden', marginBottom: '0.75rem', position: 'relative' }}>
+                  <Image src={p.images?.[0] || `https://picsum.photos/seed/${p.id}/300/300`} alt={p.name} fill sizes="(max-width: 768px) 50vw, 300px" style={{ objectFit: 'cover' }} loading="lazy" />
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{p.brand}</p>
                 <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{p.name}</p>

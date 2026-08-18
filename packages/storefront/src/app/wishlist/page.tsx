@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { api } from '@/lib/api';
 import { Heart, Trash2 } from 'lucide-react';
 import Link from 'next/link';
@@ -32,8 +33,8 @@ export default function WishlistPage() {
           {items.map((item: any) => (
             <div key={item.id} className="card">
               <Link href={`/product/${item.product.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: '0.5rem', overflow: 'hidden', marginBottom: '0.75rem' }}>
-                  <img src={`https://picsum.photos/seed/${item.product.id}/300/300`} alt={item.product.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: '0.5rem', overflow: 'hidden', marginBottom: '0.75rem', position: 'relative' }}>
+                  <Image src={`https://picsum.photos/seed/${item.product.id}/300/300`} alt={item.product.name} fill sizes="(max-width: 768px) 50vw, 300px" style={{ objectFit: 'cover' }} loading="lazy" />
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{item.product.brand}</p>
                 <p style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{item.product.name}</p>
@@ -41,7 +42,7 @@ export default function WishlistPage() {
               </Link>
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
                 <button className="btn btn-primary btn-sm" style={{ flex: 1 }} onClick={() => api.post('/cart/add', { productId: item.productId })}>Add to Cart</button>
-                <button className="btn btn-ghost btn-icon" style={{ color: 'var(--error)' }} onClick={() => removeItem(item.id)}><Trash2 size={16} /></button>
+                <button className="btn btn-ghost btn-icon" style={{ color: 'var(--error)' }} onClick={() => removeItem(item.id)} aria-label="Remove item"><Trash2 size={16} /></button>
               </div>
             </div>
           ))}

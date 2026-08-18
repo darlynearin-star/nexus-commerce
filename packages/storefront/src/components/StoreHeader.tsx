@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useStore } from '@/lib/store-context';
@@ -32,7 +33,7 @@ export default function StoreHeader() {
       <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64, gap: '1rem' }}>
         <Link href={`/store/${store.slug}`} style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', textDecoration: 'none' }}>
           {store.logoUrl ? (
-            <img src={store.logoUrl} alt={store.name} style={{ height: 40, maxWidth: 180, objectFit: 'contain' }} />
+            <Image src={store.logoUrl} alt={store.name} width={180} height={40} style={{ height: 40, maxWidth: 180, width: 'auto', objectFit: 'contain' }} />
           ) : (
             <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text)', letterSpacing: '-0.01em' }}>{store.name}</span>
           )}

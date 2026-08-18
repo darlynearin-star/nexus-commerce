@@ -32,20 +32,20 @@ export default function RegisterPage() {
         {error && <div style={{ padding: '0.75rem', background: 'var(--error)', color: 'white', borderRadius: '0.5rem', marginBottom: '1rem', fontSize: '0.875rem' }}>{error}</div>}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div className="name-fields">
-            <div><label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>First Name</label><input className="input" value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} required /></div>
-            <div><label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Last Name</label><input className="input" value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} required /></div>
+            <div><label htmlFor="firstName" style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>First Name</label><input id="firstName" className="input" value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} required /></div>
+            <div><label htmlFor="lastName" style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Last Name</label><input id="lastName" className="input" value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} required /></div>
           </div>
-          <div><label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Email</label><input className="input" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required /></div>
-          <div><label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Password</label><input className="input" type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required minLength={6} /></div>
-          <div><label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Confirm Password</label><input className="input" type="password" value={form.confirmPassword} onChange={e => setForm({ ...form, confirmPassword: e.target.value })} required placeholder="Re-enter your password" /></div>
+          <div><label htmlFor="email" style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Email</label><input id="email" className="input" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required /></div>
+          <div><label htmlFor="password" style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Password</label><input id="password" className="input" type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required minLength={6} /></div>
+          <div><label htmlFor="confirmPassword" style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Confirm Password</label><input id="confirmPassword" className="input" type="password" value={form.confirmPassword} onChange={e => setForm({ ...form, confirmPassword: e.target.value })} required placeholder="Re-enter your password" /></div>
           <div>
-            <label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Account Type</label>
-            <div className="role-buttons">
+            <label id="accountTypeLabel" style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Account Type</label>
+            <div className="role-buttons" role="radiogroup" aria-labelledby="accountTypeLabel">
               {[
                 { value: 'CUSTOMER', label: 'Customer', desc: 'Browse & shop' },
                 { value: 'RETAILER', label: 'Retailer', desc: 'Sell products' },
               ].map(opt => (
-                <button key={opt.value} type="button" onClick={() => setForm({ ...form, role: opt.value })}
+                <button key={opt.value} type="button" role="radio" aria-checked={form.role === opt.value} aria-label={opt.label} onClick={() => setForm({ ...form, role: opt.value })}
                   style={{ flex: 1, padding: '0.75rem', borderRadius: '0.5rem', border: `2px solid ${form.role === opt.value ? 'var(--primary)' : 'var(--border)'}`, background: 'var(--surface)', cursor: 'pointer', textAlign: 'center' }}>
                   <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{opt.label}</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{opt.desc}</div>

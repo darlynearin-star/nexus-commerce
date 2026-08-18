@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { User, Package, ShoppingCart, Mail, Settings, LogOut, Store, Activity, AlertTriangle, Bell, CheckCheck, ExternalLink, ShoppingBag } from 'lucide-react';
@@ -88,7 +89,7 @@ export default function AccountPage() {
               <p style={{ fontWeight: 600, fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.firstName} {user.lastName}</p>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
             </div>
-            <button className="btn btn-ghost btn-sm" style={{ color: 'var(--error)', flexShrink: 0 }} onClick={logout}><LogOut size={16} /></button>
+            <button className="btn btn-ghost btn-sm" style={{ color: 'var(--error)', flexShrink: 0 }} onClick={logout} aria-label="Sign out"><LogOut size={16} /></button>
           </div>
           <nav style={{ display: 'flex', gap: '0.375rem', overflowX: 'auto', paddingBottom: '0.5rem', marginBottom: '1.5rem', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {tabs.map(tab => (
@@ -259,7 +260,7 @@ function CartTab({ cart, loading }: any) {
         {cart.items.map((item: any) => (
           <div key={item.id} className="card account-cart-item">
             <div className="account-cart-img">
-              {item.product?.images?.[0] ? <img src={item.product.images[0]} alt={item.product.name || 'Product'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Package size={24} />}
+              {item.product?.images?.[0] ? <Image src={item.product.images[0]} alt={item.product.name || 'Product'} fill sizes="60px" style={{ objectFit: 'cover' }} /> : <Package size={24} />}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <Link href={`/product/${item.product?.slug}`} style={{ fontWeight: 600, fontSize: '0.875rem' }}>{item.product?.name || 'Product'}</Link>
@@ -276,7 +277,7 @@ function CartTab({ cart, loading }: any) {
       </div>
       <style>{`
         .account-cart-item { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; }
-        .account-cart-img { width: 60px; height: 60px; min-width: 60px; border-radius: 0.5rem; background: var(--bg-secondary); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--text-secondary); overflow: hidden; }
+        .account-cart-img { width: 60px; height: 60px; min-width: 60px; border-radius: 0.5rem; background: var(--bg-secondary); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--text-secondary); overflow: hidden; position: relative; }
         @media (max-width: 480px) {
           .account-cart-item { flex-wrap: wrap; gap: 0.5rem; }
           .account-cart-img { width: 48px; height: 48px; min-width: 48px; }

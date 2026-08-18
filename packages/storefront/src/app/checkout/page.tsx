@@ -2,16 +2,17 @@
 import { useEffect, useState } from 'react';
 import { storeApi } from '@/lib/store-api';
 import { useAuth } from '@/lib/auth';
-import { useRouter } from 'next/navigation';
 import { CheckCircle, Phone, MapPin, FileText, Info } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CheckoutPage() {
   const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
   const [cart, setCart] = useState<any>({ items: [], subtotal: 0, total: 0 });
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
@@ -20,7 +21,11 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) { router.push('/login'); return; }
+    if (user) {
+      setFirstName(user.firstName || '');
+      setLastName(user.lastName || '');
+      setEmail(user.email || '');
+    }
     loadCart();
   }, [user, authLoading]);
 
@@ -34,12 +39,22 @@ export default function CheckoutPage() {
   };
 
   const placeOrder = async () => {
-    setSubmitting(true); setMessage('');
+    setSubmitting(true); setMessage(null);
+    const guestEmail = email.trim();
+    if (!guestEmail) {
+      setMessage({ text: 'Email is required for checkout', type: 'error' });
+      setSubmitting(false);
+      return;
+    }
     try {
-      const res: any = await storeApi.post('/orders', { customerPhone: phone, shippingAddress: address, notes });
-      if (!res.success) { setMessage(res.error || 'Failed to create order'); setSubmitting(false); return; }
+      const res: any = await storeApi.post('/orders', {
+        guestEmail,
+        guestName: `${firstName} ${lastName}`.trim() || 'Guest',
+        customerPhone: phone, shippingAddress: address, notes,
+      });
+      if (!res.success) { setMessage({ text: res.error || 'Failed to create order', type: 'error' }); setSubmitting(false); return; }
       setOrder(res.data);
-    } catch (e: any) { setMessage(e?.message || 'Checkout failed'); } finally { setSubmitting(false); }
+    } catch (e: any) { setMessage({ text: e?.message || 'Checkout failed', type: 'error' }); } finally { setSubmitting(false); }
   };
 
   if (order) {
@@ -97,27 +112,36 @@ export default function CheckoutPage() {
 
   return (
     <div className="container" style={{ padding: 'clamp(1rem, 3vw, 2rem) 1rem', maxWidth: 800 }}>
-      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 700, letterSpacing: '-0.01em', marginBottom: '1.5rem' }}>Checkout</h1>
+      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 700, letterSpacing: '-0.01em', marginBottom: '0.5rem' }}>Checkout</h1>
+      {!user && (
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+          Checking out as a guest. Have an account? <Link href="/login" style={{ color: 'var(--primary)', fontWeight: 600 }}>Sign in</Link> to use saved details.
+        </p>
+      )}
       {message && (
-        <div style={{ padding: '0.75rem 1rem', borderRadius: '0.5rem', marginBottom: '1rem', background: message.includes('failed') ? 'var(--bg-secondary)' : 'var(--bg-secondary)', color: message.includes('failed') ? 'var(--error)' : 'var(--success)' }}>
-          {message}
+        <div style={{ padding: '0.75rem 1rem', borderRadius: '0.5rem', marginBottom: '1rem', background: message.type === 'error' ? 'var(--bg-secondary)' : 'var(--bg-secondary)', color: message.type === 'error' ? 'var(--error)' : 'var(--success)' }}>
+          {message.text}
         </div>
       )}
       {authLoading || cartLoading ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>Loading...</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className="skeleton" style={{ height: 24, width: '30%' }} />
+          <div className="skeleton" style={{ height: 240 }} />
+          <div className="skeleton" style={{ height: 120 }} />
+        </div>
       ) : (
         <div className="checkout-grid">
           <div>
             <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, marginBottom: '1rem' }}>Delivery Information</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div className="checkout-name-fields">
-                <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>First Name</label><input className="input" value={user?.firstName || ''} disabled /></div>
-                <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Last Name</label><input className="input" value={user?.lastName || ''} disabled /></div>
+                <div><label htmlFor="checkoutFirstName" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>First Name</label><input id="checkoutFirstName" className="input" value={firstName} onChange={e => setFirstName(e.target.value)} /></div>
+                <div><label htmlFor="checkoutLastName" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Last Name</label><input id="checkoutLastName" className="input" value={lastName} onChange={e => setLastName(e.target.value)} /></div>
               </div>
-              <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Email</label><input className="input" value={user?.email || ''} disabled /></div>
-              <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Phone Number</label><input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="2567XXXXXXXX" required /></div>
-              <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Delivery Address</label><input className="input" value={address} onChange={e => setAddress(e.target.value)} placeholder="Street, area, landmark" /></div>
-              <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Delivery Notes (optional)</label><textarea className="input" style={{ minHeight: 80 }} value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Call when arriving, leave with guard..." /></div>
+              <div><label htmlFor="checkoutEmail" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Email</label><input id="checkoutEmail" className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} required /></div>
+              <div><label htmlFor="checkoutPhone" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Phone Number</label><input id="checkoutPhone" className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="2567XXXXXXXX" required /></div>
+              <div><label htmlFor="checkoutAddress" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Delivery Address</label><input id="checkoutAddress" className="input" value={address} onChange={e => setAddress(e.target.value)} placeholder="Street, area, landmark" /></div>
+              <div><label htmlFor="checkoutNotes" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Delivery Notes (optional)</label><textarea id="checkoutNotes" className="input" style={{ minHeight: 80 }} value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Call when arriving, leave with guard..." /></div>
             </div>
 
             <div className="pay-note-checkout" style={{ marginTop: '1.5rem' }}>
@@ -128,7 +152,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            <button className="btn btn-primary checkout-btn" disabled={submitting || cart.items.length === 0 || !phone} onClick={placeOrder}>
+            <button className="btn btn-primary checkout-btn" disabled={submitting || cart.items.length === 0 || !phone || !email.trim()} onClick={placeOrder}>
               {submitting ? 'Placing Order...' : `Place Order: Pay UGX ${(cart.total || 0).toLocaleString()} on Delivery`}
             </button>
           </div>

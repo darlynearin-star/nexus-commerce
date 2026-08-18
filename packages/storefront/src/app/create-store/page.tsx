@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { setStoreSlug } from '@/lib/store-api';
@@ -43,6 +44,8 @@ export default function CreateStorePage() {
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [slugAvailable, setSlugAvailable] = useState(true);
+  const [phone, setPhone] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
@@ -64,7 +67,7 @@ export default function CreateStorePage() {
     setSubmitting(true);
     setError('');
     try {
-      const res = await api.post('/stores', { name, slug, template: template.id, colors, logoUrl: logoUrl || undefined });
+      const res = await api.post('/stores', { name, slug, template: template.id, colors, logoUrl: logoUrl || undefined, phone, whatsapp });
       if (res.success) {
         localStorage.setItem('activeStoreSlug', slug);
         setStoreSlug(slug);
@@ -166,9 +169,9 @@ export default function CreateStorePage() {
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 600, marginBottom: '2rem' }}>Customize colors</h2>
           {Object.entries(colors).map(([key, val]) => (
             <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-              <label style={{ width: 100, fontSize: '0.875rem', fontWeight: 500, textTransform: 'capitalize' }}>{key}</label>
-              <input type="color" value={val} onChange={e => { const c = { ...colors, [key]: e.target.value }; setColors(c); document.documentElement.style.setProperty(`--${key}`, e.target.value); }} style={{ width: 48, height: 40, padding: 0, border: 'none', cursor: 'pointer', background: 'transparent' }} />
-              <input type="text" value={val} onChange={e => { const c = { ...colors, [key]: e.target.value }; setColors(c); }} style={{ flex: 1 }} className="input" />
+              <label htmlFor={`color-${key}`} style={{ width: 100, fontSize: '0.875rem', fontWeight: 500, textTransform: 'capitalize' }}>{key}</label>
+              <input id={`color-${key}`} type="color" value={val} onChange={e => { const c = { ...colors, [key]: e.target.value }; setColors(c); document.documentElement.style.setProperty(`--${key}`, e.target.value); }} style={{ width: 48, height: 40, padding: 0, border: 'none', cursor: 'pointer', background: 'transparent' }} />
+              <input aria-label={`${key} hex value`} type="text" value={val} onChange={e => { const c = { ...colors, [key]: e.target.value }; setColors(c); }} style={{ flex: 1 }} className="input" />
             </div>
           ))}
           <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
@@ -183,14 +186,14 @@ export default function CreateStorePage() {
         <div>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 600, marginBottom: '2rem' }}>Store details</h2>
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.375rem' }}>Store Name</label>
-            <input className="input" value={name} onChange={e => { setName(e.target.value); setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')); }} placeholder="My Store" />
+            <label htmlFor="storeName" style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.375rem' }}>Store Name</label>
+            <input id="storeName" className="input" value={name} onChange={e => { setName(e.target.value); setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')); }} placeholder="My Store" />
           </div>
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.375rem' }}>Store URL</label>
+            <label htmlFor="storeSlug" style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.375rem' }}>Store URL</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>/store/</span>
-              <input className="input" value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, ''))} placeholder="my-store" />
+              <input id="storeSlug" className="input" value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, ''))} placeholder="my-store" />
             </div>
             {slug.length >= 3 && (
               <span style={{ fontSize: '0.8125rem', color: slugAvailable ? 'var(--success)' : 'var(--error)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.375rem' }}>
@@ -199,17 +202,31 @@ export default function CreateStorePage() {
             )}
           </div>
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.375rem' }}>Store Logo (optional)</label>
-            <input className="input" value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://example.com/logo.png" />
+            <label htmlFor="storeLogo" style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.375rem' }}>Store Logo (optional)</label>
+            <input id="storeLogo" className="input" value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://example.com/logo.png" />
             <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', display: 'block', marginTop: '0.25rem' }}>
               Upload a rectangular logo image or leave empty to use your store name as text.
             </span>
             {logoUrl && (
               <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <img src={logoUrl} alt="Logo preview" style={{ maxHeight: 50, maxWidth: 250, objectFit: 'contain' }}
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                <Image src={logoUrl} alt="Logo preview" width={250} height={50} style={{ maxHeight: 50, maxWidth: 250, objectFit: 'contain', height: 'auto' }}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
               </div>
             )}
+          </div>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label htmlFor="storePhone" style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.375rem' }}>Phone Number</label>
+            <input id="storePhone" className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="2567XXXXXXXX" />
+            <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', display: 'block', marginTop: '0.25rem' }}>
+              Customers will see this to confirm deliveries.
+            </span>
+          </div>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label htmlFor="storeWhatsapp" style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.375rem' }}>WhatsApp Number</label>
+            <input id="storeWhatsapp" className="input" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="2567XXXXXXXX" />
+            <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', display: 'block', marginTop: '0.25rem' }}>
+              Used for WhatsApp order notifications (optional).
+            </span>
           </div>
           {error && (
             <div style={{ marginBottom: '1rem', padding: '1rem', borderRadius: '0.5rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}>

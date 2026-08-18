@@ -2,10 +2,11 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShoppingCart, Heart, Search, User, Sun, Moon, Menu, X, Store, ExternalLink, LayoutDashboard, LogOut } from 'lucide-react';
+import { ShoppingCart, Heart, Search, User, Sun, Moon, Menu, X, Store, ExternalLink, LayoutDashboard, LogOut, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
 import { api } from '@/lib/api';
+import { useDismiss } from '@/lib/use-dismiss';
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -16,9 +17,17 @@ export default function Header() {
   const [storeSlug, setStoreSlug] = useState<string | null>(null);
   const [hasStore, setHasStore] = useState(false);
   const [isStorePage, setIsStorePage] = useState(false);
+  const [allStores, setAllStores] = useState<{ slug: string; name: string }[]>([]);
+  const [storeMenuOpen, setStoreMenuOpen] = useState(false);
+  const [activeSlug, setActiveSlug] = useState<string | null>(null);
+
+  const mobileMenuRef = useDismiss(mobileMenu, () => setMobileMenu(false));
+  const storeMenuRef = useDismiss(storeMenuOpen, () => setStoreMenuOpen(false));
 
   useEffect(() => {
     setIsStorePage(window.location.pathname.startsWith('/store/'));
+    setActiveSlug(localStorage.getItem('activeStoreSlug'));
+    api.get('/stores/public').then((res: any) => setAllStores(res.data || [])).catch(() => {});
     if (user?.role === 'RETAILER') {
       api.get('/stores/mine').then((res: any) => {
         const s = res.data;
@@ -55,6 +64,45 @@ export default function Header() {
             <span className="brand-mark" style={{ width: 26, height: 26, borderRadius: 8, background: 'var(--primary)', color: 'var(--bg)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.875rem' }}>N</span>
             <span>Lyn-nyx Stores</span>
           </Link>
+
+          {allStores.length > 0 && (
+            <div style={{ position: 'relative' }}>
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ borderRadius: 8, gap: '0.375rem' }}
+                onClick={() => setStoreMenuOpen(!storeMenuOpen)}
+                aria-label="Switch store"
+              >
+                <Store size={16} />
+                <span>{activeSlug ? allStores.find(s => s.slug === activeSlug)?.name || activeSlug : 'All Stores'}</span>
+                <ChevronDown size={14} />
+              </button>
+              {storeMenuOpen && (
+                <>
+                  <div style={{ position: 'fixed', inset: 0, zIndex: 140 }} onClick={() => setStoreMenuOpen(false)} />
+                  <div className="card" ref={storeMenuRef} tabIndex={-1} style={{ position: 'absolute', top: 'calc(100% + 0.5rem)', left: 0, zIndex: 150, minWidth: 220, padding: '0.5rem', maxHeight: 320, overflowY: 'auto' }}>
+                    <button
+                      className="nav-item"
+                      style={{ width: '100%', justifyContent: 'flex-start', fontWeight: activeSlug === null ? 700 : 500 }}
+                      onClick={() => { setActiveSlug(null); localStorage.removeItem('activeStoreSlug'); setStoreMenuOpen(false); window.location.href = '/shop'; }}
+                    >
+                      All Stores
+                    </button>
+                    {allStores.map(s => (
+                      <button
+                        key={s.slug}
+                        className="nav-item"
+                        style={{ width: '100%', justifyContent: 'flex-start', fontWeight: activeSlug === s.slug ? 700 : 500 }}
+                        onClick={() => { setActiveSlug(s.slug); localStorage.setItem('activeStoreSlug', s.slug); setStoreMenuOpen(false); window.location.href = `/store/${s.slug}`; }}
+                      >
+                        {s.name}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
           <nav style={{ display: 'flex', gap: '0.125rem', alignItems: 'center' }} className="desktop-nav">
             {navLinks.map(l => (
@@ -104,7 +152,7 @@ export default function Header() {
       {mobileMenu && <div className="sidebar-overlay open" onClick={close} />}
 
       {/* Mobile sidebar */}
-      <div className={`mobile-sidebar ${mobileMenu ? 'open' : ''}`}>
+      <div className={`mobile-sidebar ${mobileMenu ? 'open' : ''}`} ref={mobileMenuRef} tabIndex={-1}>
         <div style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
           <Link href="/" onClick={close} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', fontWeight: 600, color: 'var(--text)', textDecoration: 'none' }}>
             <span style={{ width: 24, height: 24, borderRadius: 7, background: 'var(--primary)', color: 'var(--bg)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8125rem' }}>N</span>

@@ -1,14 +1,14 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { storeApi } from '@/lib/store-api';
-import { useAuth } from '@/lib/auth';
 import { Trash2, ShoppingBag, Minus, Plus, ArrowLeft, Info } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CartPage() {
-  const { user } = useAuth();
   const [cart, setCart] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const storeSlug = typeof window !== 'undefined' ? localStorage.getItem('activeStoreSlug') || 'adorn' : 'adorn';
 
   useEffect(() => { loadCart(); }, []);
@@ -22,13 +22,19 @@ export default function CartPage() {
 
   const updateQuantity = async (itemId: string, quantity: number) => {
     if (quantity < 1) return;
-    await storeApi.put(`/cart/item/${itemId}`, { quantity });
-    loadCart();
+    try {
+      await storeApi.put(`/cart/item/${itemId}`, { quantity });
+      setMessage(null);
+      loadCart();
+    } catch (e: any) { setMessage({ text: e?.message || 'Could not update quantity', type: 'error' }); }
   };
 
   const removeItem = async (itemId: string) => {
-    await storeApi.delete(`/cart/item/${itemId}`);
-    loadCart();
+    try {
+      await storeApi.delete(`/cart/item/${itemId}`);
+      setMessage(null);
+      loadCart();
+    } catch (e: any) { setMessage({ text: e?.message || 'Could not remove item', type: 'error' }); }
   };
 
   if (loading) return <div className="container" style={{ padding: '3rem 1rem' }}><div className="skeleton" style={{ height: 200 }} /></div>;
@@ -39,6 +45,11 @@ export default function CartPage() {
   return (
     <div className="container" style={{ padding: 'clamp(1rem, 3vw, 2rem) 1rem' }}>
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 700, letterSpacing: '-0.01em', marginBottom: '1.5rem' }}>Shopping Cart</h1>
+      {message && (
+        <div style={{ padding: '0.75rem 1rem', borderRadius: '0.5rem', marginBottom: '1rem', background: 'var(--bg-secondary)', color: message.type === 'error' ? 'var(--error)' : 'var(--success)' }}>
+          {message.text}
+        </div>
+      )}
       {items.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
           <ShoppingBag size={64} style={{ margin: '0 auto 1rem', color: 'var(--text-secondary)', opacity: 0.5 }} />
@@ -52,18 +63,18 @@ export default function CartPage() {
             {items.map((item: any) => (
               <div key={item.id} className="card cart-item">
                 <div className="cart-item-img">
-                  <img src={item.product.images?.[0] || `https://picsum.photos/seed/${item.product.id}/200/200`} alt={item.product.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <Image src={item.product.images?.[0] || `https://picsum.photos/seed/${item.product.id}/200/200`} alt={item.product.name} fill sizes="80px" style={{ objectFit: 'cover' }} loading="lazy" />
                 </div>
                 <div className="cart-item-body">
                   <Link href={`/store/${storeSlug}/product/${item.product.slug}`} className="cart-item-name">{item.product.name}</Link>
                   <p className="cart-item-price">UGX {(item.product.price * item.quantity).toLocaleString()}</p>
                   <div className="cart-item-actions">
                     <div className="qty-controls">
-                      <button className="btn btn-ghost btn-sm" onClick={() => updateQuantity(item.id, item.quantity - 1)}><Minus size={14} /></button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => updateQuantity(item.id, item.quantity - 1)} aria-label="Decrease quantity"><Minus size={14} /></button>
                       <span className="qty-value">{item.quantity}</span>
-                      <button className="btn btn-ghost btn-sm" onClick={() => updateQuantity(item.id, item.quantity + 1)}><Plus size={14} /></button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => updateQuantity(item.id, item.quantity + 1)} aria-label="Increase quantity"><Plus size={14} /></button>
                     </div>
-                    <button className="btn btn-ghost btn-sm" style={{ color: 'var(--error)' }} onClick={() => removeItem(item.id)}><Trash2 size={16} /></button>
+                    <button className="btn btn-ghost btn-sm" style={{ color: 'var(--error)' }} onClick={() => removeItem(item.id)} aria-label="Remove item"><Trash2 size={16} /></button>
                   </div>
                 </div>
               </div>
@@ -82,11 +93,7 @@ export default function CartPage() {
                 <Info size={14} style={{ marginTop: '0.125rem', flexShrink: 0 }} />
                 <span>Pay on delivery. Delivery fees to be discussed with the seller.</span>
               </div>
-              {user ? (
-                <Link href="/checkout" className="btn btn-primary cart-cta">Proceed to Checkout</Link>
-              ) : (
-                <Link href="/login" className="btn btn-primary cart-cta">Sign In to Checkout</Link>
-              )}
+              <Link href="/checkout" className="btn btn-primary cart-cta">Proceed to Checkout</Link>
               <Link href={`/store/${storeSlug}/shop`} className="btn btn-ghost cart-cta" style={{ marginTop: '0.5rem' }}><ArrowLeft size={16} /> Continue Shopping</Link>
             </div>
           </div>
@@ -96,7 +103,7 @@ export default function CartPage() {
         .cart-layout { display: grid; gap: 1.5rem; }
         .cart-items { display: flex; flex-direction: column; gap: 1rem; }
         .cart-item { display: flex; gap: 0.75rem; padding: 1rem; }
-        .cart-item-img { width: 80px; height: 80px; min-width: 80px; border-radius: 0.5rem; overflow: hidden; background: var(--bg-secondary); }
+        .cart-item-img { width: 80px; height: 80px; min-width: 80px; border-radius: 0.5rem; overflow: hidden; background: var(--bg-secondary); position: relative; }
         .cart-item-body { flex: 1; min-width: 0; }
         .cart-item-name { font-weight: 600; font-size: 0.9375rem; color: inherit; text-decoration: none; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .cart-item-price { font-size: 1rem; font-weight: 700; color: var(--primary); margin-top: 0.25rem; }

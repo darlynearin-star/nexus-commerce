@@ -72,8 +72,12 @@ export default function LoginPage() {
           </div>
         )}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div><label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Email</label><input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} required /></div>
-          <div><label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Password</label><input className="input" type="password" value={password} onChange={e => setPassword(e.target.value)} required /></div>
+          <div><label htmlFor="loginEmail" style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: '0.375rem' }}>Email</label><input id="loginEmail" className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} required /></div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
+            <label htmlFor="loginPassword" style={{ fontSize: '0.875rem', fontWeight: 500 }}>Password</label>
+            <Link href="/forgot-password" style={{ fontSize: '0.8125rem', color: 'var(--primary)', fontWeight: 500 }}>Forgot password?</Link>
+          </div>
+          <input id="loginPassword" className="input" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
           <button className="btn btn-primary" style={{ justifyContent: 'center', padding: '0.75rem' }} disabled={loading}>{loading ? 'Signing in...' : 'Sign In'}</button>
         </form>
 
@@ -88,9 +92,9 @@ export default function LoginPage() {
         </button>
 
         <form onSubmit={handleMagicLink} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <label style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block' }}>Or sign in with a magic link</label>
+          <label htmlFor="magicEmail" style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block' }}>Or sign in with a magic link</label>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <input className="input" type="email" placeholder="you@email.com" value={magicEmail} onChange={e => setMagicEmail(e.target.value)} required style={{ flex: 1 }} />
+            <input id="magicEmail" className="input" type="email" placeholder="you@email.com" value={magicEmail} onChange={e => setMagicEmail(e.target.value)} required style={{ flex: 1 }} />
             <button className="btn btn-ghost" style={{ whiteSpace: 'nowrap' }} disabled={magicLoading}>
               {magicLoading ? <Loader2 size={16} className="spin" /> : <Mail size={16} />} Send Link
             </button>

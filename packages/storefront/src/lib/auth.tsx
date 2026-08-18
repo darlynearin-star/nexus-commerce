@@ -77,6 +77,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     setUser(null);
+    // Clear the httpOnly refresh cookie + deactivate the server session.
+    api.post('/auth/logout').catch(() => {});
     router.push('/');
   };
 

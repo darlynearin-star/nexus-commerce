@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Image from 'next/image';
 import { Heart } from 'lucide-react';
 import Link from 'next/link';
 import { storeApi } from '@/lib/store-api';
@@ -29,8 +30,7 @@ interface ProductCardProps {
   view?: ProductView;
 }
 
-function AddToCartButton({ product, cartSlug }: { product: ProductCardProps['product']; cartSlug: string }) {
-  const { user } = useAuth();
+function AddToCartButton({ product }: { product: ProductCardProps['product'] }) {
   const [added, setAdded] = useState(false);
   const add = async (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
@@ -41,13 +41,6 @@ function AddToCartButton({ product, cartSlug }: { product: ProductCardProps['pro
       setTimeout(() => setAdded(false), 2000);
     } catch (err: any) { console.error('Cart error:', err); }
   };
-  if (!user) {
-    return (
-      <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = '/login'; }}>
-        Sign In to Purchase
-      </button>
-    );
-  }
   return (
     <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={add}>
       {added ? 'Added!' : 'Add to Cart'}
@@ -93,8 +86,8 @@ export default function ProductCard({ product, showAddToCart = true, storeSlug: 
     return (
       <Link href={href} className="card" style={{ display: 'flex', gap: '1rem', textDecoration: 'none', color: 'inherit', position: 'relative', padding: '0.75rem', alignItems: 'stretch', borderRadius: 10 }}>
         <HeartButton product={product} top="0.5rem" right="0.5rem" />
-        <div style={{ width: 'clamp(90px, 18vw, 160px)', minHeight: 'clamp(90px, 18vw, 160px)', aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
-          <img src={firstImage(product)} alt={product.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = img((product as any).id); }} />
+        <div style={{ width: 'clamp(90px, 18vw, 160px)', minHeight: 'clamp(90px, 18vw, 160px)', aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: 8, overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
+          <Image src={firstImage(product)} alt={product.name} fill sizes="(max-width: 768px) 50vw, 300px" style={{ objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = img((product as any).id); }} />
         </div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem', paddingRight: '1.75rem' }}>
           <span style={{ fontSize: '0.72rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>{product.brand}</span>
@@ -105,7 +98,7 @@ export default function ProductCard({ product, showAddToCart = true, storeSlug: 
           {product.description && <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.125rem' }}>{truncate(product.description, 120)}</p>}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: 'auto', paddingTop: '0.5rem' }}>
             <span style={{ fontSize: '1.0625rem', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>UGX {product.price.toLocaleString()}</span>
-            {showAddToCart && <div style={{ marginLeft: 'auto', width: 'min(180px, 40%)' }}><AddToCartButton product={product} cartSlug={storeSlug} /></div>}
+            {showAddToCart && <div style={{ marginLeft: 'auto', width: 'min(180px, 40%)' }}><AddToCartButton product={product} /></div>}
           </div>
         </div>
       </Link>
@@ -117,8 +110,8 @@ export default function ProductCard({ product, showAddToCart = true, storeSlug: 
     return (
       <Link href={href} className="card" style={{ ...base, display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.5rem', borderRadius: 10 }}>
         <HeartButton product={product} top="0.375rem" right="0.375rem" />
-        <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: 8, overflow: 'hidden' }}>
-          <img src={firstImage(product)} alt={product.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = img((product as any).id); }} />
+        <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+          <Image src={firstImage(product)} alt={product.name} fill sizes="(max-width: 768px) 50vw, 300px" style={{ objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = img((product as any).id); }} />
         </div>
         <div style={{ padding: '0 0.25rem' }}>
           <h3 style={{ fontSize: '0.75rem', fontWeight: 600, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font-sans)' }}>{product.name}</h3>
@@ -133,8 +126,8 @@ export default function ProductCard({ product, showAddToCart = true, storeSlug: 
     return (
       <Link href={href} className="card" style={{ ...base, display: 'flex', flexDirection: 'column', gap: '0.5rem', borderRadius: 10 }}>
         <HeartButton product={product} top="0.5rem" right="0.5rem" />
-        <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: 8, overflow: 'hidden' }}>
-          <img src={firstImage(product)} alt={product.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = img((product as any).id); }} />
+        <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+          <Image src={firstImage(product)} alt={product.name} fill sizes="(max-width: 768px) 50vw, 300px" style={{ objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = img((product as any).id); }} />
         </div>
         <div>
           <p style={{ fontSize: '0.68rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.125rem' }}>{product.brand}</p>
@@ -143,7 +136,7 @@ export default function ProductCard({ product, showAddToCart = true, storeSlug: 
             <span style={{ fontSize: '0.8125rem', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>UGX {product.price.toLocaleString()}</span>
           </div>
         </div>
-        {showAddToCart && <AddToCartButton product={product} cartSlug={storeSlug} />}
+        {showAddToCart && <AddToCartButton product={product} />}
       </Link>
     );
   }
@@ -152,8 +145,8 @@ export default function ProductCard({ product, showAddToCart = true, storeSlug: 
   return (
     <Link href={href} className="card" style={{ ...base, display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '0.625rem', borderRadius: 12 }}>
       <HeartButton product={product} top="0.5rem" right="0.5rem" />
-      <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: 8, overflow: 'hidden' }}>
-        <img src={firstImage(product)} alt={product.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = img((product as any).id); }} />
+      <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+        <Image src={firstImage(product)} alt={product.name} fill sizes="(max-width: 768px) 50vw, 300px" style={{ objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = img((product as any).id); }} />
       </div>
       <div style={{ padding: '0 0.25rem 0.125rem' }}>
         <p style={{ fontSize: '0.68rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.125rem' }}>{product.brand}</p>
@@ -167,7 +160,7 @@ export default function ProductCard({ product, showAddToCart = true, storeSlug: 
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0 0.25rem' }}>
         <span style={{ fontSize: '1rem', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>UGX {product.price.toLocaleString()}</span>
       </div>
-      {showAddToCart && <div style={{ padding: '0 0.25rem 0.25rem' }}><AddToCartButton product={product} cartSlug={storeSlug} /></div>}
+      {showAddToCart && <div style={{ padding: '0 0.25rem 0.25rem' }}><AddToCartButton product={product} /></div>}
     </Link>
   );
 }
