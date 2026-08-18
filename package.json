@@ -7,6 +7,7 @@
     "packages/shared",
     "packages/database",
     "packages/api",
+    "packages/web",
     "packages/storefront",
     "packages/retailer-dashboard",
     "packages/developer-dashboard"
@@ -17,17 +18,31 @@
     "dev:storefront": "npm run dev -w packages/storefront",
     "dev:retailer": "npm run dev -w packages/retailer-dashboard",
     "dev:developer": "npm run dev -w packages/developer-dashboard",
-    "build": "npm run build -w packages/shared && npm run build -w packages/database && npm run build -w packages/api && npm run build -w packages/storefront && npm run build -w packages/retailer-dashboard && npm run build -w packages/developer-dashboard",
+    "build": "npm run build -w packages/shared && npm run build -w packages/web && npm run build -w packages/database && npm run build -w packages/api && npm run build -w packages/storefront && npm run build -w packages/retailer-dashboard && npm run build -w packages/developer-dashboard",
     "db:generate": "npm run db:generate -w packages/database",
     "db:push": "npm run db:push -w packages/database",
     "db:migrate": "npm run db:migrate -w packages/database",
     "db:seed": "npm run db:seed -w packages/database",
-    "setup": "npm install && npm run build -w packages/shared && npm run db:generate && npm run db:push && npm run db:seed"
+    "setup": "npm install && npm run build -w packages/shared && npm run db:generate && npm run db:push && npm run db:seed",
+    "lint": "eslint . --max-warnings=9999",
+    "format": "prettier --write \"packages/*/src/**/*.{ts,tsx,css}\"",
+    "test": "npm run test -w packages/api",
+    "test:e2e": "playwright test",
+    "typecheck": "npx tsc --noEmit -p packages/shared/tsconfig.json && npx tsc --noEmit -p packages/web/tsconfig.json && npx tsc --noEmit -p packages/api/tsconfig.json && npx tsc --noEmit -p packages/storefront/tsconfig.json && npx tsc --noEmit -p packages/retailer-dashboard/tsconfig.json && npx tsc --noEmit -p packages/developer-dashboard/tsconfig.json"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.62.1",
+    "@types/supertest": "^7.2.1",
+    "@vitest/coverage-v8": "^4.1.10",
     "concurrently": "^8.2.2",
+    "eslint": "^10.8.1",
+    "eslint-config-prettier": "^10.1.8",
     "playwright": "^1.62.1",
-    "typescript": "^5.4.0"
+    "supertest": "^7.2.2",
+    "typescript": "^5.4.0",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^4.1.10"
   },
   "dependencies": {
     "tsx": "^4.23.5"

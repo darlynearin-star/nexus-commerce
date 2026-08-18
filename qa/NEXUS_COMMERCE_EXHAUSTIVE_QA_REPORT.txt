@@ -1,0 +1,385 @@
+================================================================================
+NEXUS COMMERCE — EXHAUSTIVE LIVE QA / SECURITY / WORKFLOW ENGAGEMENT REPORT
+================================================================================
+Audit basis : NEXUS_COMMERCE_COMPLETE_UI_WORKFLOW_MANUAL.txt (981 lines, 30 sects)
+Environment : node v22.23.1, npm 10.9.8, curl 8.0.1, PowerShell 5.1 (win32)
+Audit date  : 2026-08-13/14 (UTC), run 1 (post-fix)
+Findings log: NEXUS_COMMERCE_QA_FINDINGS_LOG.txt (test IDs T-001..T-114)
+Scope       : All 4 live deployments; authorized test only; disposable/test
+              identities; no DoS, brute-force, or third-party attacks.
+Marks       : [OK] verified live | [WARNING] minor/consistency | [BROKEN] defect
+              | [BLOCKED] external dependency | [FIXED] verified fixed
+
+================================================================================
+0. GLOBAL INFRASTRUCTURE & CROSS-CUTTING BEHAVIOR
+================================================================================
+0.1 Deployments (all live, HTTP 200):
+    - API .......... https://nexus-api-69q5.onrender.com        (Render manual)
+    - Storefront ... https://nexus-storefront-dusky.vercel.app  (Vercel auto)
+    - Retailer ..... https://nexus-commerce-retailer-dashboard.vercel.app
+    - Developer .... https://nexus-commerce-developer-dashboard.vercel.app
+    [OK]
+
+0.2 Health / root behavior:
+    - GET /api/health -> 200 {"status":"ok"} [OK]
+    - GET /api/       -> 404 (expected; no root route) [OK]
+    - Server headers  -> Server: cloudflare, cf-cache-status: DYNAMIC [OK]
+
+0.3 Security headers:
+    - HSTS preload + CSP present on all three front-ends via helmet [OK]
+    - API relies on helmet defaults; CORS caveat below. [OK]
+
+0.4 CORS (FIXED — verified live 2026-08-14):
+    - Operator pinned CORS_ORIGIN env to the three Vercel origins + redeployed.
+    - Verified live: storefront, retailer-dashboard, developer-dashboard
+      origins each get Access-Control-Allow-Origin echoed; evil.example.com and
+      http://localhost:3001 receive NO allow-origin header (blocked). [FIXED]
+    - Code fallback remains: empty CORS_ORIGIN defaults to the documented
+      allowlist (index.ts ~L118); '*'-only deployments reflect any origin.
+
+0.5 Store resolution middleware:
+    - /api/products without x-store-slug -> 400 "x-store-slug header is required"
+    - /api/products with unknown slug    -> 404 "Store not found"
+    - Disabled store -> 503 "Store is currently disabled" [OK]
+
+================================================================================
+1. STOREFRONT — ROUTE / NAVIGATION INVENTORY
+================================================================================
+1.1 All storefront routes return 200 (client pages / redirects source-verified):
+    /, /categories, /shop (client redirect to active store), /deals (redirect),
+    /guides, /login, /register, /cart, /checkout, /wishlist, /account,
+    /create-store, /product/[slug], /store/[slug], /store/[slug]/shop,
+    /store/[slug]/product/[slug]. [OK]
+
+1.2 Store product page (the live catalog detail used by stores):
+    - Images fall back to picsum.photos seed when product has none (matches
+      manual §3). [OK]
+    - Wishlist Heart button: WAS a dead button with no handler [BROKEN ->
+      FIXED in 0113fb7]. Now saves to /wishlist/add (guest -> /login), fills on
+      save. Verified API add+remove live (200). [FIXED]
+    - StarRating hardcoded rating={4.5} regardless of real average; count uses
+      product.reviews?.length. [WARNING] Rating not computed from reviews.
+
+1.3 Legacy /product/[slug] page (main storefront): identical dead-Heart fixed;
+    hardcoded 4.2 (23 reviews) cosmetic placeholder. [WARNING]
+
+================================================================================
+2. AUTHENTICATION WORKFLOWS (STOREFRONT)
+================================================================================
+2.1 Password login:
+    - RETAILER retailer@nexuscommerce.com / Password123! -> 200, access token
+      (user id 374405d7..., role RETAILER). [OK]
+    - CUSTOMER customer@nexuscommerce.com / Password123! -> 200, access token
+      (user id c60c0447..., role CUSTOMER, Jane Shopper). [OK]
+    - admin@nexuscommerce.com / Password123! -> 401 (production password differs
+      from seed default). Dev-role positive flows BLOCKED (external dependency
+      on operator-provided dev credentials). [BLOCKED]
+
+2.2 Registration:
+    - New RETAILER register -> 201 "Account created. Check your inbox to verify
+      your email before signing in." (requiresEmailVerification=true). Positive
+      post-verify flows are BLOCKED (no mailbox access). [BLOCKED]
+    - Disposable-email guard: mailinator/* -> 400 "Disposable email addresses
+      are not allowed". [OK]
+
+2.3 Email magic-link / verify-email / Google OAuth enrollment: require live
+    mailbox/Google interaction by an operator. [BLOCKED — EXTERNAL DEPENDENCY]
+
+2.4 Session model: Bearer access+refresh tokens (JWT), no auth cookies, so the
+    CORS reflect issue (0.4) does not leak credentials. [OK]
+
+================================================================================
+3. CATALOG BROWSING & SEARCH / FILTER INTERACTIONS  (adorn store, live)
+================================================================================
+3.1 Categories:
+    - GET /api/categories -> 200, 254 top-level Jiji categories.
+    - GET /api/categories?sortBy=productCount -> 200 (254).
+    - GET /api/categories/:slug/attributes -> 200 (select control, options).
+    [OK]
+
+3.2 Products:
+    - GET /api/products?limit=12 -> 200, total 14, pagination meta correct.
+    - ?search=backpack -> 1 result.
+    - ?sort=price&order=asc -> ascending (160000..1200000).
+    - ?minPrice=100000&maxPrice=500000 -> 5 results.
+    - ?category=womens-bags -> 3 results (backpack included). Subcategory
+      drill-down works; top-level parent= returns 0 because products live in
+      leaf categories (expected tree behavior). [OK]
+    - /products/featured/list -> 8; /products/new/list -> 8. [OK]
+    - Product detail by slug -> 200 (name, price UGX, specs, features,
+      reviews/variants empty arrays). [OK]
+
+3.3 Search API:
+    - GET /api/search?q=backpack -> 1; ?q=loafer -> 1; suggestions q=si -> 4.
+    - GET /api/search/suggestions?q=bac -> top suggestion. [OK]
+    - Kill switch "search" 503s these (verified in code; see §10).
+
+================================================================================
+4. CART WORKFLOW
+================================================================================
+4.1 Server (routes/cart.ts):
+    - POST /cart/dedup public de-dupe. [OK]
+    - GET /cart optionalAuth; returns items + subtotal/total (POD: tax/shipping
+      0). Correct empty payload without identity. [OK]
+    - POST /cart/add authenticate+store; merge same (product,variant) quantity. [OK]
+    - PUT/DELETE /cart/item/:id: owner-scoping WAS absent (cross-cart mutation).
+      [BROKEN -> FIXED in 85d9327] Live retest: RETAILER token PUT customer's
+      item -> 403 "modify this cart item"; customer's own PUT/DELETE -> 200.
+    - POST /cart/coupon validates active/unexpired/maxUses. [WARNING]
+      maxUses not incremented here and minPurchase not enforced (documented).
+
+4.2 UI /cart page:
+    - Loads GET /cart, qty +/- (PUT), trash (DELETE), POD note. Source-verified. [OK]
+    - Guest funnel: "Sign In to Checkout" -> /login; Continue Shopping -> active
+      store shop (fallback 'adorn'). [OK]
+    - Guests cannot build a cart (add is auth-only) — consistent, documented. [OK]
+
+================================================================================
+5. CHECKOUT & ORDER CREATION
+================================================================================
+5.1 Live end-to-end (CUSTOMER on adorn):
+    - Cart: added product 26fedf89 (qty 2) -> subtotal 1,400,000 UGX. [OK]
+    - POST /orders -> 201 order NEXUS-MSS1SOS1, pay_on_delivery,
+      status PENDING/PENDING, orderNumber base36, cart emptied. [OK]
+    - GET /orders list -> 200 own order only. [OK]
+    - GET /orders/:id -> 200 own order. [OK]
+
+5.2 Order status authz:
+    - CUSTOMER PUT /orders/:id/status -> 403. [OK]
+    - Outsider RETAILER PUT status -> 403. [OK]
+    - Owner RETAILER status update path verified via requireStoreOwner (code
+      review + 403 negatives). [OK]
+
+================================================================================
+6. PAYMENTS (ONLINE) — PESAPAL / FLUTTERWAVE
+================================================================================
+6.1 In-app charges are POD-only by default; provider callbacks (pesapal
+    callback/ipn, flutterwave webhook) exist and are route-registered. [OK]
+6.2 Live provider charge/verify not executed (requires real external payment
+    interaction + provider creds). [BLOCKED — EXTERNAL DEPENDENCY]
+6.3 Kill switch "payments" WAS stored but never enforced [BROKEN -> FIXED in
+    0113fb7]: now 503s /payments/charge|verify and /subscriptions/
+    {subscribe,verify,cancel}. Verified in deployed middleware. [FIXED]
+
+================================================================================
+7. /account HUB
+================================================================================
+7.1 GET /customers/me (auth) -> 200 own profile + wishlists; passwordHash
+    stripped post-fix (safeUser select). [OK]
+7.2 Account order/cart views use authenticated customer-scoped endpoints
+    verified in §4/§5. [OK]
+
+================================================================================
+8. STORE CREATION FLOW (retailer onboarding)
+================================================================================
+8.1 Pre-checks:
+    - /stores/check-slug/{free-slug} -> available:true; /adorn -> false. [OK]
+    - Existing owner POST /stores -> 409 "You already have a store.
+      One email = one store." [OK]
+8.2 Side effects:
+    - luxe-vault (created via onboarding) auto-seeded 252 Jiji categories on
+      first GET /categories — confirms self-seed on first public GET. [OK]
+8.3 Limits: MAX_STORES=50 -> 503 with CONTACT_MESSAGE (code-reviewed, cannot
+    create 50 stores live). [OK by code inspection]
+8.4 Positive create with a NEW retailer blocked by email-verification gate
+    before sign-in. [BLOCKED — EXTERNAL DEPENDENCY]
+8.5 Slug conflict 409 "Store slug already taken" code-verified. [OK]
+
+================================================================================
+9. RETAILER DASHBOARD — ROUTES & NAVIGATION
+================================================================================
+9.1 Sidebar nav (layout.tsx): Dashboard, Product View, Orders, Customers,
+    Marketing, Product Creation, Reports, Subscription, Settings,
+    Guides & Tutorials. All 200. [OK]
+9.2 /media route: page.tsx exists rendering a Product-analytics component
+    (/analytics/product-stats + inline edit/delete) but is NOT linked in the
+    sidebar — orphaned/unreachable. Manual Warning #12 clarified: no media
+    library UI exists; the file is a legacy product-management page. [WARNING]
+
+================================================================================
+10. RETAILER — DASHBOARD METRICS
+================================================================================
+10.1 /analytics/summary (owner luxe-vault) -> 200 zero stats; outsider -> 403
+     owner-only. [OK]
+10.2 /analytics/product-stats (owner) -> 200 []. [OK]
+
+================================================================================
+11. RETAILER — PRODUCT MANAGEMENT
+================================================================================
+11.1 Owner products list (luxe-vault) -> 200 []. [OK]
+11.2 Cross-store product mutation (RETAILER w/ adorn slug) -> 403 (fix 9e6e4fa). [OK]
+11.3 Product create/update/delete are requireStoreOwner-guarded; negatives
+     verified in §5/§11.2. [OK]
+
+================================================================================
+12. RETAILER — ORDERS / CUSTOMERS / MEDIA / MARKETING
+================================================================================
+12.1 Orders list + detail owner-scoped post-fix (see §5.2 and regression). [FIXED]
+12.2 Customers list/detail owner-scoped + passwordHash stripped post-fix. [FIXED]
+12.3 /media orphaned (see §9.2). [WARNING]
+12.4 /marketing -> GET /coupons (owner, luxe-vault) -> 200 [] ; read-only (no
+     create/edit UI). [WARNING] "Marketing" is read-only coupons.
+
+================================================================================
+13. RETAILER — REPORTS / SETTINGS / GUIDES
+================================================================================
+13.1 /reports page present (uses analytics endpoints). [OK]
+13.2 Store settings: GET/PUT /store-settings (owner) -> 200 round-trip
+     currency/location + phone/whatsapp raw columns. Global /api/settings is
+     now developer-only (see §19). [OK]
+13.3 /guides static pages -> 200. [OK]
+
+================================================================================
+14. SUBSCRIPTIONS — RETAILER + API
+================================================================================
+14.1 GET /subscriptions (owner) -> 200: status TRIAL, trialEnd 2026-08-27,
+     weeklyAmount 3000 UGX, payments []. Auto-created on first order; matches
+     manual §14 "14-day trial, then 3,000 UGX/week". [OK]
+14.2 SUBSCRIBE/VERIFY/CANCEL are requireRole(RETAILER) and hit Pesapal
+     (external) — charge flows not executed live. [BLOCKED — EXTERNAL DEPENDENCY]
+14.3 /subscriptions/all -> SUPER_DEVELOPER only; live dev token -> 200
+     (9 records). Retailer -> 403. [OK]
+
+================================================================================
+15. DEVELOPER DASHBOARD — ROUTES & NAVIGATION
+================================================================================
+15.1 Dev app reachable (200). Positive functional pass now COMPLETE using the
+     operator-provided SUPER_DEVELOPER access token (darlynearin@gmail.com):
+     system health, users (26), stores (13), database/Neon, kill-switch, cache,
+     backups (3), api-config, settings, activity-logs, subscriptions/all — all
+     200 verified (§16-19). [OK]
+
+================================================================================
+16. DEV — SYSTEM HEALTH / USERS / STORES
+================================================================================
+16.1 Negative authz (all live): CUSTOMER -> /admin/users 403; RETAILER ->
+     /admin/users 403; RETAILER -> /system/database, /system/kill-switch,
+     /system/cache, /system/backups, /system/stores all 403. [OK]
+16.2 Positive (SUPER_DEVELOPER token, all 200):
+     /system/health (DB connected, latency 113ms, source primary);
+     /admin/users (26); /stores (13). [OK]
+
+================================================================================
+17. DEV — DATABASE / SECURITY / LOGS
+================================================================================
+17.1 /system/database -> 200 (primary, manualSwitch, Neon host
+     ep-wispy-snow-ax8b166q.c-4.us-east-2.aws.neon.tech). [OK]
+17.2 /activity-logs -> 200 (50 latest events). [OK]
+17.3 Database switch (primary<->fallback) not executed — would disable a live
+     production connection; verified by code review + read endpoints. [OK]
+
+================================================================================
+18. DEV — CACHE / BACKUPS / KILL SWITCH
+================================================================================
+18.1 Kill-switch route gate: /api/kill-switch -> 403 to retailer, 200 to dev
+     (all switches false, created by "system"). [OK]
+18.2 /api/cache -> 200: 1 entry total, 1 expired (public:announcements past its
+     30s TTL; no read-refresh). [WARNING] Expired cache entry not purged/refreshed.
+18.3 /api/backups -> 200: 3 snapshots (createdBy admin, 29 tables,
+     2860-3416 rows, 933K-1.1MB). [OK]
+18.4 Payments kill-switch enforcement FIXED and live (§6.3). [FIXED]
+
+================================================================================
+19. DEV — FEATURE FLAGS / API CONFIG / ANNOUNCEMENTS / SETTINGS  *** CRITICAL ***
+================================================================================
+19.1 CRITICAL (pre-fix): RETAILER token could GET /api/api-config (live
+     GMAIL/BREVO/GOOGLE secrets) and /api/settings (whole global Settings table
+     incl. database_backups + MTN_MOMO keys) because ROLE_PERMISSIONS[RETAILER]
+     included MANAGE_SETTINGS which gated these global routes. [BROKEN -> FIXED]
+     Fix 85d9327: both routes now requireRole(SUPER_DEVELOPER, DEVELOPER);
+     MANAGE_SETTINGS removed from RETAILER.
+     Live regression: api-config -> 403, settings -> 403 (RETAILER). [FIXED]
+19.2 Announcements public GET -> 200 []. [OK]
+19.3 Retailer's own settings live at /store-settings (requireStoreOwner),
+     unaffected by the fix (verified 200). [OK]
+19.4 Feature flags: /system/feature-flags -> 200 [] — prod table EMPTY.
+     requireFeatureEnabled only blocks EXISTING+disabled flags, so missing
+     flags default ON (wishlist/store/reviews work). [WARNING] Dev dashboard
+     flag list empty; editing a missing key would error (P2025-ish).
+
+================================================================================
+20. STORE SETTINGS API DETAILS (RETAILER)
+================================================================================
+20.1 GET/PUT /store-settings (owner) 200; outsider 403. Verified live. [OK]
+20.2 Allowed keys: currency, location (+ phone/whatsapp via raw SQL). [OK]
+
+================================================================================
+21. CUSTOMERS API (SHOPPING-SIDE)
+================================================================================
+21.1 GET /customers (owner) -> 200 list; list + /:id are owner-scoped and
+     passwordHash-stripped post-fix. [FIXED]
+21.2 GET /customers/me -> 200 own profile incl. wishlists. [OK]
+21.3 Pre-fix /customers/:id IDOR (any customer incl. hash) [BROKEN -> FIXED in
+     85d9327]. Live: outsider -> 403; owner list -> 200 (no hash). [FIXED]
+
+================================================================================
+22. NOTIFICATIONS / ANNOUNCEMENTS / SEARCH / REVIEWS / WISHLIST (API)
+================================================================================
+22.1 Notifications: GET (customer & retailer) -> 200
+     {notifications:[], unreadCount:0}; NEW_ORDER_ALERT created to owner on
+     order placement (code + order 201 flow). [OK]
+22.2 Announcements public -> 200. [OK]
+22.3 Search + suggestions -> 200 (§3.3). [OK]
+22.4 Reviews: GET /reviews/product/:id -> 200 {reviews:[], averageRating:0}. [OK]
+22.5 Wishlist: GET /wishlist 200; POST /wishlist/add 200; DELETE /item/:id 200;
+     NEW POST /wishlist/remove (by productId, owner-scoped) 200 — added in
+     0113fb7 so card heart toggles can un-save. [FIXED/OK]
+22.6 Storefront hearts wired to add/remove (guest -> /login). [FIXED]
+
+================================================================================
+23. GUIDES / ERROR / LOADING / THEME + END-TO-END SUMMARY
+================================================================================
+23.1 Guides page 200; error/loading states present via error-boundary +
+     skeletons (source-verified). [OK]
+23.2 Theme: store theme (template + colors JSON) served via /stores/public/:slug
+     and /stores/mine; store-settings round-trip confirmed. [OK]
+
+--- END-TO-END JOURNEY SUMMARY (live) ---
+J1 Browse->Cart->Order: CUSTOMER browsed adorn catalog, added product, cart
+    showed 1,400,000 UGX, placed POD order NEXUS-MSS1SOS1, order created 201,
+    cart emptied, subscription TRIAL auto-created for owner. [OK]
+J2 Storefront wishlist toggle (add + remove) verified live. [OK]
+J3 Retailer owner scoping on orders/customers/cart/analytics verified. [FIXED]
+J4 Secret/permission escalation (api-config/settings) closed. [FIXED]
+
+================================================================================
+SECURITY SUMMARY (priority-ordered)
+================================================================================
+P0 (fixed, verified live):
+  - Retailer secret exfiltration via /api/api-config + /api/settings (fix 85d9327)
+  - passwordHash exposure via /customers and /orders includes (fix 85d9327)
+  - Order-list / order-detail read IDOR by non-owner retailer (fix 85d9327)
+  - Cart-item mutation IDOR (fix 85d9327)
+P1 (fixed, verified live):
+  - Kill-switch "payments" never enforced (fix 0113fb7)
+P2 (fixed, verified live):
+  - Dead wishlist heart buttons; missing /wishlist/remove (fix 0113fb7)
+  - CORS reflected any Origin in deployment (fixed by operator pinning
+    CORS_ORIGIN to the three Vercel origins; verified live 2026-08-14)
+Outstanding non-blocking:
+  - Coupon maxUses/minPurchase not fully enforced (documented)
+  - Hardcoded storefront star ratings (cosmetic)
+  - Orphaned retailer /media route (legacy product analytics, no nav link)
+  - Prod feature_flags table empty (toggles absent; missing flags default ON)
+  - External payments/email/Google flows require live interaction
+RECOMMENDATION: rotate GMAIL/BREVO/GOOGLE/MTN_MOMO secrets exposed pre-fix.
+
+================================================================================
+REGRESSION VERIFICATION RECORD
+================================================================================
+All security fixes retested live against the redeployed Render API:
+  RETAILER: api-config 403, settings 403, customers 403, orders 403 (list+id),
+            cart item 403.
+  CUSTOMER: own orders 200 (no hash), own cart PUT/DELETE 200, wishlist
+            add/remove 200.
+  OWNER:    luxe-vault orders/customers/analytics/store-settings all 200.
+  DEV:      SUPER_DEVELOPER token enables all dev endpoints (T-100..T-113);
+            retailer negatives still 403 — no permission inflation.
+Dev-dashboard positive pass now COMPLETE with operator-provided token:
+  health, users(26), stores(13), database/Neon, kill-switch, cache, backups(3),
+  api-config, settings, activity-logs, subscriptions/all,
+  feature-flags — all 200.
+No regressions observed on positive paths. Test data cleaned up.
+================================================================================
+END OF REPORT — run 1 (2026-08-14 UTC)
+================================================================================

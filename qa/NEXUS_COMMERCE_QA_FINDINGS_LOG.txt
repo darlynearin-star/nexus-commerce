@@ -1,0 +1,196 @@
+================================================================================
+NEXUS COMMERCE EXHAUSTIVE QA — LIVE FINDINGS LOG (running)
+================================================================================
+Method: live HTTP probing vs NEXUS_COMMERCE_COMPLETE_UI_WORKFLOW_MANUAL.txt
+Environment: node 22.23.1, curl 8.0.1, PowerShell; dates 2026-08-13/14 UTC.
+
+--- PHASE 1 — DEPTH / HEADERS / CORS / HEALTH ---
+[T-001] API /api/health ......... 200 {"status":"ok"} [OK]
+[T-002] Storefront / ............. 200 HSTS preload, CSP via helmet [OK]
+[T-003] Retailer / ................ 200 HSTS [OK]
+[T-004] Dev / ..................... 200 HSTS [OK]
+[T-005] /api/system/health ........ 401 Authentication required (correct auth-z)
+[T-006] /api/system/database ...... 401 (correct auth-z)
+[T-007] /api/announcements ........ 200 [] (public, works)
+[T-008] /api/stores/public/adorn .. 200 store payload (id 72679ccc..., active)
+[T-009] CORS reflect: Origin: https://evil.example.com -> ACAO echoes the origin,
+        no ACA-Credentials header. Root cause: index.ts:121 branch fires when
+        CORS_ORIGIN='*' (reflect any non-null origin, credentials off).
+        [WARNING] CORS allowlist not enforced on deployment (doc says allowlist).
+[T-010] Uploads static: /uploads/nonexistent.jpg -> 404 (serve wired)
+[T-011] products without x-store-slug -> 400 "x-store-slug header is required"
+[T-012] products x-store-slug=nonexistent -> 404 "Store not found"
+[T-013] /api/search?q=loafer (adorn) -> 200 1 hit
+[T-014] /api/search/suggestions?q=si -> 200 4 suggestions
+[T-015] /shop,/deals pages -> 200 (client-side redirect, source-verified)
+[T-016] /api/products?limit=5 (adorn) -> 200 14 total, page 3 pages [OK]
+[T-017] /api/products/featured & new/list work [OK]
+
+--- PHASE 5/7 — AUTHZ / IDOR / ISOLATION ---
+[T-020] CUSTOMER -> /stores/mine .... 404 "No store found" (correct)
+[T-021] CUSTOMER -> /admin/users .... 403 Insufficient permissions (correct)
+[T-022] RETAILER -> /admin/users .... 403 Insufficient permissions (correct)
+[T-023] RETAILER(owns luxe-vault) PUT products/26fedf89.. w/ x-store-slug=adorn
+        -> 403 "You do not have permission to manage this store" [FIXED by 9e6e4fa]
+[T-024] RETAILER GET /orders (luxe-vault) 200 [] (works)
+[T-025] RETAILER can read adorn products (public read OK/expected)
+[T-030] ** IDOR CONFIRMED ** PUT /cart/item/:id with RETAILER token mutated
+        CUSTOMER's item (qty 2->99, then restored to 2). cart.ts:77-89 has no
+        owner scoping. Status: FIX REQUIRED (P1)
+[T-031] ** CRITICAL ** GET /api/customers/<customerId> with RETAILER token
+        returned another customer's record INCLUDING passwordHash bcrypt.
+        customers.ts:40-46 lacks owner scope AND returns user with passwordHash.
+        Also GET /customers list includes user:true => passwordHash exposed
+        to any retailer with orders in that store. Status: FIX REQUIRED (P0)
+[T-032] ** CRITICAL (compounding) ** GET /orders (store-scoped ONLY, orders.ts:12)
+        and GET /orders/:id (orders.ts:31) returned adorn's orders to the
+        luxe-vault RETAILER token (non-owner). No requireStoreOwner. Include
+        customer.user => passwordHash leak again. Mutations (PUT status, analytics
+        summary) correctly 403. Status: FIX REQUIRED (P0)
+
+--- PHASE 6 — STOREFRONT CHECKOUT WORKFLOW (customer) ---
+[T-040] Customer GET /cart .......... 200, subtotal 1,400,000 [OK]
+[T-041] Customer POST /orders ........ 201 order NEXUS-MSS1SOS1, POD,
+        PENDING/PENDING, cart emptied, orderNumber base36 [OK]
+[T-042] Customer orders list .......... 200 shows own order [OK]
+[T-043] CUSTOMER PUT /orders/:id/status -> 403 owner-only [OK]
+[T-044] RETAILER(outsider) PUT status -> 403 owner-only [OK]
+[T-045] Cart cleared after order ..... 200 items:[] [OK]
+[T-046] RETAILER GET /analytics/summary (outsider) -> 403 owner-only [OK]
+[T-047] RETAILER(outsider) GET /orders (adorn) -> 200 FULL LEAK [FIX REQUIRED P0]
+
+--- PHASE 11 — DEV-LEVEL PERMISSION ESCALATION (CRITICAL) ---
+[T-050] ** CRITICAL ** RETAILER token GET /api/api-config -> 200 returned LIVE
+        secrets: GMAIL_APP_PASSWORD ([REDACTED]), BREVO_SMTP_KEY,
+        BREVO_API_KEY, GOOGLE_CLIENT_SECRET (GOCSPX-...), AUTH_REDIRECT_URL.
+        Root cause: ROLE_PERMISSIONS grants RETAILER Permission.MANAGE_SETTINGS
+        (shared/types.ts:60) and api-config.ts:23 gates GLOBAL api-config on
+        requirePermission(MANAGE_SETTINGS). => Any retailer = full secret dump.
+        Status: FIX REQUIRED (P0 - secret exfiltration)
+[T-051] ** CRITICAL ** RETAILER token GET /api/settings -> 200 returns ENTIRE
+        global Settings table including database_backups (full DB snapshot JSON)
+        - response huge, curl timed out. RETAILER can also PUT /api/settings to
+        MODIFY global config. settings.ts:9/18 gate on MANAGE_SETTINGS.
+        Status: FIX REQUIRED (P0)
+
+--- FIX IMPLEMENTATION (Phase 12) ---
+commits: 85d9327 (security batch), 0113fb7 (functional batch) - pushed
+       5ecef0b.. no - pushed as 435ecf0..0113fb7 master -> master
+FIXES CODE-COMPLETE (local build verified shared+api+storefront; tsc clean):
+  [A] settings.ts + api-config.ts: MANAGE_SETTINGS -> requireRole(SUPER_DEVELOPER, DEVELOPER)
+  [B] types.ts: removed MANAGE_SETTINGS from ROLE_PERMISSIONS[RETAILER]
+  [C] customers.ts: passwordHash stripped (safeUser select); list + /:id owner-scoped
+  [D] orders.ts GET / and /:id: owner-scoped for retailer/dev or own-customer; hash stripped
+  [E] cart.ts PUT/DELETE /item/:id: ownership enforced (customerId or x-session-id)
+  [F] kill-switch: payments now enforced on charge/verify/subscribe routes
+  [G] wishlist: added POST /remove (productId, owner-scoped); storefront hearts wired
+NOTE: Storefront (Vercel) auto-deployed on push. API (Render) is a MANUAL deploy;
+  operator must trigger redeploy before live retest of [A]-[E].
+
+--- LIVE REGRESSION VERIFICATION (Render redeployed, all PASS) ---
+RETAILER token tests against fresh build:
+  api-config            -> 403 "Insufficient permissions"     [was 200 + live secrets]
+  settings              -> 403                                [was 200 + DB backups]
+  customers (adorn,nro) -> 403 "...manage this store"          [was 200 + passwordHash]
+  orders list (adorn)   -> 403 manage-store                    [was 200 full list + hash]
+  orders /:id (adorn)   -> 403 manage-store                    [was 200 + hash]
+  cart PUT cust item    -> 403 "modify this cart item"         [was 200 qty 2->99]
+POSITIVE (no regression):
+  owner retailer luxe-vault orders/customers -> 200 empty lists
+  customer orders list own -> 200 own only
+  customer GET own order /:id -> 200, NO passwordHash present
+  customer PUT own cart item -> 200; DELETE own item -> 200
+All test data cleaned up (cart item removed; order NEXUS-MSS1SOS1 preserved).
+
+--- PHASE 2/3 — CATALOG BROWSING (adorn store, live) ---
+[T-060] GET /api/categories -> 200, 254 top-level Jiji categories; attributes
+        /categories/:slug/attributes -> 200 (select control type). [OK]
+[T-061] GET /api/categories?sortBy=productCount -> 200 (254). [OK]
+[T-062] GET /api/products (limit12) -> 200 total 14; search=backpack -> 1;
+        sort=price&order=asc -> ascending 160000..1200000; min/max price ->
+        5; category=womens-bags -> 3 (drill-down via subcategory, top-level
+        parent= returns 0 because products live in leaves). [OK]
+[T-063] featured/list -> 8, new/list -> 8, product detail by slug -> 200
+        (reviews/variants arrays empty). [OK]
+[T-064] GET /api/search?q=backpack -> 1; /search/suggestions?q=bac -> top-1
+        suggestion. [OK]
+
+--- PHASE 8 — STORE CREATION (live) ---
+[T-065] /stores/check-slug/{free} -> available:true; /adorn -> available:false. [OK]
+[T-066] Existing retailer POST /stores -> 409 "One email = one store". [OK]
+[T-067] Category self-seeding side effect: luxe-vault (created via onboarding)
+        auto-seeded 252 Jiji categories on first GET /categories. [OK]
+[T-068] New-retailer positive store-creation path: register 201 but requires
+        email verification before sign-in -> BLOCKED (EXTERNAL DEPENDENCY).
+[T-069] Disposable-email guard: register via mailinator -> 400 blocked. [OK]
+
+--- PHASE 11/12 — RETAILER /media MISLABEL + DASHBOARD ROUTES (source + live) ---
+[T-070] /media page.tsx exists (component named ProductsPage) loading
+        /analytics/product-stats + inline edit/delete — but retailer sidebar
+        nav (layout.tsx) has NO /media link (Dashboard, Product View, Orders,
+        Customers, Marketing, Product Creation, Reports, Subscription,
+        Settings, Guides). Route is ORPHANED/unreachable in UI. [WARNING]
+        Manual's Warning #12 "media nav misleading" is instead: orphaned
+        product-analytics route, no nav entry, no media library UI.
+[T-071] /analytics/summary luxe-vault (owner) -> 200 (zeros for empty store).
+        /analytics/product-stats luxe-vault (owner) -> 200 []. [OK]
+[T-072] Retailer dashboard pages deploy live (Vercel). [OK]
+
+--- PHASE 14 — PERFORMANCE SPOT-CHECKS (4 deployments) ---
+[T-080] API (Render free tier, first-hit cold starts):
+        /api/health 1729ms, /stores/public/adorn 1344ms, /products 2717ms,
+        /categories 3154ms. Render free instances sleep/idle between requests;
+        subsequent hits expected faster. Acceptable for free tier. [OK/WARNING]
+[T-081] Storefront (Vercel) / 934ms; Retailer dashboard / 1504ms;
+        Developer dashboard / 2630ms — all 200, real HTML. [OK]
+
+--- PHASE 12/13/14/21/22 — RETAILER STORE-SCOPED + SHOPPING-SIDE APIs (live) ---
+[T-082] Store-settings GET/PUT (owner luxe-vault) -> 200 (currency/location
+        round-trip OK). [OK]
+[T-083] /notifications (customer+retailer) -> 200 shape
+        {notifications:[], unreadCount:0}. [OK]
+[T-084] /reviews/product/:id (adorn) -> 200 {reviews:[],averageRating:0}. [OK]
+[T-085] /subscriptions (retailer) -> 200 status TRIAL, trialEnd 2026-08-27,
+        weeklyAmount 3000 UGX, payments []. Matches manual §14. [OK]
+[T-086] Owner products list (luxe-vault) -> 200 [] (empty store). [OK]
+
+--- PHASE 15/16/17/18/19 — DEV-DASHBOARD POSITIVE PASS (SUPER_DEVELOPER token) ---
+The user provided a live SUPER_DEVELOPER access token (darlynearin@gmail.com,
+id 389a09ec-5127-4843-b732-7ca21945faf0) extracted from dev-dashboard
+localStorage. All positive dev flows now verified live:
+[T-100] /api/system/health -> 200 healthy, DB connected latency 113ms
+        source primary, memory 97.9% (1-core Render free). [OK]
+[T-101] /api/admin/users -> 200, 26 users. [OK]
+[T-102] /api/stores (dev list) -> 200, 13 stores. [OK]
+[T-103] /api/system/database -> 200 primary, manualSwitch, host Neon
+        (ep-wispy-snow-ax8b166q.c-4.us-east-2.aws.neon.tech). [OK]
+[T-104] /api/kill-switch -> 200 config (all switches false; entry created by
+        "system"). [OK]
+[T-105] /api/cache -> 200 stats: 1 total entry, 1 expired (public:announcements
+        past its 30s TTL - no TTL-refresh logic on read). [OK/WARNING]
+[T-106] /api/backups -> 200, 3 backups (createdBy 389a09ec admin, sizes
+        933K-1.1MB, 29 tables, 2860-3416 rows). [OK]
+[T-107] /api/api-config (dev) -> 200 secrets view (expected for SUPER_DEVELOPER;
+        retailer still 403 post-fix). [OK]
+[T-108] /api/settings (dev) -> 200 (expected for SUPER_DEVELOPER). [OK]
+[T-109] /api/announcements (public) -> 200 []. [OK]
+[T-110] /api/activity-logs -> 200 (50 latest). [OK]
+[T-111] /api/subscriptions/all -> 200, 9 subscription records. [OK]
+[T-112] /api/system/feature-flags -> 200 [] (prod table EMPTY - seed flags not
+        present). requireFeatureEnabled only blocks EXISTING+disabled flags,
+        so missing flags default to enabled (wishlist/store/reviews worked).
+        [WARNING] Dev dashboard "Feature Flags" page shows none; toggles
+        would P2025 if editing a missing key.
+[T-113] Search endpoint with switch off -> 200 (kill-switch "search" off). [OK]
+[T-114] CORS pinning VERIFIED LIVE 2026-08-14: Origin storefront / retailer-dash /
+        dev-dash each echoed in ACAO; evil.example.com + localhost:3001 get NO
+        allow-origin header. [FIXED] Operator set CORS_ORIGIN env + redeployed.
+
+--------------------------------------------------------------------------------
+END OF SECTION (run 1)
+-----------------------------------------------------------------------
+SECURITY NOTE (localStorage token): the SUPER_DEVELOPER token provided by the
+operator and stored by the dev dashboard in localStorage is JWT access token;
+localStorage is readable by any JS (XSS-exfiltratable). Best practice is
+httpOnly SameSite cookies; existing app uses Bearer headers instead - no fix
+requested, noted for hardening.

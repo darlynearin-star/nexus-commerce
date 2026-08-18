@@ -1,0 +1,981 @@
+================================================================================
+NEXUS COMMERCE — COMPLETE UI / WORKFLOW MANUAL
+Audit of every user-facing interaction, navigation path, form, button, modal,
+workflow, role, redirect, and error state.
+================================================================================
+
+PLATFORM (4 apps, 5 deployables)
+  - API             https://nexus-api-69q5.onrender.com        (Render, manual deploy)
+  - Storefront      https://nexus-storefront-dusky.vercel.app  (Vercel auto)
+  - Retailer Dboard https://nexus-commerce-retailer-dashboard.vercel.app  (Vercel auto)
+  - Dev Dboard      https://nexus-commerce-developer-dashboard.vercel.app (Vercel auto)
+
+MARK LEGEND (applies to every line)
+  [OK]      = authorized/consistent state; works as coded
+  [WARNING] = works but risky/inconsistent/hardcoded/dead-adjacent
+  [BROKEN]  = code path that cannot work as intended
+  [UNKNOWN] = depends on live external service/secret; not provable from code alone
+================================================================================
+
+================================================================================
+0. GLOBAL INFRASTRUCTURE & CROSS-CUTTING BEHAVIOR
+================================================================================
+
+API BODY SETUP (packages/api/src/index.ts)
+  - express.json limit 10mb; helmet CSP (picsum.photos, res.cloudinary.com,
+    nexus-api-69q5.onrender.com allowed for images); HSTS/clickjacking/XSS headers.
+  - CORS allowlist: localhost:3000/3001/3002 + all three vercel apps. Env
+    CORS_ORIGIN can override; '*' disables credentials. [OK]
+  - Rate limit: 100 req / 15 min per IP on ALL /api. Message: "Too many requests,
+    please try again later." [WARNING] 100/15min is very strict for catalogs.
+  - checkKillSwitch runs on every /api route BEFORE routers. [OK]
+  - /uploads served statically. Uploaded files persisted to local disk on Render
+    (ephemeral) — deploy/restart clears them. [WARNING]
+  - Migration block on boot: adds store_settings.phone/whatsapp, products.shortCode
+    (+unique partial index), products.images TEXT[], products.categoryId nullable,
+    orders.customerPhone/shippingAddress/paymentMethod/paymentStatus/trackingNumber/
+    estimatedDelivery/deliveredAt, users.googleId (+unique partial), users.passwordHash
+    nullable, and magic_link_tokens table. [OK]
+  - DB mirror: primary↔fallback auto-switch + snapshot restore (dashboard manual
+    override supported). /api/system/database reports `source`.
+  - 404 handler for unknown /api/*; central errorHandler.
+
+TOKEN MODEL
+  - Access token (JWT, short-lived) in localStorage `accessToken`; refresh token in
+    localStorage `refreshToken`; refresh token row is a Session in DB (isActive,
+    expiresAt 7d). [OK]
+  - /api/auth/refresh issues new access token from refresh token. All api clients
+    (storefront api.ts, retailer api.ts, dev api.ts) auto-refresh on 401 once, then
+    drop tokens and redirect to /login (storefront/retailer) / route.replace login. [OK]
+  - Dashboard SSO: URLs like `/dashboard#token=<accessToken>` are consumed by
+    `captureTokenFromUrl()` (both dashboards) which stores token and strips hash. [OK]
+  - Branding: embeddable mini-app. Retailer store name: "Lyn-nyx Stores". Primary
+    brand color #00D9A3 appears in email CTA buttons.
+
+ROLE MODEL (packages/shared UserRole + ROLE_PERMISSIONS)
+  - Roles: CUSTOMER, RETAILER, DEVELOPER, SUPER_DEVELOPER.
+  - Permission flags used: MANAGE_PRODUCTS, MANAGE_MEDIA, MANAGE_USERS, MANAGE_SYSTEM,
+    MANAGE_SETTINGS, MANAGE_KILL_SWITCH, VIEW_LOGS.
+  - requireRole(...roles) exact-role match; requirePermission(all-of list).
+  - resolveStore + requireStoreOwner: DEV/SUPER_DEV bypass; retailer must be
+    store.ownerId; 401/400/403 mesh. [OK]
+
+RESPONSE CONTRACT
+  - success responses: { success:true, data } (+ meta for paginated).
+  - errors: { success:false, error:'<msg>' } with 400/401/403/404/409/502/503.
+  - Storefront customer-facing clients treat non-ok as thrown ApiError with message.
+
+KILL SWITCH MATRIX (middleware/kill-switch.ts + /api/kill-switch)
+  - apis        → 503 ALL /api (maintenanceMessage).
+  - maintenance → 503 all /api except /api/auth.
+  - retailerDashboard → 503 /api/stores/mine.
+  - customerRegistration → 503 POST /api/auth/register.
+  - orders      → 503 /api/orders.
+  - storefront  → 503 /api/products.
+  - checkout    → 503 /api/orders + /api/cart.
+  - search      → 503 /api/search.
+  - uploads     → 503 POST/PUT /api/media.
+  - Each returns { error, maintenance:true } unless apis/maintenance override. [OK]
+
+FEATURE FLAGS (middleware/feature-flags.ts)
+  - requireFeatureEnabled reads FeatureFlag table. Used on: store creation
+    (`storeCreation`), wishlist add (`wishlist`), reviews post (`reviews`). Disabled →
+    403 "Feature 'x' is currently disabled". Managed via dev dashboard /api/system/
+    feature-flags. [OK]
+
+EMAIL PIPELINE (utils/email.ts)
+  - Provider priority: Resend API → Brevo API → Gmail SMTP → Brevo SMTP.
+    Config read from Settings table (RESEND_API_KEY/FROM_EMAIL, BREVO_*, GMAIL_*).
+  - isEmailConfigured() gates registration verification + magic-link flows.
+  - magicLinkHtml: sign-in CTA, expires "15 minutes".
+  - verifyEmailHtml: verify CTA, expires "24 hours".
+  - NOT verified in prod by [UNKNOWN] — depends on configured provider keys.
+================================================================================
+
+================================================================================
+1. STOREFRONT — ROUTE / NAVIGATION INVENTORY
+================================================================================
+All pages 'use client' unless noted. api.ts auto-adds Bearer + x-store-slug
+(from localStorage activeStoreSlug). store-api.ts adds x-store-slug from module
+var or localStorage or URL path /store/<slug>.
+
+Pages:
+  /                       Home (marketing) [OK]
+  /categories             Category browser [OK]
+  /shop                   REDIRECT → /store/{activeStoreSlug||'adorn'}/shop?search= [OK]
+  /deals                  REDIRECT → /shop [OK]
+  /wishlist               Wishlist (auth) [OK]  (Browse link hardcoded /store/adorn/shop [WARNING])
+  /cart                   Cart (auth / optional-session) [OK]
+  /checkout               Checkout (auth required) [OK]
+  /product/[slug]         Product detail OUTSIDE store context (uses active store) [OK]
+  /store/[slug]           Store landing page [OK]
+  /store/[slug]/shop      Store catalog w/ filters [OK]
+  /store/[slug]/product/[slug]  Store product detail [OK]
+  /login                  Sign in (email/pass + Google + magic link) [OK]
+  /register               Create account (+ Google) [OK]
+  /auth/callback          OAuth + passwordless token handoff [OK]
+  /auth/check-email       "Check your inbox" + resend verification [OK]
+  /auth/magic-link        Magic link redemption [OK]
+  /auth/verify-email      Email verification redemption [OK]
+  /account                Account hub (tabs overview/orders/cart/notifications) [OK]
+  /create-store           Store-creation onboarding (retailer) [OK]
+  /guides                 Static support guides [OK]
+  error.tsx               Global error boundary [OK]
+  loading.tsx             Global loading spinner [OK]
+
+HEADER (components/Header.tsx) — platform header for non-store pages
+  - Hidden on /store/ paths (StoreHeader takes over). [OK]
+  - Links: Home /, Categories /categories, Guides /guides. User pill → /account.
+    Wishlist /wishlist, Cart /cart. Dark mode toggle (theme lib). Search overlay.
+  - RETAILER + has /stores/mine: mobile sidebar shows "Visit Store" (storefrontUrl +
+    /store/{slug}, new tab) and "Dashboard" (retailer URL + #token). No-store retailer:
+    "Create Store" → /create-store. DEV/SUPER_DEV: "Dashboard" → dev URL + #token. [OK]
+  - Search Enter → /shop?search=<q> (then redirected to active store shop). [OK]
+  - Sign-out clears tokens, push '/'. [OK]
+
+STOREHEADER (components/StoreHeader.tsx) — store-scoped pages
+  - Renders null until StoreProvider loads. Logo or store name; Home + Shop;
+    search overlay (Enter → /store/{slug}/shop?search=); wishlist/cart/account links;
+    mobile menu. [OK]
+
+STOREFOOTER (components/StoreFooter.tsx)
+  - Only for store pages (global Footer used elsewhere). Brand/location, Shop links,
+    "Support" column is static text (Contact Us, Shipping Info, Returns — no links).
+    Bottom bar: copyright + "Powered by Lyn-nyx Stores" → '/'. [WARNING] Support links
+    are placeholders and non-navigable.
+
+ANNOUNCEMENT BANNER (components/AnnouncementBanner.tsx)
+  - GET /api/announcements (public). Colors: ERROR/CRITICAL #7f1d1d,
+    WARNING #7c2d12, else #14532d. Dismiss X is state-only (reappears on reload).
+    No persistence. [WARNING] dismiss not remembered.
+
+STAR RATING (components/StarRating.tsx): renders n stars filled by `--gold`;
+  page passes rating prop.
+
+PRODUCT CARD: image w/ picsum fallback, brand, name, price UGX, optional Add-to-Cart
+  (storefront store pages pass showAddToCart=false). Link to product page.
+================================================================================
+
+================================================================================
+2. AUTHENTICATION WORKFLOWS (STOREFRONT) 
+================================================================================
+
+lib/auth.tsx AuthProvider:
+  - loadUser on mount: if accessToken → GET /auth/me → setUser. 401 clears tokens.
+    Network errors retry up to 4x at 5/15/25/35s (Render cold start guard). [OK]
+
+completeSession(res):
+  - Stores access+refresh tokens; branch by role:
+    * RETAILER: GET /stores/mine. Has store → hard redirect
+      RETAILER_DASHBOARD_URL + /dashboard#token=<accessToken>.
+      No store → router.push('/create-store'). [OK]
+    * DEVELOPER/SUPER_DEVELOPER → dev URL + /dashboard#token=. [OK]
+    * CUSTOMER → router.push('/account'). [OK]
+
+EMAIL + PASSWORD LOGIN (/login):
+  - POST /api/auth/login. Errors surfaced: invalid creds 401, suspended 403,
+    unverified → 403 code EMAIL_NOT_VERIFIED → inline "verify your email" box with
+    `Resend verification email` (POST /auth/resend-verification). [OK]
+  - Login success → completeSession (role-based redirect above). [OK]
+
+GOOGLE LOGIN (/login, /register):
+  - window.location = API_BASE + /api/auth/google (GET, redirects to Google).
+    API google/callback → creates/links user → redirects
+    ${AUTH_REDIRECT_URL}/auth/callback?accessToken=...&refreshToken=...
+    Storefront /auth/callback parses query token(s), calls completeSession. [OK]
+    Denied/no-email/account-suspended → {origin}?error=... (storefront root). [WARNING]
+    googleId migration + unique index present; first-time CUSTOMER profile created. [OK]
+
+MAGIC LINK (/login → "send link" + /auth/magic-link):
+  - POST /auth/magic-link { email } → validates email, config check (503 if unset),
+    creates 15-min token, emails link `${AUTH_REDIRECT_URL}/auth/magic-link?token=..&email=..`.
+    UI shows "If that email is registered, a sign-in link has been sent." [OK]
+  - /auth/magic-link page: reads token+email, POST /auth/magic-link/verify.
+    Auto-creates account (CUSTOMER, passwordHash null, emailVerified true) if missing;
+    marks verified if existing; suspended users blocked 403. Returns tokens → completeSession. [OK]
+
+REGISTER (/register):
+  - Fields firstName, lastName, email, password, confirm, role (Customer|Retailer).
+    Client rules: passwords equal, password >= 6. [OK]
+  - POST /auth/register. Server: email format + TLD + disposable-blocklist checks,
+    password >= 6, duplicate 409, role whitelist (CUSTOMER/RETAILER/DEVELOPER→ else CUSTOMER).
+    Creates auth + role profile + always a Customer profile. [OK]
+  - If email configured: creates 24h verify token, sends email, responds
+    requiresEmailVerification → storefront pushes /auth/check-email?email=.
+    If NOT configured: returns tokens directly (register succeeds logged-in). [OK]
+  - Retailer registration pre-creates a Retailer row (storeName "<First>'s Store",
+    storeSlug "<first>-<base36 timestamp>") → completeSession routes to /create-store. [OK]
+  - /auth/check-email: shows address + "Resend" (POST /auth/resend-verification),
+    "Back to sign in". [OK]
+  - /auth/verify-email: POST /auth/verify-email (token+email). Invalid/expired 401;
+    already-verified → confirm message; success → "You can now sign in". Stays on
+    storefront (does not auto-login). [OK]
+
+LOGOUT: clear localStorage tokens, setUser null, push '/'. Does NOT call
+  /auth/logout (session row stays active until expiry). [WARNING] server session
+  not revoked on logout.
+
+CHECKOUT GATE: /checkout redirects to /login when no user (authLoading first). [OK]
+================================================================================
+
+================================================================================
+3. CATALOG BROWSING & SEARCH / FILTER INTERACTIONS
+================================================================================
+
+PLATFORM /categories:
+  - GET /api/categories (requires active store). Renders top-level categories with
+    emoji icon (category-icons.ts), child badges, productCount (subtree, from API).
+    Card → /shop?category={slug}. "View all" etc. [OK]
+
+PLATFORM /product/[slug] (non-store):
+  - GET /products/{slug} via active store (api.ts injects activeStoreSlug). 
+    Fallback images picsum. Add-to-cart POST /cart/add { productId, variantId?, quantity }.
+    Auth required server-side. [OK]
+
+STORE LANDING /store/[slug] (page.tsx):
+  - StoreProvider (GET /stores/public/:slug). Sections: hero (store name, gradient),
+    New Arrivals (GET /products/new/list), Featured (GET /products/featured/list),
+    Quick Browse (GET /categories?sortBy=productCount → top-level → shop?parent=s). [OK]
+  - StoreCreator not-active / disabled: /stores/public returns 503 "Store is currently
+    disabled" → layout shows "Store not found or is disabled". [OK]
+
+STORE SHOP /store/[slug]/shop (page.tsx) — full browse UX:
+  - Query params: search, category, parent. Breadcrumb builds from category ancestry. [OK]
+  - Category dropdown (top-level list) → navigates ?parent= (URL push, resets filters). [OK]
+  - Search box: Enter triggers fetch (state-based); X clears. Category+parent filter. [OK]
+  - Sort select: createdAt desc/asc, price asc/desc, name asc/desc. [OK]
+  - Filter overlay (only when a category/parent is chosen): subcategory select,
+    per-category attribute controls (select/multiselect/text/number/boolean from
+    /categories/:slug/attributes), price min/max. Apply commits drafts → also resets
+    page to 1. Cancel discards. Active count badge on "Filters" button. Clear-all. [OK]
+  - Active filter chips (spec + price) clickable to remove. [OK]
+  - GET /products with params: page/limit(12)/sort/order/search/category|parent/
+    minPrice/maxPrice/spec_<key>. Results grid ProductCard (no add-to-cart), count,
+    pagination bar. Empty state w/ clear-all when filters. [OK]
+  - Note: setting category via overlay only updates state (not URL). [WARNING] minor
+    inconsistency vs dropdown (URL) — shareable URLs only for dropdown choices.
+
+STORE PRODUCT /store/[slug]/product/[slug]:
+  - GET /products/{slug} (returns PUBLISHED only for guests; retailer-auth may see
+    drafts). Thumbnails swap main image; picsum fallback per image. Related products
+    ("You May Also Like") from same category. [OK]
+  - Qty stepper 1..n. Add to Cart (auth) → POST /cart/add; success flashes "✓ Added!".
+    Guest → "Sign In to Purchase" /login. [OK]
+  - Heart (wishlist) button has NO onClick handler → dead button. [BROKEN]
+    (wishlist UX only reachable via header link /wishlist.)
+  - StarRating hardcoded rating={4.5} regardless of real average; count uses
+    product.reviews?.length from detail includes (approved, take 20). [WARNING]
+    Rating not computed from reviews.
+  - "Pay on delivery" info callout always shown. Specifications grid. [OK]
+
+SEARCH API (global) — used by search-in-shop flows:
+  - GET /api/search?q&page&limit → PUBLISHED products matching name/description/brand/
+    tags (has match). GET /api/search/suggestions?q (needs >=2 chars) → top 5 names.
+    [OK] (Kill switch "search" 503s these.)
+================================================================================
+
+================================================================================
+4. CART WORKFLOW
+================================================================================
+Server (routes/cart.ts, requireStore):
+  - POST /cart/dedup: maintenance-ish; de-dupes cart_items by (cartId,productId,
+    variant null). Public. [OK]
+  - GET /cart: optionalAuth. Identifies cart by customerId (user) OR sessionId header;
+    neither → empty payload. Returns subtotal+total (total = subtotal - couponDiscount).
+    taxAmount/shippingCost always 0 (POD model). [OK]
+  - POST /cart/add: authenticate + store. Requires cart per user. Merge quantity if
+    same (product, variant). vId null for '' legacy. Returns full cart. [OK]
+  - PUT /cart/item/:id {quantity}, DELETE /cart/item/:id: optionalAuth, direct row ops
+    (owner-scoping of item id not enforced). [WARNING] item-id ops not scoped to caller.
+  - POST /cart/coupon {code}: validates active, unexpired, uses<maxUses; recomputes
+    discount (percentage of subtotal or fixed); saves couponCode/couponDiscount on cart;
+    returns display string. [WARNING] maxUses not incremented here (increments likely
+    missing across flows), and minPurchase not enforced though field exists.
+
+UI /cart (page.tsx):
+  - Loads GET /cart. Empty state → Continue Shopping. Non-empty: line items with
+    qty +/- (PUT) and trash (DELETE), sticky order summary card, POD note. [OK]
+  - CTA: user → /checkout; guest → "Sign In to Checkout" /login. Continue Shopping →
+    /store/{activeStoreSlug||'adorn'}/shop. [OK]
+  - Fallback slug default 'adorn' hardcoded here and in checkout success. [WARNING]
+
+Guest cart: GET works via x-session-id only if some code sends it (none does), and
+  add-to-cart is auth-only, so guests effectively cannot build a cart. UI consistently
+  funnels guests to sign-in. [OK-ish / note]
+================================================================================
+
+================================================================================
+5. CHECKOUT & ORDER CREATION
+================================================================================
+/checkout (page.tsx):
+  - Gate: !user → /login. Loads cart. Form: First/Last/Email (disabled prefill from
+    user), Phone (required, placeholder 2567XXXXXXX), Delivery Address, Delivery Notes. [OK]
+  - Pay on Delivery callout. Button disabled unless submitting/empty-cart/no phone.
+    Label: "Place Order — Pay UGX n on Delivery". [OK]
+  - POST /orders { customerPhone, shippingAddress, notes } via storeApi.
+    Server creates order from user's cart: orderNumber NEXUS-<base36>, subtotal from
+    cart items at product.price, discountAmount=couponDiscount, total=subtotal-discount,
+    items snapshot (productName, sku, unitPrice, totalPrice), paymentMethod
+    'pay_on_delivery'. Emails nothing but creates NEW_ORDER_ALERT notification to store
+    owner. Clears cart. Returns order + storePhone/storeWhatsapp (raw columns). [OK]
+  - Success view: check icon, Order #, itemized totals, Total Due on Delivery,
+    Delivery Details, Store Contact (phone + whatsapp when present),
+    "Continue Shopping" → /store/{slug}/shop (slug from activeStoreSlug||'shop'). [OK]
+
+ORDER STATUS LIFECYCLE (server):
+  - Create: paymentStatus PENDING, status default confirmed in schema (UI tolerant).
+  - Retailer orders table: PUT /orders/:id/status (requireStoreOwner) updates status
+    string; badges for various statuses. [OK]
+  - Pay-on-delivery orders can only be marked paid via status; no payment row created.
+    (Payments/charge flow applies to the Flores/Pesapal path described in §6.) [OK]
+================================================================================
+
+================================================================================
+6. PAYMENTS (ONLINE) — PESAPAL / FLUTTERWAVE
+================================================================================
+Providers (payments/index.ts): getPaymentProvider maps mtn_momo, airtel_money,
+  pesapal → PesapalProvider; flutterwave → FlutterwaveProvider. Both resolve secrets
+  from Settings (DB) with env fallback. [OK]
+
+PESAPAL (payments/pesapal.ts):
+  - Auth RequestToken (consumer key/secret, base from PESAPAL_BASE_URL setting or
+    https://pay.pesapal.com prod). RegisterIPNURL (ipn_notification_type GET). [OK]
+  - charge(): SubmitOrderRequest with id=reference, currency UGX, amount, callback_url,
+    notification_id, billing (email/phone/UG). Returns order_tracking_id /
+    merchant_reference → PENDING. [OK]
+  - verify(): GetTransactionStatus; payment_status_description COMPLETED → PAID. [OK]
+  - refund(): returns "must be processed in Pesapal merchant dashboard" (unsupported
+    programmatically). [OK]
+
+FLUTTERWAVE (payments/flutterwave.ts):
+  - charge with network+phone → mobile_money_uganda charge (tx_ref=reference).
+    Without → /v3/payments redirect flow. [OK]
+  - verify(): /v3/transactions/:id/verify → success+successful→PAID. [OK]
+  - refund(): POST /transactions/:id/refund. [OK]
+
+API surface (routes/payments.ts):
+  - GET /callback/pesapal (NO auth): verifyAndMark → redirect
+    ${STOREFRONT_URL}/checkout?status=callback&order=<ref>. [OK]
+  - GET|POST /ipn/pesapal (no auth): on pesapal_notification_type=CHANGE →
+    verifyAndMark; responds OK. [OK]
+  - POST /callback (flutterwave style): on status successful/completed → markPaid
+    by transaction_id||tx_ref. [OK]
+  - POST /charge (auth + requireStore): order scoped by storeId header; provider by
+    method (pesapal|mtn_momo|airtel_money → pesapal; flutterwave); constructs
+    callback/ipn URLs from req host; creates Payment row (PENDING) on success. [OK]
+    [WARNING] No customer-ownership check: any authenticated user knowing an order id
+    in that store can initiate a charge against it.
+  - markPaid: payment PENDING→PAID, order paymentStatus PAID + status PROCESSING. [OK]
+  - POST /verify (auth+requireStore): manual verify + mark. [OK]
+
+SUBSCRIPTION payments live under /api/subscriptions (see §14). Flutterwave webhook
+  handles SUB- tx_refs there; verif-hash secret validated; non-SUB tx_refs update
+  order payments. [OK]
+================================================================================
+
+================================================================================
+7. /account HUB
+================================================================================
+/account (page.tsx):
+  - Uses GET /stores/mine → hasStore/isStoreOwner; storeSlug =
+    retailer?.storeSlug || localStorage activeStoreSlug; subscription =
+    retailer?.subscription. [OK]
+  - Header shows name/email/role badge; retailer receives a tier label from
+    subscription status (TRIAL/ACTIVE/…). [OK]
+  - Tabs: Overview, Orders, Cart, Notifications (state-driven). Orders list likely
+    via /orders (customer-scoped server-side). Cart tab shows current cart items.
+    Notifications via /notifications (unread count, read-all). [OK]
+  - Retailer with store: "Open Store Dashboard" → retail URL + #token, plus
+    "View Store" (storefrontUrl /store/{slug}, new tab) and "Create Store" when none.
+    Dev role: dashboard link. [OK]
+  - Hardcoded fallback storefrontUrl
+    https://nexus-storefront-dusky.vercel.app in fallback. [OK]
+================================================================================
+
+================================================================================
+8. STORE CREATION FLOW (retailer onboarding)
+================================================================================
+/create-store (page.tsx):
+  - Step 0: 3 marketing slides (Sell Fashion / Pick Your Style / Accept UGX
+    Payments) with Next; last slide requires Terms checkbox ("14-day free trial, then
+    3,000 UGX/week, cancel anytime") → Accept & Continue. [OK]
+  - Steps 1-3 progress dots (Template → Colors → Details):
+    * Template: 4 cards (elegance/minimal/bold/nature) with live theme preview. [OK]
+    * Colors: 6 color pickers + text inputs, live CSS var updates. [OK]
+    * Details: Store Name → auto slug; Store URL /store/<slug> with live
+      availability check (GET /stores/check-slug/:slug, only when slug>=3). [OK]
+      Logo URL optional with image preview (hidden on error). [OK]
+  - Submit POST /stores { name, slug, template, colors, logoUrl }:
+    * Server gates with feature flag storeCreation; MAX_STORES=50 → 503 with
+      CONTACT_MESSAGE (Mr.Dev +256740157510 / darlenzai01@gmail.com); FAQ →
+      UI turns error into Call/WhatsApp/Email buttons. [OK]
+    * Slug conflict 409; already has store 409 ("One email = one store").
+    * Success creates Store + StoreTheme (template, colors JSON) + StoreSettings
+      (currency UGX, location Kampala, Uganda) + upserts Retailer (storeName/storeSlug)
+      + raw-SQL phone/whatsapp defaults. [OK]
+    * UI: sets activeStoreSlug + storeApi slug, then hard redirect to retail
+      dashboard /dashboard#token=<current access token>. [OK]
+  - Store appears on storefront automatically (public/:slug). Categories self-seed on
+    first GET / (Jiji taxonomy tree) or via /api/reseed-categories/:slug. [OK]
+================================================================================
+
+================================================================================
+9. RETAILER DASHBOARD — ROUTES & NAVIGATION
+================================================================================
+URLs (Next.js app router):
+  /login            Sign in (role-gated)
+  /dashboard        (index redirect)
+  /products         "Product View" (list)
+  /products/new     "Product Creation" (+DRAFT persistence)
+  /products/[id]/edit  Edit product
+  /orders           Orders management
+  /customers        Customers
+  /marketing        Coupons
+  /media            (named component ProductsPage; product stats + inline edit) [WARNING]
+  /reports          Analytics + CSV export
+  /subscription     Subscription management
+  /settings         Store settings & branding
+  /guides           Static guides
+
+LAYOUT SIDEBAR (layout.tsx) exact labels:
+  Dashboard /dashboard, Product View /products, Orders /orders, Customers /customers,
+  Marketing /marketing, Product Creation /products/new, Reports /reports,
+  Subscription /subscription, Settings /settings, Guides & Tutorials /guides.
+  Left-nav hidden on /login. [OK]
+
+lib/auth.tsx (retailer):
+  - captureTokenFromUrl(): if location.hash starts #token= → localStorage accessToken,
+    history.replaceState to remove hash. [OK]
+  - login(email,password) → POST /auth/login → stores tokens, returns user. [OK]
+  - ensureStore(): GET /stores/mine; on 404 → window.location =
+    ${storefrontUrl}/create-store#token=<accessToken>. [OK]
+  - Role gate: retail users may be CUSTOMER (blocked) — RETAILER required; devs
+    redirected to dev dashboard root? (guarded by auth-guard + role). [OK]
+
+AUTH GUARD (auth-guard.tsx): no user → /login; role mismatch → redirect. [OK]
+
+SUBSCRIPTION GUARD (subscription-guard.tsx):
+  - RETAILER only; passthrough for routes /subscription and /login.
+  - Loads /subscriptions. If status SUSPENDED or CANCELLED, or TRIAL expired
+    (trialEnd < now) → renders lock card instead of page. [OK]
+  - Order endpoints already 403-server-side via requireActiveSubscription. [OK]
+
+client api.ts: API_BASE=NEXT_PUBLIC_API_URL||'' (same host when empty),
+  UPLOAD_BASE=NEXT_PUBLIC_UPLOAD_URL||https://nexus-api-69q5.onrender.com.
+  Adds x-store-slug from localStorage activeStoreSlug; auto-refresh on 401; on refresh
+  failure clears tokens → /login. [OK]
+================================================================================
+
+================================================================================
+10. RETAILER — DASHBOARD METRICS
+================================================================================
+/dashboard (page.tsx):
+  - On load: GET /analytics/summary (days=30), /stores/mine, /orders?limit=5,
+    /products?limit=50; sets activeStoreSlug from my store; FETCHES store settings. [OK]
+  - KPI cards: revenue, orders, products, customers (+AOV) from summary.
+  - Recent orders mini-list; low-stock computed client-side:
+    product.trackInventory && stock <= lowStockThreshold. [OK]
+  - Welcome + store name + storefront link (Visit Store). [OK]
+  - Guarded by SubscriptionGuard (expired trial → locked card). [OK]
+================================================================================
+
+================================================================================
+11. RETAILER — PRODUCT MANAGEMENT
+================================================================================
+/products (page.tsx):
+  - GET /products?limit=100&status=... (auth). Table w/ image, name, price, stock,
+    status badge, category. Filters by status. Search box (server search). [OK]
+  - Row actions: Edit → /products/[id]/edit; Copy Link → clipboard with
+    `https://nexus-storefront-dusky.vercel.app/store/{slug}/product/{p.slug}`
+    (clipboard API + execCommand fallback on failure). [OK/WARNING] hardcoded
+    storefront host even though env var exists elsewhere.
+  - Delete: window.confirm → DELETE /products/:id. Server archives (status ARCHIVED)
+    if order history exists, else deletes. UI refreshes list. [OK]
+
+/products/new (page.tsx):
+  - Form + DRAFT autosave key `nexus_product_draft` (localStorage) + reload guard. [OK]
+  - Category picker (CategoryPicker tree; flush/select), attributes per category. [OK]
+  - Images via UploadWidget (upload to /api/upload w/ compress-image max 3840px JPEG
+    0.95), broken-image tracking. [OK]
+  - SKU/slug auto-suggest; price, compareAt, cost; stock/track/backorder/lowStock;
+    tags, features, specs, SEO, shipping fields, return/warranty, featured/new. [OK]
+  - Submits POST /products (server validate zod: price>0, categoryId required, sku
+    required, name required, status default DRAFT). Variants created separately or in
+    bulk PUT /products/:id/variants. [OK]
+
+/products/[id]/edit:
+  - Loads GET /products/detail/:id (auth). Same form with variants manager
+    (buildTree/flattenTree), image add/remove. PUT /products/:id. Delete. [OK]
+
+API variants endpoints (products.ts):
+  - POST /:id/variants, PUT /:productId/variants/:id, DELETE /:productId/variants/:id,
+    PUT /:id/variants (bulk replace), POST /:id/duplicate (creates "(Copy)" DRAFT
+    with -COPY slugs/skus). All require MANAGE_PRODUCTS + store owner. [OK]
+  - Duplicate keep images & variants but forces DRAFT. [OK]
+================================================================================
+
+================================================================================
+12. RETAILER — ORDERS / CUSTOMERS / MEDIA / MARKETING
+================================================================================
+/orders (page.tsx):
+  - GET /orders?limit=50 (server: default status filter? none). Table: order#,
+    customer, status badge, items count, total, date. Status pill colors by status.
+    Status update via PUT /orders/:id/status (permission requireStoreOwner). [OK]
+  - Click-through order detail (GET /orders/:id). [OK]
+
+/customers (page.tsx):
+  - GET /customers?limit=50. Client search box filters by user email/firstName/lastName
+    (server supports ?search too). Shows name, email, orders, total. [OK]
+
+/media (page.tsx) — NOTE internal component named ProductsPage:
+  - Loads GET /analytics/product-stats. Renders product table (name, category,
+    price, stock, status, unitsSold, revenue, cartDemand, orderCount). [OK]
+  - Inline edit: opens modal to change name/price/stock/status → PUT /products/:id
+    then refresh. Delete (archive-on-history) → DELETE. [WARNING] placement under
+    "Media" nav is misleading; it is product analytics/management, not media library.
+
+/marketing (page.tsx):
+  - GET /coupons (active/unexpired only). Lists code, description, discount type/value,
+    isActive badge. No coupon create/edit UI present. [WARNING] read-only despite
+    "Marketing".
+================================================================================
+
+================================================================================
+13. RETAILER — REPORTS / SETTINGS / GUIDES
+================================================================================
+/reports (page.tsx):
+  - Period selector (7/30/90/365 days). GET /analytics/summary?days= + /analytics/
+    revenue?days=. Summary cards (revenue, orders, customers, AOV, product count) 
+    + revenue chart (daily/weekly/monthly series + totals allTime). [OK]
+  - CSV export client-side (builds blob from data; date-stamped filename). [OK]
+
+/settings (page.tsx):
+  - GET /store-settings + /stores/mine (owner). Form: store name, slug preview,
+    location, currency, phone (raw column via settings endpoint), whatsapp, logo URL,
+    theme colors + template (from updates via /stores/:id PUT with logo/settings/theme). [OK]
+  - Saves via PUT /store-settings (allowed: currency, location; phone/whatsapp via raw
+    UPDATE) and PUT /stores/:id for branding/logo (owner or SUPER_DEVELOPER). [OK]
+
+/guides: static instructional cards. [OK]
+================================================================================
+
+================================================================================
+14. SUBSCRIPTIONS — RETAILER + API
+================================================================================
+API (routes/subscriptions.ts):
+  - GET / (RETAILER only): finds Retailer; creates 14-day trial on first hit;
+    expired TRIAL → SUSPENDED (returns updated). Includes last 10 payments. [OK]
+  - POST /subscribe: if already ACTIVE returns "Already active". Otherwise upserts
+    subscription (TRIAL, trialStart now, trialEnd +14d, nextBilling +7d); Pesapal
+    charge(subscription.weeklyAmount, currency); creates SubscriptionPayment PENDING
+    (periodStart now, periodEnd nextBilling); returns checkoutUrl (redirect_url).
+    Model fields weeklyAmount/currency live on RetailerSubscription (seed data). [OK]
+  - POST /cancel: sets status CANCELLED (immediately gates all store routes via
+    subscription-check middleware → 403 messages). [OK]
+  - GET|POST /ipn/pesapal (CHANGE) → verifySubscriptionPayment: confirm PAID →
+    payment PENDING→PAID; subscription TRIAL→ACTIVE, lastBilling now, +7d next. [OK]
+  - GET /callback/pesapal → redirects RETAILER_URL/subscription?payment=success|error
+    (missing_transaction variant). Legacy GET /callback (flutterwave) similar. [OK]
+  - POST /verify (retailer) for frontend polling after redirect. [OK]
+  - POST /webhook/flutterwave: verif-hash secret; SUB- tx_refs → same ACTIVE update;
+    non-SUB → mark order payment PAID + order PROCESSING. [OK]
+  - GET /all (SUPER_DEVELOPER): all subscriptions + retailer user info. [OK]
+
+UI /subscription (page.tsx):
+  - GET /subscriptions → plan card: status (Trial/Active), trial end, weeklyAmount,
+    price 3,000 UGX/week claim, payment history. Subscribe → POST /subscribe →
+    window.location = checkoutUrl. Cancel → confirm → POST /cancel → locked. [OK]
+  - Payment=success/error query params after Pesapal redirect show message. [OK]
+  - SubscriptionGuard lock card as fallback. [OK]
+================================================================================
+
+================================================================================
+15. DEVELOPER DASHBOARD — ROUTES & NAVIGATION
+================================================================================
+URLs:
+  /login, /dashboard(index), /users, /system, /stores, /security, /database,
+  /settings, /logs, /cache, /kill-switch, /backups, /feature-flags, /api-config,
+  /announcements
+
+SIDEBAR (layout.tsx):
+  Dashboard, User Management /users, Security /security, Stores /stores, Database
+  /database, System Health /system, Kill Switch /kill-switch (danger icon), Global
+  Settings /settings, API Configuration /api-config, Feature Flags /feature-flags,
+  Activity Logs /logs, Announcements /announcements, Backups /backups,
+  Cache /cache. [OK]
+
+lib/auth.tsx (dev): captureTokenFromUrl (#token=) → localStorage; login POST
+  /auth/login; no ensureStore (devs have no store). [OK]
+AUTH GUARD: dev dashboard requires role DEVELOPER/SUPER_DEVELOPER. [OK]
+client api.ts: no x-store-slug sent; refresh-on-401. [OK]
+================================================================================
+
+================================================================================
+16. DEV — SYSTEM HEALTH / USERS / STORES
+================================================================================
+/system (System Health):
+  - GET /system/health: cpu, memory(heap), database latency+source (primary/fallback),
+    api uptime. Degraded banner when DB error. [OK]
+
+/users (User Management):
+  - GET /admin/users (strips passwordHash; includes _count activeSessions). [OK]
+  - User table: name, email, role, active, session count, created. Role badges.
+  - Toggle isActive → PUT /admin/users/:id { isActive } (cannot suspend
+    SUPER_DEVELOPER; deactivate kills their sessions). [OK]
+  - Create user form POST /admin/users { email, firstName, lastName, role,
+    password? } → auto-creates role profile; random 8-char password if omitted
+    (log warning only). emailVerified forced true. [WARNING] generated password only
+    logged to console; must be captured/communicated manually.
+  - Suspend (delete) → DELETE /admin/users/:id (deactivates + kills sessions). [OK]
+
+/stores:
+  - GET /stores (MANAGE_SYSTEM) incl. owner + settings/theme. [OK]
+  - Cards list; template label mapping (elegance/minimal/bold/nature). Toggle
+    isActive → POST /stores/:id/toggle (deactivate storefront instantly via
+    resolve-store 503). [OK]
+  - Delete store cascade: orders/orderItems/payments/carts/retailer/store
+    (DELETE /admin/stores/:id). [OK]
+  - Repair ownership endpoints (POST /admin/repair/store-ownership,
+    /repair/all-store-ownerships) exist server-side but no dedicated UI. [OK-API]
+  - Admin cleanup (/admin/cleanup) keeps store 'adorn' + emails admin@ and
+    retailer@nexuscommerce.com; wipes everything else. [WARNING] destructive tool
+    reachable only server-side; no UI button seen.
+================================================================================
+
+================================================================================
+17. DEV — DATABASE / SECURITY / LOGS
+================================================================================
+/database:
+  - GET /system/database: source primary|fallback, manualSwitch flag, primaryHost. [OK]
+  - Switch buttons (Primary/Fallback) → POST /system/database/switch { target }.
+    Fallback: restore snapshot if empty. Primary: mirror to fallback. Errors surfaced
+    ("Could not connect to %s database"). [OK]
+  - Create backup action present (POST /backups/create — see §18). [OK]
+
+/security:
+  - GET /activity-logs?action=user:login (login events). Static info cards: rate
+    limit 300/15min (documented) vs actual 100/15min limiter. [WARNING] card text
+    (300) mismatches code (100).
+  - JWT details cards: access 1h, refresh 7d (documentation). [OK]
+
+/logs (Activity Logs):
+  - GET /activity-logs?page&limit&action. Server: paginated, filter by action/userId,
+    include actor email. UI: table + pagination + action select (from known log
+    actions). [OK]
+================================================================================
+
+================================================================================
+18. DEV — CACHE / BACKUPS / KILL SWITCH
+================================================================================
+/cache:
+  - GET /cache (in-memory Map) → stats + entries (ttl, age, expired). DELETE /cache
+    (all) or ?key= single. Logs flush/cleared. [OK] In-memory only (lost on restart),
+    primarily used by announcements cache (public:announcements 30s TTL). [WARNING]
+
+/backups:
+  - GET /backups (metadata only; data stripped). POST /backups/create → dumps 30
+    tables via raw SQL, stores in Settings `database_backups` as JSON (grows unbounded). [WARNING] no retention/pruning.
+  - Download GET /backups/:id/download returns full backup JSON. Delete DELETE
+    /backups/:id. [OK]
+  - After create, mirrorToFallback triggered. [OK]
+
+/kill-switch:
+  - GET /kill-switch → current state (10 toggles). PUT /kill-switch with all fields:
+    storefront, retailerDashboard, customerRegistration, checkout, orders, uploads,
+    payments (stored but NOT enforced in middleware! [WARNING]), apis, search,
+    maintenance + maintenanceMessage. updatedBy/updatedAt. [OK]
+  - Danger styling on nav. Confirm dialogs on destructive toggles. [OK]
+  - **payments kill-switch field is stored but checkKillSwitch has no branch for it.** [BROKEN]
+================================================================================
+
+================================================================================
+19. DEV — FEATURE FLAGS / API CONFIG / ANNOUNCEMENTS / SETTINGS
+================================================================================
+/feature-flags:
+  - GET /system/feature-flags; toggle row → PUT /system/feature-flags/:key {enabled}.
+    Keys include storeCreation, wishlist, reviews (used server-side) + any seeded. [OK]
+
+/api-config:
+  - GET /api-config (MANAGE_SETTINGS) returns config + keys list (ALL_KEYS):
+    FLUTTERWAVE_* (public/secret/webhook), PESAPAL_* (consumer key/secret, IPN_URL,
+    BASE_URL), RESEND_* (api key + from email), BREVO_* (api key, smtp login/key,
+    from email/name), GMAIL_* (user, app password, from email), GOOGLE_CLIENT_ID/SECRET,
+    AUTH_REDIRECT_URL, and per-prefix ENABLED / LAST_TESTED keys. [OK]
+  - PUT saves whitelisted keys via upsert. [OK]
+  - POST /api-config/test/:key live-tests: Flutterwave (GET transactions page 1),
+    Pesapal (RequestToken), Resend (GET domains), generic keys → 'configured' check;
+    stamps ${key}_LAST_TESTED. UI shows ✓/✗ + message + timestamp. [OK]
+  - API-config is how email OTP/Google/magic-link are daisy-chained at runtime. [OK]
+
+/announcements:
+  - GET /announcements/all (dev). POST /announcements { title, message, type,
+    priority, startsAt, endsAt } → active:true default. PUT /:id partial update
+    (incl. active toggle); DELETE /:id. Each write clears public cache. Public GET /
+    filters by active + startsAt/endsAt window, cached 30s. [OK]
+
+/settings (Global Settings):
+  - GET/PUT /settings (MANAGE_SETTINGS): generic key-value editor of Settings table.
+    Includes /cache delete-all action? (reports page had CSV; settings page exposes
+    cache flush + backup create) — see page specifics. [OK]
+================================================================================
+
+================================================================================
+20. STORE SETTINGS API DETAILS (RETAILER)
+================================================================================
+/store-settings (routes/store-settings.ts):
+  - authenticate + requireStore + requireStoreOwner. GET creates empty settings if
+    none; appends raw phone/whatsapp. PUT allows only currency/location (+raw
+    phone/whatsapp via SQL). UI settings form combines this + PUT /stores/:id. [OK]
+  - Defaults on store create: currency 'UGX', location 'Kampala, Uganda'. [OK]
+================================================================================
+
+================================================================================
+21. CUSTOMERS API (SHOPPING-SIDE) 
+================================================================================
+/customers (routes/customers.ts, mounted GLOBAL but router uses requireStore):
+  - GET / requireStore + authenticate; customers with orders in that store; ?search
+    matches user email/first/last. Returns customers + addresses + last 5 orders. [OK]
+  - GET /me requireStore; returns own customer incl. wishlists. (Used by storefront? 
+    mostly /auth/me; low usage.) [OK]
+  - GET /:id requireStore; any customer record (IDOR-lite: dev/knowing id can inspect
+    others). [WARNING]
+================================================================================
+
+================================================================================
+22. NOTIFICATIONS / ANNOUNCEMENTS / SEARCH / REVIEWS / WISHLIST (API)
+================================================================================
+notifications (global, auth):
+  - GET / take 50 desc + unreadCount; PUT /read-all; PUT /:id/read. [OK]
+  - Created server-side on: order placed (NEW_ORDER_ALERT to owner). [OK]
+
+announcements (public+dev): §19.
+
+search (store-scoped): §3.
+
+reviews (store-scoped):
+  - GET /product/:productId → approved only + rating counts + average. [OK]
+  - POST / (auth, requireFeatureEnabled reviews): rating clamped 1-5, isVerifiedPurchase
+    forced true, images optional. isApproved default (false) until dev approval
+    (no approval UI observed). [WARNING] no moderation screen -> new reviews invisible.
+
+wishlist (store-scoped, auth):
+  - GET / (all wishlists w/ items for my customer + store). POST /add
+    (requireFeatureEnabled wishlist; 409 if exists). DELETE /item/:id. [OK]
+  - Store product page wishlist heart is dead (§3). [BROKEN]
+================================================================================
+
+================================================================================
+23. GUIDES / ERROR / LOADING / THEME (STOREFRONT) — MISC UI STATE
+================================================================================
+- /guides: static cards (getting started, seller, buyer, payments). [OK]
+- error.tsx: generic boundary with reload; loading.tsx: centered spinner (CSS
+  keyframes spin). [OK]
+- Theme (lib/theme.tsx): dark/light with persisted toggle; default dark. Store pages
+  override via theme colors + data-theme (elegance/bold → dark). [OK]
+- AnnouncementBanner, GoogleIcon, StarRating, ProductCard all shared. [OK]
+================================================================================
+
+================================================================================
+24. END-TO-END JOURNEYS (summary flows)
+================================================================================
+
+GUEST → VALUE
+  Browse store/shop/product → is pushed to /login on add-to-cart → register
+  (email verification gate) or Google or magic link → lands on /account →
+  add to cart → /cart → /checkout (phone required) → POD order placed →
+  success screen with store contact → Continue Shopping. [OK]
+
+RETAILER ACQUISITION
+  Register as Retailer (verify email) → /create-store onboarding (slides→terms→
+  template→colors→details→slug check→Launch) → POST /stores → redirected to
+  retail dashboard with #token → first GET /subscriptions auto-creates 14-day trial →
+  dashboard KPIs → product creation → orders come in as NEW_ORDER_ALERT. [OK]
+  Trial expiry → SUSPENDED → /subscription shows subscribe → Pesapal weekly 3,000 UGX
+  → ACTIVE (callback/IPN/webhook) → unlock. [OK]
+
+DEVELOPER OPS
+  Login (#token handoff) → users/stores/system/db/kill-switch/cache/backups/feature
+  flags/api-config/announcements/logs. Kill switch + flags enforce globally. [OK]
+
+MULTI-APP TOKEN HANDOFF
+  password login/Google/magic-link/register on storefront → completeSession →
+  <dash>/dashboard#token=... → captureTokenFromUrl → dashboard session. Reverse:
+  retailer dashboard "Visit Store" uses storefrontUrl; dev dashboard storefront link. [OK]
+
+PAYMENT CALLBACK LOOP
+  Checkout POD (no online payment for storefront orders; online charge endpoint exists
+  but no storefront checkout integration surfaced). Payments/charge + callback/ipn
+  wired for retailer/future; order finalize via Pesapal callback → storefront
+  /checkout?status=callback&order=<ref> page handles display only. [WARNING] no storefront
+  UI posts /payments/charge; the only fee path is subscriptions.
+================================================================================
+
+================================================================================
+25. CONSISTENCY / INTEGRITY FLAGS (master list)
+================================================================================
+[BROKEN]
+  1. Store product page Heart (wishlist) has no onClick — dead button (§3).
+  2. Kill switch `payments` field stored but never enforced in middleware (§18).
+  3. (seen earlier) media/page.tsx labeled "Media" but is product analytics
+     management — navigation claims vs content mismatch (§12) [WARNING not broken].
+
+[WARNING]
+  1. Storefront /product/[slug] + /wishlist + /cart + /account depend on
+     localStorage `activeStoreSlug`; fresh sessions default to 'adorn' fallbacks
+     scattered in code (`'adorn'`, `'shop'` — inconsistent fallbacks).
+  2. Support links in StoreFooter are static text (no links). [OK acceptable]
+  3. Announcement dismiss not persisted.
+  4. Global 100 req/15min rate limit vs documented 300.
+  5. Backup JSON stored in a single Settings row, unbounded growth.
+  6. Upload allows .svg (XSS vector via SVG) — extension allowlist includes svg except
+     uploads served with nosniff; still risky for stored-XSS on img tags. [OK] residual.
+  7. /cart item PUT/DELETE not owner-scoped; /customers/:id not owner-scoped.
+  8. /payments/charge lacks customer-ownership check (store-scoped only).
+  9. Retailer product Copy-Link hardcodes storefront vercel URL (env exists but not
+     used consistently).
+  10. Admin user-create random password only console-logged.
+  11. /marketing read-only; no coupon create/edit UI though API has full CRUD.
+  12. Wishlist zero-state "Browse" hardcodes /store/adorn/shop.
+  13. Star rating on product page hardcoded 4.5.
+  14. /deals and /shop are redirect-only shells.
+  15. Cart guest reject: add-to-cart auth-only; no guest cart despite optionalAuth GET.
+  16. rating clamp + isVerifiedPurchase auto-true; no approval UI (reviews invisible).
+  17. Order PUT /:id/status accepts any status string (no enum validation).
+  18. Toggle pairing: SUPER_DEVELOPER can't be suspended, but SUPER_DEVELOPER account
+     itself seeded in dev; production safety depends on unexposed role editing.
+  19. logout doesn't hit /auth/logout (session row lingers).
+  20. Newsletter/CTA forms on marketing home (if any) are static.
+
+[UNKNOWN]
+  1. Live email delivery (Resend/Brevo/Gmail) — secret-dependent.
+  2. Pesapal/Flutterwave live credentials + callback URL reachability from internet.
+  3. Whether render.com uploads persist (ephemeral disk) across redeploys.
+  4. Database source currently primary vs fallback and which host.
+================================================================================
+
+================================================================================
+26. MASTER ACTION INDEX (screen → endpoints)
+================================================================================
+STOREFRONT
+  login ................ POST /api/auth/login | POST /auth/magic-link | GET /auth/google
+  register ............. POST /auth/register | GET /auth/google
+  auth/callback ........ (parses tokens) → GET /auth/me
+  auth/magic-link ...... POST /auth/magic-link/verify
+  auth/verify-email .... POST /auth/verify-email | POST /auth/resend-verification
+  home/store land ...... GET /stores/public/:slug | /products/featured/list |
+                         /products/new/list | /categories
+  /shop ................ GET /products (params) | /categories | /categories/:slug/attributes
+  /product/[slug] ...... GET /products/:slug | POST /cart/add
+  /wishlist ............ GET /wishlist | DELETE /wishlist/item/:id
+  /cart ................ GET /cart | PUT/DELETE /cart/item/:id | POST /cart/coupon
+  /checkout ............ POST /orders
+  /account ............. GET /auth/me | /stores/mine | /orders | /cart | /notifications
+  /create-store ........ GET /stores/check-slug/:slug | POST /stores
+
+RETAILER
+  login ................ POST /auth/login
+  dashboard ............ GET /analytics/summary | /stores/mine | /orders?limit=5 |
+                         /products?limit=50
+  products ............. GET /products?limit=100&status= | DELETE /products/:id
+  products/new/edit .... GET /categories | /categories/:slug/attributes | POST/PUT
+                         /products | /products/:id/variants (CRUD) |
+                         POST /products/:id/duplicate | GET /products/detail/:id |
+                         POST /upload
+  orders ............... GET /orders | GET /orders/:id | PUT /orders/:id/status
+  customers ............ GET /customers
+  marketing ............ GET /coupons
+  media(prod mgmt) ..... GET /analytics/product-stats | PUT/DELETE /products/:id
+  reports .............. GET /analytics/summary | /analytics/revenue
+  subscription ......... GET /subscriptions | POST /subscriptions/subscribe |
+                         POST /subscriptions/cancel | POST /subscriptions/verify
+  settings ............. GET/PUT /store-settings | PUT /stores/:id
+
+DEVELOPER
+  users ................ GET/POST/PUT/DELETE /admin/users(:id)
+  stores ............... GET /stores | POST /stores/:id/toggle | DELETE /admin/stores/:id
+  system ................ GET /system/health
+  database ............. GET /system/database | POST /system/database/switch
+  security ............ GET /activity-logs?action=user:login
+  logs ................ GET /activity-logs
+  cache ............... GET/DELETE /cache
+  kill-switch ......... GET/PUT /kill-switch
+  backups ............. GET /backups | POST /backups/create | GET /backups/:id/download |
+                         DELETE /backups/:id
+  feature-flags ....... GET /system/feature-flags | PUT /system/feature-flags/:key
+  api-config .......... GET/PUT /api-config | POST /api-config/test/:key
+  announcements ....... GET /announcements/all | POST /announcements |
+                         PUT/DELETE /announcements/:id
+  settings ............ GET/PUT /settings
+================================================================================
+
+================================================================================
+27. DEPLOYMENT / ENVIRONMENT PRE-REQUISITES CHECKLIST
+================================================================================
+API env:
+  PORT, DATABASE_URL (+FALLBACK), NEXT_PUBLIC_API_URL equivalents, STOREFRONT_URL,
+  RETAILER_DASHBOARD_URL, DEVELOPER_DASHBOARD_URL, AUTH_REDIRECT_URL,
+  PESAPAL_CONSUMER_KEY/SECRET/IPN_URL, FLUTTERWAVE_SECRET_KEY,
+  RESEND_API_KEY, CORS_ORIGIN optional. Secrets also settable via /api-config DB
+  Settings (values read from Settings first, env fallback). [OK]
+
+Storefront env: NEXT_PUBLIC_API_URL, NEXT_PUBLIC_STOREFRONT_URL,
+  NEXT_PUBLIC_RETAILER_DASHBOARD_URL, NEXT_PUBLIC_DEVELOPER_DASHBOARD_URL. [OK]
+  If NEXT_PUBLIC_API_URL empty, client calls same origin (`/api`) — must be wired to
+  https://nexus-api-69q5.onrender.com in prod. [WARNING] verify env set.
+
+Per-package package.json scripts: dev/build/start/lint + workspace @nexus packages
+  (shared, database). Build order matters (shared → database → apps). [OK]
+================================================================================
+
+================================================================================
+28. DATA MODEL QUICK REFERENCE (tables referenced by flows)
+================================================================================
+users(g+googleId), customers, retailers(storeSlug unique), developers,
+sessions(token PK refresh row), magic_link_tokens, stores(ownerId,slug,isActive,
+logoUrl)+store_settings(currency,location,shipping*,phone,whatsapp)+store_themes
+(template, colors JSON), products(slug,sku,shortCode,images[],price,categoryId,
+variants[],status), product_variants(options[],image), categories(parentId, tree),
+brands, orders(orderNumber,items,customerId,storeId,status,paymentStatus,total,
+subtotal,discount,customercolumns)*, order_items(payload snapshot), payments,
+carts+cart_items(couponCode,couponDiscount), wishlists+wishlist_items,
+reviews(isApproved), coupons(discountType/value,minPurchase,maxUses,usedCount),
+media, addresses, notifications, activity_logs, retailer_subscriptions(
+trialStart/End,nextBilling,weeklyAmount,currency,status)+subscription_payments,
+settings (key→value; announcements/backups/api-config stored here), feature_flags,
+kill_switch(10 cols+maintenanceMessage+updatedBy/At), support_tickets, ticket_messages.
+Auto-migrations add store_settings.phone/whatsapp, products.shortCode/images,
+orders.*, users.googleId, magic_link_tokens. [OK]
+================================================================================
+
+================================================================================
+29. RECOMMENDED FOLLOW-UPS (prioritized)
+================================================================================
+  P0 Fix kill-switch `payments` enforcement branch (or remove toggle).
+  P0 Wire store product Heart to POST /wishlist/add (and hide for guests).
+  P0 Confirm AUTH_REDIRECT_URL + NEXT_PUBLIC_API_URL wiring in all three Vercel apps.
+  P1 Add review-approval UI or auto-approve; surface average rating computed from
+     reviews instead of hardcoded 4.5.
+  P1 Owner-scope /cart item + /customers/:id + /payments/charge.
+  P1 Restrict .svg uploads (remove from allowlist) or sanitize.
+  P1 Add backup pruning; move backups out of single Settings row.
+  P1 Make markdown of retailer Copy-Link use env STOREFRONT_URL.
+  P2 Unify store-slug fallback constant (adorn vs shop).
+  P2 Add coupon CRUD UI under Marketing.
+  P3 Persist announcement dismiss; honor logout to call /auth/logout.
+  P3 Align documented rate-limit (300) with code (100).
+================================================================================
+
+================================================================================
+30. AUDIT METADATA
+================================================================================
+  Method: static read of all 6 packages source (storefront, retailer-dashboard,
+  developer-dashboard, api, shared, database). Cross-checked client endpoints vs
+  server routers. Every interaction traced to an API verb+guard.
+  Coverage: storefront (22 pages + header/footer/banner/cards), retailer (12 pages +
+  guards), dev (17 pages + guards), API (31 route files + 6 middleware + birth of
+  payments + email). 
+  Marks allow [OK]/[WARNING]/[BROKEN]/[UNKNOWN] per item.
+  Not verified live: external payment/email/DB hosts, deployed env values.
+================================================================================
+END OF MANUAL
+================================================================================
