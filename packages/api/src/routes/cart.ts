@@ -1,28 +1,10 @@
 import { Router } from 'express';
 import prisma from '@nexus/database';
-import { authenticate, optionalAuth } from '../middleware/auth';
+import { optionalAuth } from '../middleware/auth';
 import { requireStore } from '../middleware/resolve-store';
+import { calculateCouponDiscount } from '../utils/coupon-discount';
 
 export const cartRouter = Router();
-
-// One-time dedup: remove duplicate cart items caused by old variantId='' bug (before requireStore so no auth needed)
-cartRouter.post('/dedup', async (_req, res, next) => {
-  try {
-    const result = await prisma.$executeRawUnsafe(`
-      DELETE FROM cart_items
-      WHERE id IN (
-        SELECT id FROM (
-          SELECT id, ROW_NUMBER() OVER (
-            PARTITION BY "cartId", "productId", CASE WHEN "variantId" IS NULL THEN '__NULL__' ELSE "variantId" END
-            ORDER BY id
-          ) AS rn
-          FROM cart_items
-        ) t WHERE t.rn > 1
-      );
-    `);
-    res.json({ success: true, data: { removed: result } });
-  } catch (error) { next(error); }
-});
 
 cartRouter.get('/', optionalAuth, async (req: any, res, next) => {
   try {
@@ -44,18 +26,47 @@ cartRouter.get('/', optionalAuth, async (req: any, res, next) => {
   } catch (error) { next(error); }
 });
 
-cartRouter.post('/add', authenticate, async (req: any, res, next) => {
+cartRouter.post('/add', optionalAuth, async (req: any, res, next) => {
   try {
     const { productId, variantId, quantity = 1 } = req.body;
+    if (!productId) return res.status(400).json({ success: false, error: 'productId is required' });
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      return res.status(400).json({ success: false, error: 'Quantity must be a positive integer' });
+    }
+
+    const sessionId = req.headers['x-session-id'] as string;
+    const customerId = req.user?.userId || null;
+    if (!customerId && !sessionId) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+
+    // The product must belong to the resolved store (prevents cross-store items).
+    const product = await prisma.product.findFirst({ where: { id: productId, storeId: req.storeId! } });
+    if (!product) return res.status(404).json({ success: false, error: 'Product not found in this store' });
+    if (product.status !== 'PUBLISHED') return res.status(400).json({ success: false, error: 'Product is not available' });
+
+    if (variantId) {
+      const variant = await prisma.productVariant.findFirst({ where: { id: variantId, productId } });
+      if (!variant) return res.status(404).json({ success: false, error: 'Variant not found' });
+      if (variant.stock > 0 && quantity > variant.stock) {
+        return res.status(400).json({ success: false, error: `Only ${variant.stock} in stock` });
+      }
+    } else if (product.stock > 0 && quantity > product.stock) {
+      return res.status(400).json({ success: false, error: `Only ${product.stock} in stock` });
+    }
 
     let cart = await prisma.cart.findFirst({
-      where: { customerId: req.user.userId, storeId: req.storeId! },
+      where: customerId
+        ? { customerId, storeId: req.storeId! }
+        : { sessionId, storeId: req.storeId! },
       orderBy: { updatedAt: 'desc' },
     });
 
     if (!cart) {
       cart = await prisma.cart.create({
-        data: { storeId: req.storeId!, customerId: req.user.userId },
+        data: customerId
+          ? { storeId: req.storeId!, customerId }
+          : { storeId: req.storeId!, sessionId },
       });
     }
 
@@ -64,7 +75,12 @@ cartRouter.post('/add', authenticate, async (req: any, res, next) => {
       where: { cartId: cart.id, productId, variantId: vId },
     });
     if (existingItem) {
-      await prisma.cartItem.update({ where: { id: existingItem.id }, data: { quantity: existingItem.quantity + quantity } });
+      const newQty = existingItem.quantity + quantity;
+      const cap = vId ? (await prisma.productVariant.findUnique({ where: { id: vId } }))?.stock : product.stock;
+      if (cap && cap > 0 && newQty > cap) {
+        return res.status(400).json({ success: false, error: `Only ${cap} in stock` });
+      }
+      await prisma.cartItem.update({ where: { id: existingItem.id }, data: { quantity: newQty } });
     } else {
       await prisma.cartItem.create({ data: { cartId: cart.id, productId, variantId: vId, quantity } });
     }
@@ -123,21 +139,59 @@ cartRouter.delete('/item/:id', optionalAuth, async (req: any, res, next) => {
 cartRouter.post('/coupon', optionalAuth, async (req: any, res, next) => {
   try {
     const { code } = req.body;
-    const coupon = await prisma.coupon.findFirst({ where: { code, storeId: req.storeId! } });
-    if (!coupon || !coupon.isActive || coupon.expiresAt < new Date() || coupon.usedCount >= coupon.maxUses) {
-      return res.status(400).json({ success: false, error: 'Invalid or expired coupon' });
-    }
+    if (!code) return res.status(400).json({ success: false, error: 'Coupon code is required' });
+    const coupon = await prisma.coupon.findFirst({ where: { code: code.toUpperCase(), storeId: req.storeId! } });
+    if (!coupon) return res.status(400).json({ success: false, error: 'Coupon not found' });
+    const now = new Date();
+    if (!coupon.isActive) return res.status(400).json({ success: false, error: 'Coupon is no longer active' });
+    if (coupon.startsAt && coupon.startsAt > now) return res.status(400).json({ success: false, error: 'Coupon is not valid yet' });
+    if (coupon.expiresAt < now) return res.status(400).json({ success: false, error: 'Coupon has expired' });
+    if (coupon.maxUses > 0 && coupon.usedCount >= coupon.maxUses) return res.status(400).json({ success: false, error: 'Coupon has reached its usage limit' });
 
     const sessionId = req.headers['x-session-id'] as string;
     const cart = await prisma.cart.findFirst({
       where: req.user ? { customerId: req.user.userId, storeId: req.storeId! } : { sessionId, storeId: req.storeId! },
+      include: { items: { include: { product: true } } },
       orderBy: { updatedAt: 'desc' },
     });
+    if (!cart || cart.items.length === 0) return res.status(400).json({ success: false, error: 'Cart is empty' });
 
-    if (cart) {
-      const subtotal = (cart as any).items?.reduce((sum: number, item: any) => sum + (item.product?.price || 0) * item.quantity, 0) || 0;
-      const discount = coupon.discountType === 'PERCENTAGE' ? Math.round(subtotal * coupon.discountValue) / 100 : coupon.discountValue;
-      await prisma.cart.update({ where: { id: cart.id }, data: { couponCode: code, couponDiscount: discount } });
+    const subtotal = cart.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    if (coupon.minOrderAmount > 0 && subtotal < coupon.minOrderAmount) {
+      return res.status(400).json({ success: false, error: `This coupon requires a minimum order of ${coupon.minOrderAmount}` });
+    }
+
+    // Per-customer usage cap (only enforceable for authenticated customers).
+    if (coupon.maxUsesPerCustomer > 0 && req.user) {
+      const customer = await prisma.customer.findUnique({ where: { userId: req.user.userId } });
+      if (customer) {
+        const usedByCustomer = await prisma.couponUsage.count({ where: { couponId: coupon.id, customerId: customer.id } });
+        if (usedByCustomer >= coupon.maxUsesPerCustomer) {
+          return res.status(400).json({ success: false, error: 'You have already used this coupon the maximum number of times' });
+        }
+      }
+    }
+
+    // appliesTo restricts to specific product ids (empty = all products).
+    if (Array.isArray(coupon.appliesTo) && coupon.appliesTo.length > 0) {
+      const eligible = cart.items.some(item => coupon.appliesTo.includes(item.productId));
+      if (!eligible) return res.status(400).json({ success: false, error: 'This coupon does not apply to any items in your cart' });
+    }
+
+    const discount = calculateCouponDiscount(coupon.discountType, coupon.discountValue, subtotal);
+
+    await prisma.cart.update({ where: { id: cart.id }, data: { couponCode: code.toUpperCase(), couponDiscount: discount } });
+
+    // Increment global usage once per successful application.
+    await prisma.coupon.update({
+      where: { id: coupon.id },
+      data: { usedCount: { increment: 1 } },
+    });
+    if (req.user) {
+      const customer = await prisma.customer.findUnique({ where: { userId: req.user.userId } });
+      if (customer) {
+        await prisma.couponUsage.create({ data: { couponId: coupon.id, customerId: customer.id } }).catch(() => {});
+      }
     }
 
     const finalDiscount = coupon.discountType === 'PERCENTAGE' ? coupon.discountValue + '%' : coupon.discountValue;

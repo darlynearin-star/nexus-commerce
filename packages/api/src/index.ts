@@ -1,9 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
-import { rateLimit } from 'express-rate-limit';
 import { authRouter } from './routes/auth';
 import { productsRouter } from './routes/products';
 import { ordersRouter } from './routes/orders';
@@ -32,18 +30,29 @@ import { cacheRouter } from './routes/cache';
 import { backupsRouter } from './routes/backups';
 import { storeSettingsRouter } from './routes/store-settings';
 import { uploadRouter } from './routes/upload';
+import { storage } from './utils/storage';
 
 import { resolveStore } from './middleware/resolve-store';
 import { errorHandler } from './middleware/error-handler';
 import { checkKillSwitch } from './middleware/kill-switch';
 import { authenticate } from './middleware/auth';
 import prisma, { initDatabase, getDbStatus } from '@nexus/database';
-import { logger } from './utils/logger';
+import { logger, newRequestId } from './utils/logger';
 import type { JijiCategory } from '@nexus/database';
 import { mirrorToFallbackIfChanged, restoreFallbackIfEmpty, getFallbackClient } from './utils/db-mirror';
+import { globalLimiter, authLimiter, loginLimiter } from './middleware/rate-limit';
 
-// Startup migration: sync DB columns that Prisma schema needs
+const PORT = process.env.PORT || 4000;
+
+// Startup migration: legacy drift-sync for DBs that predate Prisma migrations.
+// This is a documented compatibility path, gated by RUN_LEGACY_MIGRATIONS
+// (default on for existing deployments). New installs should use `prisma db push`
+// or `prisma migrate deploy` instead — see packages/database/prisma/migrations.
 async function runMigrations() {
+  if (process.env.RUN_LEGACY_MIGRATIONS === 'false') {
+    logger.info('Legacy migrations skipped (RUN_LEGACY_MIGRATIONS=false)');
+    return;
+  }
   try {
     await prisma.$executeRawUnsafe("ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS phone TEXT NOT NULL DEFAULT ''");
     logger.info('Migration: added phone column to store_settings');
@@ -73,6 +82,11 @@ async function runMigrations() {
     logger.info('Migration: added estimatedDelivery to orders');
     await prisma.$executeRawUnsafe("ALTER TABLE orders ADD COLUMN IF NOT EXISTS \"deliveredAt\" TIMESTAMP");
     logger.info('Migration: added deliveredAt to orders');
+    // Guest checkout: customerId nullable + guest contact columns
+    await prisma.$executeRawUnsafe('DO $$ BEGIN ALTER TABLE orders ALTER COLUMN "customerId" DROP NOT NULL; EXCEPTION WHEN others THEN NULL; END $$');
+    await prisma.$executeRawUnsafe("ALTER TABLE orders ADD COLUMN IF NOT EXISTS \"guestEmail\" TEXT NOT NULL DEFAULT ''");
+    await prisma.$executeRawUnsafe("ALTER TABLE orders ADD COLUMN IF NOT EXISTS \"guestName\" TEXT NOT NULL DEFAULT ''");
+    logger.info('Migration: added guest checkout columns to orders');
     // Auth: Google OAuth + magic links
     await prisma.$executeRawUnsafe('ALTER TABLE users ADD COLUMN IF NOT EXISTS "googleId" TEXT');
     await prisma.$executeRawUnsafe('ALTER TABLE users ALTER COLUMN "passwordHash" DROP NOT NULL');
@@ -86,27 +100,50 @@ async function runMigrations() {
       "createdAt" TIMESTAMP NOT NULL DEFAULT now()
     )`);
     logger.info('Migration: added googleId + magic_link_tokens');
+    // Password reset tokens
+    await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id TEXT PRIMARY KEY,
+      token TEXT NOT NULL UNIQUE,
+      email TEXT NOT NULL,
+      "expiresAt" TIMESTAMP NOT NULL,
+      "usedAt" TIMESTAMP,
+      "createdAt" TIMESTAMP NOT NULL DEFAULT now()
+    )`);
+    await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS password_reset_tokens_email_idx ON password_reset_tokens(email)');
+    logger.info('Migration: added password_reset_tokens');
+    // Search: pg_trgm trigram index on product searchable columns
+    await prisma.$executeRawUnsafe('CREATE EXTENSION IF NOT EXISTS pg_trgm');
+    await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS products_name_trgm_idx ON products USING gin (name gin_trgm_ops)');
+    await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS products_description_trgm_idx ON products USING gin (description gin_trgm_ops)');
+    await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS products_brand_trgm_idx ON products USING gin (brand gin_trgm_ops)');
+    logger.info('Migration: added pg_trgm search indexes on products');
   } catch (e: any) {
     logger.warn(`Migrations skipped: ${e.message}`);
   }
 }
 
+// Factory so tests can mount the app without starting the listener (supertest).
+export function createApp() {
 const app = express();
 app.set('trust proxy', 1); // Trust Render proxy for real visitor IPs (rate limiting, activity logs)
-const PORT = process.env.PORT || 4000;
 
 // Security
+const cspConnectSrc = process.env.CSP_CONNECT_SRC || ["'self'", 'https://nexus-api-69q5.onrender.com'];
+const cspImgSrc = process.env.CSP_IMG_SRC || ["'self'", 'data:', 'blob:', 'https://picsum.photos', 'https://res.cloudinary.com', 'https://nexus-api-69q5.onrender.com'];
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' },
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:', 'blob:', 'https://picsum.photos', 'https://res.cloudinary.com', 'https://nexus-api-69q5.onrender.com'],
-      connectSrc: ["'self'", 'https://nexus-api-69q5.onrender.com'],
+      imgSrc: cspImgSrc,
+      connectSrc: cspConnectSrc,
+      frameAncestors: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
     },
   },
 }));
@@ -129,18 +166,25 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 
-// Logging
-app.use(morgan('dev'));
+// Logging (structured, with request ids for correlation)
+app.use((req, res, next) => {
+  const requestId = newRequestId();
+  res.setHeader('X-Request-Id', requestId);
+  const start = Date.now();
+  res.on('finish', () => {
+    logger.request({
+      requestId,
+      method: req.method,
+      path: req.originalUrl,
+      status: res.statusCode,
+      durationMs: Date.now() - start,
+    });
+  });
+  next();
+});
 
 // Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, error: 'Too many requests, please try again later.' },
-});
-app.use('/api', limiter);
+app.use('/api', globalLimiter);
 
 // Kill switch check (applied to all /api routes)
 app.use('/api', checkKillSwitch);
@@ -149,15 +193,19 @@ app.use('/api', checkKillSwitch);
 app.use('/uploads', express.static('uploads'));
 
 // DB-backed uploads survive ephemeral host disks (Render wipes files on deploy).
+// S3/R2-backed uploads are streamed from object storage when STORAGE_* is set.
 app.get('/uploads/:storeId/:mediaId', async (req, res) => {
   try {
-    const media = await prisma.media.findFirst({ where: { id: req.params.mediaId, storeId: req.params.storeId } });
-    if (!media || !media.data) return res.status(404).send('Not found');
-    const buf = Buffer.from(media.data, 'base64');
-    res.setHeader('Content-Type', media.mimeType || 'application/octet-stream');
-    res.setHeader('Content-Length', buf.length);
+    const file = await storage.retrieve(req.params.storeId, req.params.mediaId);
+    if (!file) return res.status(404).send('Not found');
+    // Derive content type from the stored filename, not the client-supplied
+    // mimetype, and force nosniff so a spoofed file can never execute inline.
+    res.setHeader('Content-Type', file.mimeType);
+    res.setHeader('Content-Disposition', file.type === 'document' ? 'inline; filename="' + encodeURIComponent(file.filename) + '"' : 'inline');
+    res.setHeader('Content-Length', file.buffer.length);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    res.send(buf);
+    res.send(file.buffer);
   } catch {
     res.status(500).send('Server error');
   }
@@ -189,6 +237,8 @@ app.use('/api/upload', resolveStore, uploadRouter);
 app.use('/api/analytics', resolveStore, analyticsRouter);
 app.use('/api/search', resolveStore, searchRouter);
 // Global routes (no store context needed)
+app.use('/api/auth', authLimiter);
+app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth', authRouter);
 app.use('/api/customers', customersRouter);
 app.use('/api/notifications', notificationsRouter);
@@ -219,6 +269,13 @@ app.use('/api/*', (_req, res) => {
 // Error handling
 app.use(errorHandler);
 
+return app;
+}
+
+const app = createApp();
+export default app;
+
+if (require.main === module) {
 app.listen(PORT, async () => {
   logger.info(`Lyn-nyx Stores API running on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -244,8 +301,7 @@ app.listen(PORT, async () => {
       else logger.info('Fallback snapshot already up to date - mirror skipped');
     } catch (e: any) {
       logger.warn(`Fallback mirror failed: ${e?.message || e}`);
-    }
+}
   }
 });
-
-export default app;
+}

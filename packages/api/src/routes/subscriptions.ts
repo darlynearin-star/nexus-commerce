@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import prisma from '@nexus/database';
-import { authenticate, requireRole, AuthRequest } from '../middleware/auth';
+import { authenticate, requireRole, AuthRequest, invalidateUserCache } from '../middleware/auth';
 import { UserRole } from '@nexus/shared';
 import { logActivity } from '../utils/activity-log';
 import { getPaymentProvider } from '../payments';
@@ -297,6 +297,7 @@ subscriptionsRouter.post('/:id/lock', authenticate, requireRole(UserRole.SUPER_D
     }
     if (retailer) {
       await prisma.user.update({ where: { id: retailer.userId }, data: { isActive: false } });
+      invalidateUserCache(retailer.userId);
       await prisma.session.updateMany({ where: { userId: retailer.userId, isActive: true }, data: { isActive: false } });
     }
     await prisma.retailerSubscription.update({ where: { id: sub.id }, data: { status: 'SUSPENDED' } });
@@ -316,6 +317,7 @@ subscriptionsRouter.post('/:id/unlock', authenticate, requireRole(UserRole.SUPER
     }
     if (retailer) {
       await prisma.user.update({ where: { id: retailer.userId }, data: { isActive: true } });
+      invalidateUserCache(retailer.userId);
     }
     if (sub.status === 'SUSPENDED') {
       const now = new Date();

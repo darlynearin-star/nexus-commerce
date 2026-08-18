@@ -4,6 +4,7 @@ import { authenticate, requirePermission, AuthRequest } from '../middleware/auth
 import { Permission } from '@nexus/shared';
 import { requireFeatureEnabled } from '../middleware/feature-flags';
 import { logActivity } from '../utils/activity-log';
+import { cacheGet, cacheSet, cacheInvalidate, cacheInvalidateStore } from '../utils/cache';
 
 export const storesRouter = Router();
 
@@ -33,6 +34,23 @@ storesRouter.get('/', authenticate, requirePermission(Permission.MANAGE_SYSTEM),
       orderBy: { createdAt: 'desc' },
     });
     res.json({ success: true, data: stores });
+  } catch (error) { next(error); }
+});
+
+// List active stores (public) for the storefront switcher
+storesRouter.get('/public', async (_req, res, next) => {
+  try {
+    const cacheKey = 'stores:public';
+    const cached = cacheGet(cacheKey);
+    if (cached) return res.json(cached);
+    const stores = await prisma.store.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, slug: true, logoUrl: true },
+      orderBy: { name: 'asc' },
+    });
+    const payload = { success: true, data: stores };
+    cacheSet(cacheKey, payload);
+    res.json(payload);
   } catch (error) { next(error); }
 });
 
@@ -66,7 +84,7 @@ storesRouter.post('/', authenticate, requireFeatureEnabled('storeCreation'), asy
     if (storeCount >= MAX_STORES) {
       return res.status(503).json({ success: false, error: CONTACT_MESSAGE });
     }
-    const { name, slug, template, colors, logoUrl } = req.body;
+    const { name, slug, template, colors, logoUrl, phone, whatsapp } = req.body;
     const existingSlug = await prisma.store.findUnique({ where: { slug } });
     if (existingSlug) return res.status(409).json({ success: false, error: 'Store slug already taken' });
 
@@ -90,13 +108,14 @@ storesRouter.post('/', authenticate, requireFeatureEnabled('storeCreation'), asy
     });
 
     // Set extra fields via raw SQL (columns exist in DB but not in Prisma schema)
-    await prisma.$executeRaw`UPDATE store_settings SET phone = '', whatsapp = '' WHERE "storeId" = ${store.id}`;
+    await prisma.$executeRaw`UPDATE store_settings SET phone = ${phone || ''}, whatsapp = ${whatsapp || ''} WHERE "storeId" = ${store.id}`;
 
     // Re-fetch from raw SQL to include extra fields
     const [settingsRaw] = await prisma.$queryRaw`SELECT * FROM store_settings WHERE "storeId" = ${store.id}` as any;
     if (settingsRaw && store.settings) Object.assign(store.settings, settingsRaw);
 
     logActivity({ userId: req.user!.userId, action: 'store:created', resource: 'store', resourceId: store.id, req: req as any });
+    cacheInvalidate('stores:public');
     res.status(201).json({ success: true, data: store });
   } catch (error) { next(error); }
 });
@@ -126,6 +145,8 @@ storesRouter.put('/:id', authenticate, async (req: AuthRequest, res, next) => {
       include: { settings: true, theme: true },
     });
 
+    cacheInvalidate('stores:public');
+    cacheInvalidateStore(store.slug);
     res.json({ success: true, data: updated });
   } catch (error) { next(error); }
 });
@@ -142,6 +163,8 @@ storesRouter.post('/:id/toggle', authenticate, requirePermission(Permission.MANA
     });
 
     logActivity({ userId: req.user!.userId, action: updated.isActive ? 'store:activated' : 'store:deactivated', resource: 'store', resourceId: store.id, req: req as any });
+    cacheInvalidate('stores:public');
+    cacheInvalidateStore(store.slug);
     res.json({ success: true, data: updated });
   } catch (error) { next(error); }
 });

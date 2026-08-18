@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { randomBytes } from 'crypto';
 import prisma from '@nexus/database';
-import { authenticate, requirePermission, AuthRequest } from '../middleware/auth';
+import { authenticate, requirePermission, AuthRequest, invalidateUserCache } from '../middleware/auth';
 import { Permission, UserRole } from '@nexus/shared';
 import { logActivity } from '../utils/activity-log';
+import { validatePassword } from '../utils/password-policy';
 
 export const adminRouter = Router();
 
@@ -22,12 +23,17 @@ adminRouter.put('/users/:id', authenticate, requirePermission(Permission.MANAGE_
   try {
     const data: any = {};
     for (const key of ALLOWED_USER_FIELDS) { if (req.body[key] !== undefined) data[key] = req.body[key]; }
-    if (req.body.password) data.passwordHash = await require('bcryptjs').hash(req.body.password, 10);
+    if (req.body.password) {
+      const passwordError = validatePassword(req.body.password);
+      if (passwordError) return res.status(400).json({ success: false, error: passwordError });
+      data.passwordHash = await require('bcryptjs').hash(req.body.password, 10);
+    }
     if (data.isActive === false) {
       const target = await prisma.user.findUnique({ where: { id: req.params.id }, select: { role: true } });
       if (target?.role === UserRole.SUPER_DEVELOPER) return res.status(403).json({ success: false, error: 'Cannot suspend a super developer account' });
     }
     const user = await prisma.user.update({ where: { id: req.params.id }, data });
+    invalidateUserCache(user.id);
     if (data.isActive === false) {
       await prisma.session.updateMany({ where: { userId: user.id, isActive: true }, data: { isActive: false } });
     }
@@ -41,6 +47,10 @@ adminRouter.post('/users', authenticate, requirePermission(Permission.MANAGE_USE
   try {
     const bcrypt = require('bcryptjs');
     const password = req.body.password || randomBytes(8).toString('hex');
+    if (req.body.password) {
+      const passwordError = validatePassword(req.body.password);
+      if (passwordError) return res.status(400).json({ success: false, error: passwordError });
+    }
     if (!req.body.password) console.warn(`Generated random password for ${req.body.email} - share it securely`);
     const passwordHash = await bcrypt.hash(password, 10);
     const data: any = {};
@@ -61,6 +71,7 @@ adminRouter.delete('/users/:id', authenticate, requirePermission(Permission.MANA
     const target = await prisma.user.findUnique({ where: { id: req.params.id }, select: { role: true } });
     if (target?.role === UserRole.SUPER_DEVELOPER) return res.status(403).json({ success: false, error: 'Cannot suspend a super developer account' });
     await prisma.user.update({ where: { id: req.params.id }, data: { isActive: false } });
+    invalidateUserCache(req.params.id);
     await prisma.session.updateMany({ where: { userId: req.params.id, isActive: true }, data: { isActive: false } });
     logActivity({ userId: req.user!.userId, action: 'user:deleted', resource: 'user', resourceId: req.params.id, req: req as any });
     res.json({ success: true, message: 'User suspended' });
@@ -107,6 +118,7 @@ adminRouter.post('/repair/store-ownership', authenticate, requirePermission(Perm
     });
 
     await prisma.user.update({ where: { id: userId }, data: { role: 'RETAILER' } });
+    invalidateUserCache(userId);
 
     logActivity({ userId: req.user!.userId, action: 'store:ownership-repaired', resource: 'store', resourceId: store.id, details: { userId, storeSlug }, req: req as any });
     res.json({ success: true, message: `Store "${storeSlug}" activated and assigned to user ${userId}` });
@@ -123,6 +135,7 @@ adminRouter.post('/repair/all-store-ownerships', authenticate, requirePermission
       if (!retailer) {
         await prisma.retailer.create({ data: { userId: store.ownerId, storeName: store.name, storeSlug: store.slug } });
         await prisma.user.update({ where: { id: store.ownerId }, data: { role: 'RETAILER' } });
+        invalidateUserCache(store.ownerId);
         results.push({ storeSlug: store.slug, action: 'created-retailer' });
       } else {
         results.push({ storeSlug: store.slug, action: 'already-has-retailer' });

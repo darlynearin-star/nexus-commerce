@@ -3,11 +3,12 @@ import prisma from '@nexus/database';
 import { authenticate, requirePermission, AuthRequest } from '../middleware/auth';
 import { Permission } from '@nexus/shared';
 import { StoreRequest, requireStore, requireStoreOwner } from '../middleware/resolve-store';
+import { storage } from '../utils/storage';
 
 export const mediaRouter = Router();
 mediaRouter.use(requireStore);
 
-mediaRouter.get('/', authenticate, async (req: StoreRequest, res, next) => {
+mediaRouter.get('/', authenticate, requireStoreOwner, async (req: StoreRequest, res, next) => {
   try {
     const media = await prisma.media.findMany({ where: { storeId: req.storeId! }, orderBy: { createdAt: 'desc' } });
     res.json({ success: true, data: media.map(({ data: _data, ...rest }) => rest) });
@@ -26,6 +27,7 @@ mediaRouter.delete('/:id', authenticate, requireStoreOwner, requirePermission(Pe
   try {
     const existing = await prisma.media.findFirst({ where: { id: req.params.id, storeId: req.storeId! } });
     if (!existing) return res.status(404).json({ success: false, error: 'Media not found' });
+    await storage.remove(req.storeId!, req.params.id);
     await prisma.media.delete({ where: { id: req.params.id } });
     res.json({ success: true, message: 'Media deleted' });
   } catch (error) { next(error); }

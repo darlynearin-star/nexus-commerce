@@ -8,6 +8,7 @@ import { logActivity } from '../utils/activity-log';
 import { StoreRequest, requireStore, requireStoreOwner } from '../middleware/resolve-store';
 import { validate } from '../middleware/validate';
 import { createProductSchema, updateProductSchema, createVariantSchema, updateVariantSchema, bulkVariantsSchema } from '../validation/product';
+import { cacheGet, cacheSet, cacheInvalidateStore } from '../utils/cache';
 
 function generateShortCode(): string {
   return crypto.randomBytes(5).toString('base64url').slice(0, 8);
@@ -66,6 +67,14 @@ productsRouter.get('/', optionalAuth, async (req: StoreRequest, res, next) => {
     const brand = req.query.brand as string;
     const status = req.query.status as string;
 
+    // Public (no auth) list reads are cacheable; authed requests always bypass cache.
+    if (!(req as any).user) {
+      const specKey = Object.keys(req.query).filter(k => k.startsWith('spec_')).map(k => `${k}=${req.query[k]}`).join(',');
+      const cacheKey = `products:${req.store!.slug}:list:${page}:${limit}:${sort}:${order}:${search || ''}:${category || ''}:${parent || ''}:${minPrice || ''}:${maxPrice || ''}:${brand || ''}:${specKey}`;
+      const cached = cacheGet(cacheKey);
+      if (cached) return res.json(cached);
+    }
+
     const where: any = { storeId: req.storeId! };
     if (!(req as any).user) {
       where.status = 'PUBLISHED';
@@ -121,7 +130,12 @@ productsRouter.get('/', optionalAuth, async (req: StoreRequest, res, next) => {
       prisma.product.count({ where }),
     ]);
 
-    res.json({ success: true, data: products, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+    const payload = { success: true, data: products, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    if (!(req as any).user) {
+      const specKey = Object.keys(req.query).filter(k => k.startsWith('spec_')).map(k => `${k}=${req.query[k]}`).join(',');
+      cacheSet(`products:${req.store!.slug}:list:${page}:${limit}:${sort}:${order}:${search || ''}:${category || ''}:${parent || ''}:${minPrice || ''}:${maxPrice || ''}:${brand || ''}:${specKey}`, payload);
+    }
+    res.json(payload);
   } catch (error) { next(error); }
 });
 
@@ -129,6 +143,14 @@ productsRouter.get('/:slug', optionalAuth, async (req: StoreRequest & AuthReques
   try {
     const where: any = { slug: req.params.slug, storeId: req.storeId! };
     if (!req.user) where.status = 'PUBLISHED';
+
+    // Public (no auth) product reads are cacheable.
+    if (!req.user) {
+      const cacheKey = `products:${req.store!.slug}:detail:${req.params.slug}`;
+      const cached = cacheGet(cacheKey);
+      if (cached) return res.json(cached);
+    }
+
     const product = await prisma.product.findFirst({
       where,
       include: { category: true, variants: true, downloads: true, reviews: { where: { isApproved: true }, orderBy: { createdAt: 'desc' }, take: 20, include: { customer: { select: { user: { select: { firstName: true, lastName: true } } } } } } },
@@ -139,27 +161,41 @@ productsRouter.get('/:slug', optionalAuth, async (req: StoreRequest & AuthReques
       where: { storeId: req.storeId!, categoryId: product.categoryId, id: { not: product.id }, status: 'PUBLISHED' },
       take: 6, orderBy: { createdAt: 'desc' },
     });
-    res.json({ success: true, data: { ...product, related } });
+    const payload = { success: true, data: { ...product, related } };
+    if (!req.user) {
+      cacheSet(`products:${req.store!.slug}:detail:${req.params.slug}`, payload);
+    }
+    res.json(payload);
   } catch (error) { next(error); }
 });
 
 productsRouter.get('/featured/list', async (req: StoreRequest, res, next) => {
   try {
+    const cacheKey = `products:${req.store!.slug}:featured`;
+    const cached = cacheGet(cacheKey);
+    if (cached) return res.json(cached);
     const products = await prisma.product.findMany({
       where: { storeId: req.storeId!, isFeatured: true, status: 'PUBLISHED' },
       include: { category: true }, take: 8, orderBy: { createdAt: 'desc' },
     });
-    res.json({ success: true, data: products });
+    const payload = { success: true, data: products };
+    cacheSet(cacheKey, payload);
+    res.json(payload);
   } catch (error) { next(error); }
 });
 
 productsRouter.get('/new/list', async (req: StoreRequest, res, next) => {
   try {
+    const cacheKey = `products:${req.store!.slug}:new`;
+    const cached = cacheGet(cacheKey);
+    if (cached) return res.json(cached);
     const products = await prisma.product.findMany({
       where: { storeId: req.storeId!, isNew: true, status: 'PUBLISHED' },
       include: { category: true }, take: 8, orderBy: { createdAt: 'desc' },
     });
-    res.json({ success: true, data: products });
+    const payload = { success: true, data: products };
+    cacheSet(cacheKey, payload);
+    res.json(payload);
   } catch (error) { next(error); }
 });
 
@@ -171,6 +207,7 @@ productsRouter.post('/', authenticate, requireStoreOwner, requirePermission(Perm
       data: { name, slug, brand: brand || '', sku, description: description || '', shortCode, specifications: specifications || {}, features: features || [], price, compareAtPrice: compareAtPrice || null, costPerItem: costPerItem || null, stock: stock ?? 0, lowStockThreshold: lowStockThreshold ?? 10, trackInventory: trackInventory ?? true, allowBackorder: allowBackorder ?? false, status: status || 'DRAFT', categoryId, tags: tags || [], seoTitle: seoTitle || '', seoDescription: seoDescription || '', returnPolicy: returnPolicy || '', warranty: warranty || '', weight: weight ?? 0, weightUnit: weightUnit || 'kg', shippingClass: shippingClass || 'standard', estimatedDays: estimatedDays || '5-7 business days', freeShipping: freeShipping ?? false, images: images || [], isFeatured: isFeatured ?? false, isNew: isNew ?? false, storeId: req.storeId! },
     });
     logActivity({ userId: (req as any).user!.userId, action: 'product:created', resource: 'product', resourceId: product.id, req: req as any });
+    cacheInvalidateStore(req.store!.slug);
     res.status(201).json({ success: true, data: product });
   } catch (error) { next(error); }
 });
@@ -212,6 +249,7 @@ productsRouter.put('/:id', authenticate, requireStoreOwner, requirePermission(Pe
     if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
     const updated = await prisma.product.update({ where: { id: req.params.id }, data });
     logActivity({ userId: (req as any).user!.userId, action: 'product:updated', resource: 'product', resourceId: updated.id, details: { changes: Object.keys(req.body) }, req: req as any });
+    cacheInvalidateStore(req.store!.slug);
     res.json({ success: true, data: updated });
   } catch (error) { next(error); }
 });
@@ -224,15 +262,17 @@ productsRouter.delete('/:id', authenticate, requireStoreOwner, requirePermission
     if (references > 0) {
       await prisma.product.update({ where: { id: req.params.id }, data: { status: 'ARCHIVED' } });
       logActivity({ userId: (req as any).user!.userId, action: 'product:archived', resource: 'product', resourceId: req.params.id, req: req as any });
+      cacheInvalidateStore(req.store!.slug);
       return res.json({ success: true, message: 'Product archived (has order history)' });
     }
     await prisma.product.delete({ where: { id: req.params.id } });
     logActivity({ userId: (req as any).user!.userId, action: 'product:deleted', resource: 'product', resourceId: req.params.id, req: req as any });
+    cacheInvalidateStore(req.store!.slug);
     res.json({ success: true, message: 'Product deleted' });
   } catch (error) { next(error); }
 });
 
-productsRouter.get('/detail/:id', authenticate, requirePermission(Permission.MANAGE_PRODUCTS), async (req: StoreRequest, res, next) => {
+productsRouter.get('/detail/:id', authenticate, requireStoreOwner, requirePermission(Permission.MANAGE_PRODUCTS), async (req: StoreRequest, res, next) => {
   try {
     const product = await prisma.product.findFirst({
       where: { id: req.params.id, storeId: req.storeId! },
@@ -252,6 +292,7 @@ productsRouter.post('/:id/variants', authenticate, requireStoreOwner, requirePer
     const variant = await prisma.productVariant.create({
       data: { productId: req.params.id, name, sku, price: price || 0, stock: stock ?? 0, options: options || [], image: image || '' },
     });
+    cacheInvalidateStore(req.store!.slug);
     res.status(201).json({ success: true, data: variant });
   } catch (error) { next(error); }
 });
@@ -267,6 +308,7 @@ productsRouter.put('/:productId/variants/:id', authenticate, requireStoreOwner, 
       where: { id: req.params.id },
       data: { ...(name !== undefined && { name }), ...(sku !== undefined && { sku }), ...(price !== undefined && { price }), ...(stock !== undefined && { stock }), ...(options !== undefined && { options }), ...(image !== undefined && { image }) },
     });
+    cacheInvalidateStore(req.store!.slug);
     res.json({ success: true, data: updated });
   } catch (error) { next(error); }
 });
@@ -278,6 +320,7 @@ productsRouter.delete('/:productId/variants/:id', authenticate, requireStoreOwne
     });
     if (!variant) return res.status(404).json({ success: false, error: 'Variant not found' });
     await prisma.productVariant.delete({ where: { id: req.params.id } });
+    cacheInvalidateStore(req.store!.slug);
     res.json({ success: true, message: 'Variant deleted' });
   } catch (error) { next(error); }
 });
@@ -300,6 +343,7 @@ productsRouter.put('/:id/variants', authenticate, requireStoreOwner, requirePerm
     const updated = await prisma.product.findFirst({
       where: { id: req.params.id }, include: { variants: true },
     });
+    cacheInvalidateStore(req.store!.slug);
     res.json({ success: true, data: updated });
   } catch (error) { next(error); }
 });
@@ -320,6 +364,7 @@ productsRouter.post('/:id/duplicate', authenticate, requireStoreOwner, requirePe
         })),
       });
     }
+    cacheInvalidateStore(req.store!.slug);
     res.status(201).json({ success: true, data: duplicate });
   } catch (error) { next(error); }
 });

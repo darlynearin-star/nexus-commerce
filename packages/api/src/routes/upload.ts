@@ -2,22 +2,22 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import prisma from '@nexus/database';
-import { authenticate, requirePermission, AuthRequest } from '../middleware/auth';
+import { authenticate, requirePermission } from '../middleware/auth';
 import { Permission } from '@nexus/shared';
 import { StoreRequest, requireStore, requireStoreOwner } from '../middleware/resolve-store';
+import { storage, mimeFromFilename } from '../utils/storage';
 
-// Uploads are stored in the database (Media.data as base64) and served through
-// /uploads/:storeId/:mediaId. This survives ephemeral host filesystems (Render
-// recreates the disk on every deploy, which used to wipe uploaded images).
-const API_BASE = process.env.RENDER_EXTERNAL_URL || 'https://nexus-api-69q5.onrender.com';
+export { mimeFromFilename };
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const allowed = /jpeg|jpg|png|gif|webp|svg|mp4|pdf|doc|docx/;
-    const ok = allowed.test(path.extname(file.originalname).toLowerCase());
-    cb(null, ok);
+    // Refuse SVG uploads: SVG is HTML+script capable and would be served from the
+    // API origin, creating a stored-XSS / phishing vector.
+    const ext = path.extname(file.originalname).toLowerCase();
+    const allowed = /jpeg|jpg|png|gif|webp|mp4|pdf|doc|docx/;
+    cb(null, allowed.test(ext));
   },
 });
 
@@ -27,25 +27,15 @@ uploadRouter.use(requireStore);
 uploadRouter.post(['/', ''], authenticate, requireStoreOwner, requirePermission(Permission.MANAGE_MEDIA), upload.single('file'), async (req: StoreRequest, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
-    const { originalname, buffer, size, mimetype } = req.file;
-    const media = await prisma.media.create({
-      data: {
-        storeId: req.storeId!,
-        url: '',
-        thumbnailUrl: '',
-        alt: originalname,
-        type: mimetype.startsWith('image/') ? 'image' : 'document',
-        mimeType: mimetype,
-        size,
-        data: buffer.toString('base64'),
-        folder: req.body.folder || 'general',
-        productId: req.body.productId || null,
-      },
+    const { originalname, buffer } = req.file;
+    const { media } = await storage.store({
+      storeId: req.storeId!,
+      buffer,
+      filename: originalname,
+      folder: req.body.folder,
+      productId: req.body.productId,
     });
-    const url = `${API_BASE}/uploads/${req.storeId}/${media.id}`;
-    await prisma.media.update({ where: { id: media.id }, data: { url, thumbnailUrl: url } });
-    const { data: _data, ...safeMedia } = media;
-    res.status(201).json({ success: true, data: { ...safeMedia, url, thumbnailUrl: url } });
+    res.status(201).json({ success: true, data: media });
   } catch (error) { next(error); }
 });
 
