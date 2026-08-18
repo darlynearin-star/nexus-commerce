@@ -31,6 +31,7 @@
     "typecheck": "npx tsc --noEmit -p packages/shared/tsconfig.json && npx tsc --noEmit -p packages/web/tsconfig.json && npx tsc --noEmit -p packages/api/tsconfig.json && npx tsc --noEmit -p packages/storefront/tsconfig.json && npx tsc --noEmit -p packages/retailer-dashboard/tsconfig.json && npx tsc --noEmit -p packages/developer-dashboard/tsconfig.json"
   },
   "devDependencies": {
+    "@esbuild/linux-x64": "0.28.1",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.62.1",
     "@types/supertest": "^7.2.1",
