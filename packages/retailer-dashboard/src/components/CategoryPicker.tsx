@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { ChevronDown, ChevronRight, Search, X, ArrowLeft } from 'lucide-react';
 import { categoryIcon } from '@/lib/category-icons';
+import { useDismiss } from '@/lib/use-dismiss';
 
 interface Cat { id: string; name: string; slug: string; parentId: string | null; }
 
@@ -98,6 +99,8 @@ export default function CategoryPicker({ categories, selectedId, onChange }: { c
     setViewStack([]);
   };
 
+  const pickerRef = useDismiss(open, resetPicker);
+
   const iconFor = (name: string) => {
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     return categoryIcon(slug);
@@ -115,19 +118,19 @@ export default function CategoryPicker({ categories, selectedId, onChange }: { c
 
       {open && (
         <div onClick={resetPicker} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, maxHeight: '80vh', background: 'var(--bg-card)', borderRadius: '1rem 1rem 0 0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div ref={pickerRef} tabIndex={-1} onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, maxHeight: '80vh', background: 'var(--bg-card)', borderRadius: '1rem 1rem 0 0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)' }}>
               {viewStack.length > 0 && (
-                <button onClick={goBack} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-secondary)', display: 'flex' }}>
+                <button onClick={goBack} aria-label="Go back" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-secondary)', display: 'flex' }}>
                   <ArrowLeft size={20} />
                 </button>
               )}
               <Search size={18} style={{ opacity: 0.4, flexShrink: 0 }} />
               <input ref={inputRef} value={search} onChange={e => setSearch(e.target.value)} placeholder={viewStack.length > 0 ? 'Search sub-categories...' : 'Search categories...'}
                 style={{ flex: 1, border: 'none', outline: 'none', background: 'var(--bg)', padding: '0.375rem 0.5rem', borderRadius: '0.375rem', fontSize: '1rem', color: 'inherit' }} />
-              <button onClick={resetPicker} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-secondary)' }}><X size={20} /></button>
+              <button onClick={resetPicker} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-secondary)' }}><X size={20} /></button>
             </div>
 
             {/* Breadcrumb */}

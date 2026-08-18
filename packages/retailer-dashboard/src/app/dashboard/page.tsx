@@ -42,7 +42,13 @@ function DashboardContent() {
   const storeSlug = store?.slug || localStorage.getItem('activeStoreSlug');
   const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
 
-  if (loading || !user) return <div style={{ padding: '2rem' }}>{loading ? 'Loading...' : 'Redirecting...'}</div>;
+  if (loading || !user) return (
+    <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div className="skeleton" style={{ height: 32, width: '40%' }} />
+      <div className="skeleton" style={{ height: 16, width: '25%' }} />
+      <div className="skeleton" style={{ height: 180 }} />
+    </div>
+  );
   if (error) return <div style={{ padding: '2rem', color: 'var(--error)' }}>{error}</div>;
 
   const cards = [

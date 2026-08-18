@@ -38,7 +38,12 @@ export default function KillSwitchPage() {
     await api.put('/kill-switch', { maintenanceMessage: message });
   };
 
-  if (loading) return <div style={{ padding: '2rem' }}>Loading...</div>;
+  if (loading) return (
+    <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div className="skeleton" style={{ height: 28, width: '35%' }} />
+      <div className="skeleton" style={{ height: 120 }} />
+    </div>
+  );
 
   const activeCount = switches.filter(s => state[s.key] === true).length;
 
@@ -77,7 +82,7 @@ export default function KillSwitchPage() {
       <div className="card" style={{ marginTop: '1.5rem' }}>
         <h3 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Maintenance Page Message</h3>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <input className="input" value={message} onChange={e => setMessage(e.target.value)} placeholder="Custom maintenance message..." />
+          <input className="input" value={message} onChange={e => setMessage(e.target.value)} placeholder="Custom maintenance message..." aria-label="Maintenance message" />
           <button className="btn btn-primary btn-sm" onClick={updateMessage}>Save</button>
         </div>
       </div>

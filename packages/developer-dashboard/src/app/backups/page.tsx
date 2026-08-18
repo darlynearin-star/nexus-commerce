@@ -60,8 +60,8 @@ export default function BackupsPage() {
                 <td style={{ fontSize: '0.875rem' }}>{b.rowCount?.toLocaleString()}</td>
                 <td style={{ fontSize: '0.875rem' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}><HardDrive size={14} />{formatSize(b.size)}</div></td>
                 <td><div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button className="btn btn-ghost btn-sm" onClick={() => download(b.id)}><Download size={14} /></button>
-                  <button className="btn btn-ghost btn-sm" style={{ color: 'var(--error)' }} onClick={() => remove(b.id)}><Trash2 size={14} /></button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => download(b.id)} aria-label="Download"><Download size={14} /></button>
+                  <button className="btn btn-ghost btn-sm" style={{ color: 'var(--error)' }} onClick={() => remove(b.id)} aria-label="Delete"><Trash2 size={14} /></button>
                 </div></td>
               </tr>
             ))}</tbody>

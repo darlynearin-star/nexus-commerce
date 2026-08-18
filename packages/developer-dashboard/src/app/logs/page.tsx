@@ -38,6 +38,7 @@ export default function LogsPage() {
           <input
             className="form-input"
             placeholder="Filter by action (e.g. user:login)"
+            aria-label="Filter by action"
             value={action}
             onChange={e => { setAction(e.target.value); load(1, e.target.value); }}
             style={{ paddingLeft: '2.25rem' }}

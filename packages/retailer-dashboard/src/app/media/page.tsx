@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { useDismiss } from '@/lib/use-dismiss';
 import { Package, Edit2, Trash2, X, ShoppingCart, TrendingUp, DollarSign } from 'lucide-react';
 
 export default function ProductsPage() {
@@ -9,6 +10,8 @@ export default function ProductsPage() {
   const [modal, setModal] = useState<{ open: boolean; edit?: any }>({ open: false });
   const [form, setForm] = useState<any>({ name: '', sku: '', price: 0, stock: 0, status: 'DRAFT', brand: '' });
   const [saving, setSaving] = useState(false);
+
+  const modalRef = useDismiss(modal.open, () => setModal({ open: false }));
 
   useEffect(() => { loadProducts(); }, []);
 
@@ -94,8 +97,8 @@ export default function ProductsPage() {
                   <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--success)' }}>UGX {p.revenue.toLocaleString()}</td>
                   <td>
                     <div style={{ display: 'flex', gap: '0.25rem' }}>
-                      <button className="btn btn-ghost btn-icon" title="Edit" onClick={() => openEdit(p)}><Edit2 size={14} /></button>
-                      <button className="btn btn-ghost btn-icon" style={{ color: 'var(--error)' }} title="Delete" onClick={() => deleteProduct(p.id)}><Trash2 size={14} /></button>
+                      <button className="btn btn-ghost btn-icon" title="Edit" aria-label="Edit" onClick={() => openEdit(p)}><Edit2 size={14} /></button>
+                      <button className="btn btn-ghost btn-icon" style={{ color: 'var(--error)' }} title="Delete" aria-label="Delete" onClick={() => deleteProduct(p.id)}><Trash2 size={14} /></button>
                     </div>
                   </td>
                 </tr>
@@ -107,39 +110,39 @@ export default function ProductsPage() {
 
       {modal.open && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }} onClick={() => setModal({ open: false })}>
-          <div style={{ background: 'var(--surface)', borderRadius: '0.75rem', padding: '2rem', width: '100%', maxWidth: 440, maxHeight: '90vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
+          <div ref={modalRef} tabIndex={-1} style={{ background: 'var(--surface)', borderRadius: '0.75rem', padding: '2rem', width: '100%', maxWidth: 440, maxHeight: '90vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h3 style={{ fontWeight: 600 }}>Edit Product</h3>
-              <button className="btn btn-ghost btn-icon" onClick={() => setModal({ open: false })}><X size={18} /></button>
+              <button className="btn btn-ghost btn-icon" onClick={() => setModal({ open: false })} aria-label="Close dialog"><X size={18} /></button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <div>
-                <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Name</label>
-                <input className="input" value={form.name} onChange={e => setForm((p: any) => ({ ...p, name: e.target.value }))} />
+                <label htmlFor="productName" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Name</label>
+                <input id="productName" className="input" value={form.name} onChange={e => setForm((p: any) => ({ ...p, name: e.target.value }))} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>SKU</label>
-                  <input className="input" value={form.sku} onChange={e => setForm((p: any) => ({ ...p, sku: e.target.value }))} />
+                  <label htmlFor="productSku" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>SKU</label>
+                  <input id="productSku" className="input" value={form.sku} onChange={e => setForm((p: any) => ({ ...p, sku: e.target.value }))} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Brand</label>
-                  <input className="input" value={form.brand} onChange={e => setForm((p: any) => ({ ...p, brand: e.target.value }))} />
+                  <label htmlFor="productBrand" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Brand</label>
+                  <input id="productBrand" className="input" value={form.brand} onChange={e => setForm((p: any) => ({ ...p, brand: e.target.value }))} />
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Price (UGX)</label>
-                  <input className="input" type="number" value={form.price} onChange={e => setForm((p: any) => ({ ...p, price: parseFloat(e.target.value) || 0 }))} />
+                  <label htmlFor="productPrice" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Price (UGX)</label>
+                  <input id="productPrice" className="input" type="number" value={form.price} onChange={e => setForm((p: any) => ({ ...p, price: parseFloat(e.target.value) || 0 }))} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Stock</label>
-                  <input className="input" type="number" value={form.stock} onChange={e => setForm((p: any) => ({ ...p, stock: parseInt(e.target.value) || 0 }))} />
+                  <label htmlFor="productStock" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Stock</label>
+                  <input id="productStock" className="input" type="number" value={form.stock} onChange={e => setForm((p: any) => ({ ...p, stock: parseInt(e.target.value) || 0 }))} />
                 </div>
               </div>
               <div>
-                <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Status</label>
-                <select className="input" value={form.status} onChange={e => setForm((p: any) => ({ ...p, status: e.target.value }))}>
+                <label htmlFor="productStatus" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Status</label>
+                <select id="productStatus" className="input" value={form.status} onChange={e => setForm((p: any) => ({ ...p, status: e.target.value }))}>
                   <option value="DRAFT">Draft</option>
                   <option value="PUBLISHED">Published</option>
                   <option value="ARCHIVED">Archived</option>

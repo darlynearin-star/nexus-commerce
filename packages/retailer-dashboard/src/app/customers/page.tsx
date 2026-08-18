@@ -14,7 +14,7 @@ export default function CustomersPage() {
       <div style={{ marginBottom: '1.5rem' }}><h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Customers</h1><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{customers.length} customers</p></div>
       <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
         <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
-        <input className="input" style={{ paddingLeft: '2.25rem' }} placeholder="Search customers..." value={search} onChange={e => setSearch(e.target.value)} />
+        <input className="input" style={{ paddingLeft: '2.25rem' }} placeholder="Search customers..." aria-label="Search customers" value={search} onChange={e => setSearch(e.target.value)} />
       </div>
       <div className="card" style={{ padding: 0 }}>
         <div className="table-container"><table className="table">

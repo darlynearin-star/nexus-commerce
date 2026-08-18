@@ -308,7 +308,7 @@ export default function NewProductPage() {
     const val = attrValues[attr.key] || '';
     if (attr.type === 'select' && attr.options) {
       return (
-        <select className="input" value={val} onChange={e => setAttr(attr.key, e.target.value)}>
+        <select id={`attr-${attr.key}`} className="input" value={val} onChange={e => setAttr(attr.key, e.target.value)}>
           <option value="">Select {attr.label.toLowerCase()}...</option>
           {attr.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
@@ -343,15 +343,15 @@ export default function NewProductPage() {
       );
     }
     if (attr.type === 'number') {
-      return <input className="input" type="number" value={val} onChange={e => setAttr(attr.key, e.target.value)} placeholder={attr.placeholder} />;
+      return <input id={`attr-${attr.key}`} className="input" type="number" value={val} onChange={e => setAttr(attr.key, e.target.value)} placeholder={attr.placeholder} />;
     }
-    return <input className="input" value={val} onChange={e => setAttr(attr.key, e.target.value)} placeholder={attr.placeholder || `Enter ${attr.label.toLowerCase()}`} />;
+    return <input id={`attr-${attr.key}`} className="input" value={val} onChange={e => setAttr(attr.key, e.target.value)} placeholder={attr.placeholder || `Enter ${attr.label.toLowerCase()}`} />;
   };
 
   return (
     <div style={{ padding: '2rem', maxWidth: 960, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-        <button className="btn btn-ghost btn-icon" onClick={() => router.push('/products')}><ArrowLeft size={18} /></button>
+        <button className="btn btn-ghost btn-icon" onClick={() => router.push('/products')} aria-label="Go back"><ArrowLeft size={18} /></button>
         <div style={{ flex: 1 }}><h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>New Product</h1><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Create a new product for your store</p></div>
         <button className="btn btn-secondary" onClick={runTest} disabled={testing} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}>
           {testing ? <RefreshCw size={16} className="animate-spin" /> : <Plug size={16} />} {testing ? 'Testing...' : 'Test Product Service'}
@@ -387,15 +387,15 @@ export default function NewProductPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {/* Category FIRST */}
             <div>
-              <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Major Category *<FieldInfo text="Select the broad category your product belongs to, then pick the specific subcategory below." /></label>
-              <select className="input" value={majorCatId} onChange={e => { const id = e.target.value; setMajorCatId(id); update('categoryId', ''); update('categorySlug', ''); setAttrValues({}); setCategoryAttrs([]); }}>
+              <label htmlFor="majorCategory" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Major Category *<FieldInfo text="Select the broad category your product belongs to, then pick the specific subcategory below." /></label>
+              <select id="majorCategory" className="input" value={majorCatId} onChange={e => { const id = e.target.value; setMajorCatId(id); update('categoryId', ''); update('categorySlug', ''); setAttrValues({}); setCategoryAttrs([]); }}>
                 <option value="">Select major category...</option>
                 {topCats.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
               </select>
               {majorCatId && (
                 <div style={{ marginTop: '0.5rem' }}>
-                  <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Subcategory *<FieldInfo text="Choose the specific category that best describes your product." /></label>
-                  <select className="input" value={form.categoryId} onChange={e => { if (e.target.value) handleCategoryChange(e.target.value); else { update('categoryId', ''); update('categorySlug', ''); setAttrValues({}); setCategoryAttrs([]); } }}>
+                  <label htmlFor="subcategory" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Subcategory *<FieldInfo text="Choose the specific category that best describes your product." /></label>
+                  <select id="subcategory" className="input" value={form.categoryId} onChange={e => { if (e.target.value) handleCategoryChange(e.target.value); else { update('categoryId', ''); update('categorySlug', ''); setAttrValues({}); setCategoryAttrs([]); } }}>
                     <option value="">Select subcategory...</option>
                     {subCats.map(c => <option key={c.id} value={c.id}>{'— '.repeat(Math.max(0, c.depth - 1))}{c.label}</option>)}
                   </select>
@@ -410,7 +410,7 @@ export default function NewProductPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   {categoryAttrs.map(attr => (
                     <div key={attr.key}>
-                      <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>{attr.label}{attr.unit ? ` (${attr.unit})` : ''}</label>
+                      <label htmlFor={`attr-${attr.key}`} style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>{attr.label}{attr.unit ? ` (${attr.unit})` : ''}</label>
                       {renderAttrField(attr)}
                     </div>
                   ))}
@@ -420,22 +420,22 @@ export default function NewProductPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div>
-                <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Product Name *<FieldInfo text="The name of your product as it appears on your storefront and in search results." /></label>
-                <input className="input" value={form.name} onChange={e => { update('name', e.target.value); if (!seoTitleEdited.current) update('seoTitle', e.target.value); }} placeholder="e.g., Sterling Silver Chain Necklace" />
+                <label htmlFor="productName" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Product Name *<FieldInfo text="The name of your product as it appears on your storefront and in search results." /></label>
+                <input id="productName" className="input" value={form.name} onChange={e => { update('name', e.target.value); if (!seoTitleEdited.current) update('seoTitle', e.target.value); }} placeholder="e.g., Sterling Silver Chain Necklace" />
               </div>
               <div>
-                <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Brand<FieldInfo text="The brand or manufacturer of this product. Helps customers identify and search for your product." /></label>
-                <input className="input" value={form.brand} onChange={e => update('brand', e.target.value)} placeholder="Brand name" />
+                <label htmlFor="productBrand" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Brand<FieldInfo text="The brand or manufacturer of this product. Helps customers identify and search for your product." /></label>
+                <input id="productBrand" className="input" value={form.brand} onChange={e => update('brand', e.target.value)} placeholder="Brand name" />
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div>
-                <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>SKU *<FieldInfo text="Stock Keeping Unit — your unique code to track this product in inventory." /></label>
-                <input className="input" value={form.sku} onChange={e => update('sku', e.target.value)} placeholder="e.g., AD-JW-001" />
+                <label htmlFor="productSku" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>SKU *<FieldInfo text="Stock Keeping Unit — your unique code to track this product in inventory." /></label>
+                <input id="productSku" className="input" value={form.sku} onChange={e => update('sku', e.target.value)} placeholder="e.g., AD-JW-001" />
               </div>
               <div>
-                <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Status<FieldInfo text="Draft = hidden. Published = live on store. Archived = removed from view." /></label>
-                <select className="input" value={form.status} onChange={e => update('status', e.target.value)}>
+                <label htmlFor="productStatus" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Status<FieldInfo text="Draft = hidden. Published = live on store. Archived = removed from view." /></label>
+                <select id="productStatus" className="input" value={form.status} onChange={e => update('status', e.target.value)}>
                   <option value="DRAFT">Draft</option>
                   <option value="PUBLISHED">Published</option>
                   <option value="ARCHIVED">Archived</option>
@@ -443,8 +443,8 @@ export default function NewProductPage() {
               </div>
             </div>
             <div>
-              <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Description<FieldInfo text="A detailed description of your product. Include materials, sizing, features — anything a customer should know before buying." /></label>
-              <textarea className="input" rows={4} value={form.description} onChange={e => update('description', e.target.value)} placeholder="Product description..." style={{ resize: 'vertical' }} />
+              <label htmlFor="productDescription" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Description<FieldInfo text="A detailed description of your product. Include materials, sizing, features — anything a customer should know before buying." /></label>
+              <textarea id="productDescription" className="input" rows={4} value={form.description} onChange={e => update('description', e.target.value)} placeholder="Product description..." style={{ resize: 'vertical' }} />
             </div>
           </div>
         </div>
@@ -454,16 +454,16 @@ export default function NewProductPage() {
           <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Pricing</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
             <div>
-              <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Price (UGX) *<FieldInfo text="The selling price the customer pays. Enter in UGX." /></label>
-              <input className="input" type="number" value={form.price} onChange={e => update('price', e.target.value)} placeholder="0" />
+              <label htmlFor="productPrice" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Price (UGX) *<FieldInfo text="The selling price the customer pays. Enter in UGX." /></label>
+              <input id="productPrice" className="input" type="number" value={form.price} onChange={e => update('price', e.target.value)} placeholder="0" />
             </div>
             <div>
-              <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Compare-at Price<FieldInfo text="Original price shown with strikethrough to highlight a discount." /></label>
-              <input className="input" type="number" value={form.compareAtPrice} onChange={e => update('compareAtPrice', e.target.value)} placeholder="Original price" />
+              <label htmlFor="productCompareAtPrice" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Compare-at Price<FieldInfo text="Original price shown with strikethrough to highlight a discount." /></label>
+              <input id="productCompareAtPrice" className="input" type="number" value={form.compareAtPrice} onChange={e => update('compareAtPrice', e.target.value)} placeholder="Original price" />
             </div>
             <div>
-              <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Cost per Item<FieldInfo text="How much you paid for this item. Used for profit calculation. Customers don't see this." /></label>
-              <input className="input" type="number" value={form.costPerItem} onChange={e => update('costPerItem', e.target.value)} placeholder="Cost" />
+              <label htmlFor="productCostPerItem" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Cost per Item<FieldInfo text="How much you paid for this item. Used for profit calculation. Customers don't see this." /></label>
+              <input id="productCostPerItem" className="input" type="number" value={form.costPerItem} onChange={e => update('costPerItem', e.target.value)} placeholder="Cost" />
             </div>
           </div>
         </div>
@@ -481,13 +481,13 @@ export default function NewProductPage() {
                   <img src={url} alt="" style={{ width: '100%', height: 100, objectFit: 'cover' }} onError={() => markBroken(url)} />
                 )}
                 <div style={{ fontSize: '0.625rem', textAlign: 'center', padding: '0.125rem 0', color: 'var(--text-secondary)' }}>{i === 0 ? 'Main' : `Image ${i + 1}`}</div>
-                <button style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white' }} onClick={() => removeImage(url)}><X size={12} /></button>
+                <button aria-label="Remove image" style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white' }} onClick={() => removeImage(url)}><X size={12} /></button>
               </div>
             ))}
             {images.length < 10 && (
-              <label style={{ width: 100, height: 100, borderRadius: '0.5rem', border: '2px dashed var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.75rem', gap: '0.25rem' }}>
+              <label htmlFor="productImageUpload" style={{ width: 100, height: 100, borderRadius: '0.5rem', border: '2px dashed var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.75rem', gap: '0.25rem' }}>
                 <Upload size={20} /> {uploading ? 'Uploading...' : 'Upload'}
-                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleUpload} disabled={uploading} />
+                <input id="productImageUpload" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleUpload} disabled={uploading} />
               </label>
             )}
           </div>
@@ -497,12 +497,12 @@ export default function NewProductPage() {
         <div className="card" style={{ padding: '1.5rem' }}>
           <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Inventory</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Stock Quantity<FieldInfo text="How many units available to sell." /></label><input className="input" type="number" value={form.stock} onChange={e => update('stock', e.target.value)} /></div>
-            <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Low Stock Threshold<FieldInfo text="Alert when stock drops to this number." /></label><input className="input" type="number" value={form.lowStockThreshold} onChange={e => update('lowStockThreshold', e.target.value)} /></div>
+            <div><label htmlFor="productStock" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Stock Quantity<FieldInfo text="How many units available to sell." /></label><input id="productStock" className="input" type="number" value={form.stock} onChange={e => update('stock', e.target.value)} /></div>
+            <div><label htmlFor="productLowStockThreshold" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Low Stock Threshold<FieldInfo text="Alert when stock drops to this number." /></label><input id="productLowStockThreshold" className="input" type="number" value={form.lowStockThreshold} onChange={e => update('lowStockThreshold', e.target.value)} /></div>
           </div>
           <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.75rem' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}><input type="checkbox" checked={form.trackInventory} onChange={e => update('trackInventory', e.target.checked)} /> Track Inventory</label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}><input type="checkbox" checked={form.allowBackorder} onChange={e => update('allowBackorder', e.target.checked)} /> Allow Backorders</label>
+            <label htmlFor="productTrackInventory" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}><input id="productTrackInventory" type="checkbox" checked={form.trackInventory} onChange={e => update('trackInventory', e.target.checked)} /> Track Inventory</label>
+            <label htmlFor="productAllowBackorder" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}><input id="productAllowBackorder" type="checkbox" checked={form.allowBackorder} onChange={e => update('allowBackorder', e.target.checked)} /> Allow Backorders</label>
           </div>
         </div>
 
@@ -516,8 +516,8 @@ export default function NewProductPage() {
             {features.map((f, i) => (
               <div key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>{i + 1}.</span>
-                <input className="input" value={f} onChange={e => setFeature(i, e.target.value)} placeholder="e.g., Polished 925 sterling silver" style={{ flex: 1 }} />
-                <button className="btn btn-ghost btn-icon" onClick={() => removeFeature(i)}><X size={14} /></button>
+                <input className="input" value={f} onChange={e => setFeature(i, e.target.value)} placeholder="e.g., Polished 925 sterling silver" aria-label={`Feature ${i + 1}`} style={{ flex: 1 }} />
+                <button className="btn btn-ghost btn-icon" onClick={() => removeFeature(i)} aria-label="Remove feature"><X size={14} /></button>
               </div>
             ))}
           </div>
@@ -533,9 +533,9 @@ export default function NewProductPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {specs.map((s, i) => (
               <div key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <input className="input" value={s.key} onChange={e => setSpec(i, 'key', e.target.value)} placeholder="Label (e.g., Material)" style={{ width: 200 }} />
-                <input className="input" value={s.value} onChange={e => setSpec(i, 'value', e.target.value)} placeholder="Value" style={{ flex: 1 }} />
-                <button className="btn btn-ghost btn-icon" onClick={() => removeSpec(i)}><X size={14} /></button>
+                <input className="input" value={s.key} onChange={e => setSpec(i, 'key', e.target.value)} placeholder="Label (e.g., Material)" aria-label={`Specification label ${i + 1}`} style={{ width: 200 }} />
+                <input className="input" value={s.value} onChange={e => setSpec(i, 'value', e.target.value)} placeholder="Value" aria-label={`Specification value ${i + 1}`} style={{ flex: 1 }} />
+                <button className="btn btn-ghost btn-icon" onClick={() => removeSpec(i)} aria-label="Remove specification"><X size={14} /></button>
               </div>
             ))}
           </div>
@@ -555,13 +555,13 @@ export default function NewProductPage() {
                 <div key={v._key} style={{ border: '1px solid var(--border)', borderRadius: '0.5rem', padding: '0.75rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                     <span style={{ fontSize: '0.8125rem', fontWeight: 500 }}>{v.name || 'New Variant'}</span>
-                    <button className="btn btn-ghost btn-icon" style={{ color: 'var(--error)' }} onClick={() => removeVariant(v._key)}><X size={14} /></button>
+                    <button className="btn btn-ghost btn-icon" style={{ color: 'var(--error)' }} onClick={() => removeVariant(v._key)} aria-label="Remove variant"><X size={14} /></button>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                    <input className="input" value={v.name} onChange={e => setVariant(v._key, 'name', e.target.value)} placeholder="Name" style={{ fontSize: '0.8125rem' }} />
-                    <input className="input" value={v.sku} onChange={e => setVariant(v._key, 'sku', e.target.value)} placeholder="SKU" style={{ fontSize: '0.8125rem' }} />
-                    <input className="input" type="number" value={v.price} onChange={e => setVariant(v._key, 'price', parseFloat(e.target.value) || 0)} placeholder="Price" style={{ fontSize: '0.8125rem' }} />
-                    <input className="input" type="number" value={v.stock} onChange={e => setVariant(v._key, 'stock', parseInt(e.target.value) || 0)} placeholder="Stock" style={{ fontSize: '0.8125rem' }} />
+                    <input className="input" value={v.name} onChange={e => setVariant(v._key, 'name', e.target.value)} placeholder="Name" aria-label="Variant name" style={{ fontSize: '0.8125rem' }} />
+                    <input className="input" value={v.sku} onChange={e => setVariant(v._key, 'sku', e.target.value)} placeholder="SKU" aria-label="Variant SKU" style={{ fontSize: '0.8125rem' }} />
+                    <input className="input" type="number" value={v.price} onChange={e => setVariant(v._key, 'price', parseFloat(e.target.value) || 0)} placeholder="Price" aria-label="Variant price" style={{ fontSize: '0.8125rem' }} />
+                    <input className="input" type="number" value={v.stock} onChange={e => setVariant(v._key, 'stock', parseInt(e.target.value) || 0)} placeholder="Stock" aria-label="Variant stock" style={{ fontSize: '0.8125rem' }} />
                   </div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
@@ -570,9 +570,9 @@ export default function NewProductPage() {
                     </div>
                     {v.options.map((o, oi) => (
                       <div key={oi} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.25rem' }}>
-                        <input className="input" value={o.name} onChange={e => setVariantOption(v._key, oi, 'name', e.target.value)} placeholder="Name (e.g., Color)" style={{ width: 150, fontSize: '0.75rem' }} />
-                        <input className="input" value={o.value} onChange={e => setVariantOption(v._key, oi, 'value', e.target.value)} placeholder="Value (e.g., Red)" style={{ width: 150, fontSize: '0.75rem' }} />
-                        <button className="btn btn-ghost btn-icon" onClick={() => removeVariantOption(v._key, oi)}><X size={12} /></button>
+                        <input className="input" value={o.name} onChange={e => setVariantOption(v._key, oi, 'name', e.target.value)} placeholder="Name (e.g., Color)" aria-label="Variant option name" style={{ width: 150, fontSize: '0.75rem' }} />
+                        <input className="input" value={o.value} onChange={e => setVariantOption(v._key, oi, 'value', e.target.value)} placeholder="Value (e.g., Red)" aria-label="Variant option value" style={{ width: 150, fontSize: '0.75rem' }} />
+                        <button className="btn btn-ghost btn-icon" onClick={() => removeVariantOption(v._key, oi)} aria-label="Remove option"><X size={12} /></button>
                       </div>
                     ))}
                   </div>
@@ -586,9 +586,9 @@ export default function NewProductPage() {
         <div className="card" style={{ padding: '1.5rem' }}>
           <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>SEO</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>SEO Title<FieldInfo text="Title shown in search results. If empty, product name is used." /></label><input className="input" value={form.seoTitle} onChange={e => { seoTitleEdited.current = true; update('seoTitle', e.target.value); }} /></div>
-            <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>SEO Description<FieldInfo text="Short description shown below the title in search results." /></label><textarea className="input" rows={2} value={form.seoDescription} onChange={e => update('seoDescription', e.target.value)} /></div>
-            <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Tags (comma separated)<FieldInfo text="Keywords that help customers find your product." /></label><input className="input" value={form.tags} onChange={e => update('tags', e.target.value)} placeholder="e.g., necklace, silver, jewelry" /></div>
+            <div><label htmlFor="productSeoTitle" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>SEO Title<FieldInfo text="Title shown in search results. If empty, product name is used." /></label><input id="productSeoTitle" className="input" value={form.seoTitle} onChange={e => { seoTitleEdited.current = true; update('seoTitle', e.target.value); }} /></div>
+            <div><label htmlFor="productSeoDescription" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>SEO Description<FieldInfo text="Short description shown below the title in search results." /></label><textarea id="productSeoDescription" className="input" rows={2} value={form.seoDescription} onChange={e => update('seoDescription', e.target.value)} /></div>
+            <div><label htmlFor="productTags" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Tags (comma separated)<FieldInfo text="Keywords that help customers find your product." /></label><input id="productTags" className="input" value={form.tags} onChange={e => update('tags', e.target.value)} placeholder="e.g., necklace, silver, jewelry" /></div>
           </div>
         </div>
 
@@ -596,12 +596,12 @@ export default function NewProductPage() {
         <div className="card" style={{ padding: '1.5rem' }}>
           <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Additional Settings</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Return Policy<FieldInfo text="Your return policy for this product." /></label><input className="input" value={form.returnPolicy} onChange={e => update('returnPolicy', e.target.value)} placeholder="e.g., 30-day returns" /></div>
-            <div><label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Warranty<FieldInfo text="Warranty information for this product." /></label><input className="input" value={form.warranty} onChange={e => update('warranty', e.target.value)} placeholder="e.g., 1-year warranty" /></div>
+            <div><label htmlFor="productReturnPolicy" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Return Policy<FieldInfo text="Your return policy for this product." /></label><input id="productReturnPolicy" className="input" value={form.returnPolicy} onChange={e => update('returnPolicy', e.target.value)} placeholder="e.g., 30-day returns" /></div>
+            <div><label htmlFor="productWarranty" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Warranty<FieldInfo text="Warranty information for this product." /></label><input id="productWarranty" className="input" value={form.warranty} onChange={e => update('warranty', e.target.value)} placeholder="e.g., 1-year warranty" /></div>
           </div>
           <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.75rem' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}><input type="checkbox" checked={form.isFeatured} onChange={e => update('isFeatured', e.target.checked)} /> Featured</label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}><input type="checkbox" checked={form.isNew} onChange={e => update('isNew', e.target.checked)} /> New Arrival</label>
+            <label htmlFor="productFeatured" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}><input id="productFeatured" type="checkbox" checked={form.isFeatured} onChange={e => update('isFeatured', e.target.checked)} /> Featured</label>
+            <label htmlFor="productNewArrival" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}><input id="productNewArrival" type="checkbox" checked={form.isNew} onChange={e => update('isNew', e.target.checked)} /> New Arrival</label>
           </div>
         </div>
 

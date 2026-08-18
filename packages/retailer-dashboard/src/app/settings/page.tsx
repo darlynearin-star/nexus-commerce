@@ -98,12 +98,12 @@ export default function SettingsPage() {
           <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>General</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div>
-              <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>Currency</label>
-              <input className="input" value={settings.currency || 'UGX'} onChange={e => setSettings((p: any) => ({ ...p, currency: e.target.value }))} />
+              <label htmlFor="storeCurrency" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>Currency</label>
+              <input id="storeCurrency" className="input" value={settings.currency || 'UGX'} onChange={e => setSettings((p: any) => ({ ...p, currency: e.target.value }))} />
             </div>
             <div>
-              <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>Location</label>
-              <input className="input" value={settings.location || 'Kampala, Uganda'} onChange={e => setSettings((p: any) => ({ ...p, location: e.target.value }))} />
+              <label htmlFor="storeLocation" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>Location</label>
+              <input id="storeLocation" className="input" value={settings.location || 'Kampala, Uganda'} onChange={e => setSettings((p: any) => ({ ...p, location: e.target.value }))} />
           </div>
         </div>
 
@@ -112,12 +112,12 @@ export default function SettingsPage() {
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>Customers will see these on their order receipt.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div>
-              <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>Phone Number</label>
-              <input className="input" value={settings.phone || ''} onChange={e => setSettings((p: any) => ({ ...p, phone: e.target.value }))} placeholder="2567XXXXXXXX" />
+              <label htmlFor="storePhone" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>Phone Number</label>
+              <input id="storePhone" className="input" value={settings.phone || ''} onChange={e => setSettings((p: any) => ({ ...p, phone: e.target.value }))} placeholder="2567XXXXXXXX" />
             </div>
             <div>
-              <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>WhatsApp Number</label>
-              <input className="input" value={settings.whatsapp || ''} onChange={e => setSettings((p: any) => ({ ...p, whatsapp: e.target.value }))} placeholder="2567XXXXXXXX" />
+              <label htmlFor="storeWhatsapp" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>WhatsApp Number</label>
+              <input id="storeWhatsapp" className="input" value={settings.whatsapp || ''} onChange={e => setSettings((p: any) => ({ ...p, whatsapp: e.target.value }))} placeholder="2567XXXXXXXX" />
             </div>
           </div>
         </div>
@@ -137,8 +137,8 @@ export default function SettingsPage() {
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
-            <label style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>Logo URL</label>
-            <input className="input" value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://example.com/logo.png" />
+            <label htmlFor="storeLogoUrl" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>Logo URL</label>
+            <input id="storeLogoUrl" className="input" value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://example.com/logo.png" />
           </div>
           {logoUrl && (
             <div>

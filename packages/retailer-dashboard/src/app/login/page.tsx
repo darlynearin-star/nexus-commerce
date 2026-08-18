@@ -21,8 +21,8 @@ export default function LoginPage() {
         <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>Sign in to manage your store</p>
         {error && <div style={{ padding: '0.75rem', background: 'var(--error)', color: 'white', borderRadius: '0.5rem', marginBottom: '1rem', fontSize: '0.8125rem' }}>{error}</div>}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <input className="input" type="email" name="email" id="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
-          <input className="input" type="password" name="password" id="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
+          <input className="input" type="email" name="email" id="email" placeholder="Email" aria-label="Email" value={email} onChange={e => setEmail(e.target.value)} required />
+          <input className="input" type="password" name="password" id="password" placeholder="Password" aria-label="Password" value={password} onChange={e => setPassword(e.target.value)} required />
           <button className="btn btn-primary" style={{ justifyContent: 'center', padding: '0.75rem' }}>Sign In</button>
         </form>
       </div>

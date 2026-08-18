@@ -25,7 +25,7 @@ export default function FeatureFlagsPage() {
               <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{flag.description}</p>
               <code style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{flag.key}</code>
             </div>
-            <button className={`btn btn-ghost btn-icon`} onClick={() => toggle(flag.key, flag.enabled)} style={{ color: flag.enabled ? 'var(--success)' : 'var(--text-secondary)' }}>
+            <button className={`btn btn-ghost btn-icon`} onClick={() => toggle(flag.key, flag.enabled)} style={{ color: flag.enabled ? 'var(--success)' : 'var(--text-secondary)' }} aria-label={flag.enabled ? 'Disable flag' : 'Enable flag'}>
               {flag.enabled ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
             </button>
           </div>

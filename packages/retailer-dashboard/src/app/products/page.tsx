@@ -75,9 +75,9 @@ export default function ProductsPage() {
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
         <div style={{ position: 'relative', flex: 1 }}>
           <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
-          <input className="input" style={{ paddingLeft: '2.25rem' }} placeholder="Search by name, SKU or brand..." value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="input" style={{ paddingLeft: '2.25rem' }} placeholder="Search by name, SKU or brand..." aria-label="Search products" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className="input" style={{ width: 160 }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+        <select className="input" style={{ width: 160 }} aria-label="Filter by status" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
           <option value="">All Statuses</option>
           <option value="DRAFT">Drafts</option>
           <option value="PUBLISHED">Published</option>
@@ -134,9 +134,9 @@ export default function ProductsPage() {
                     <td>
                       <div style={{ display: 'flex', gap: '0.25rem' }}>
                         <Link href={`/products/${p.id}/edit`} className="btn btn-ghost btn-icon" title="Edit"><Edit2 size={14} /></Link>
-                        <button className="btn btn-ghost btn-icon" onClick={() => copyLink(p)} title="Copy product link">{copiedId === p.id ? <Check size={14} style={{ color: 'var(--success, #4ade80)' }} /> : <Link2 size={14} />}</button>
-                        <button className="btn btn-ghost btn-icon" onClick={() => duplicateProduct(p.id)} title="Duplicate"><Copy size={14} /></button>
-                        <button className="btn btn-ghost btn-icon" style={{ color: 'var(--error)' }} onClick={() => deleteProduct(p.id)} title="Delete"><Trash2 size={14} /></button>
+                        <button className="btn btn-ghost btn-icon" onClick={() => copyLink(p)} title="Copy product link" aria-label="Copy product link">{copiedId === p.id ? <Check size={14} style={{ color: 'var(--success, #4ade80)' }} /> : <Link2 size={14} />}</button>
+                        <button className="btn btn-ghost btn-icon" onClick={() => duplicateProduct(p.id)} title="Duplicate" aria-label="Duplicate"><Copy size={14} /></button>
+                        <button className="btn btn-ghost btn-icon" style={{ color: 'var(--error)' }} onClick={() => deleteProduct(p.id)} title="Delete" aria-label="Delete"><Trash2 size={14} /></button>
                         {p.store?.slug && <Link href={`https://nexus-storefront-dusky.vercel.app/store/${p.store.slug}/product/${p.slug}`} target="_blank" className="btn btn-ghost btn-icon" title="View on store"><ExternalLink size={14} /></Link>}
                       </div>
                     </td>

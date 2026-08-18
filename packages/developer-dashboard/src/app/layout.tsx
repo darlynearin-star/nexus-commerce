@@ -3,6 +3,7 @@
 import './globals.css';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/lib/auth-guard';
+import { useDismiss } from '@/lib/use-dismiss';
 import { LayoutDashboard, Users, Shield, Database, Activity, Settings, AlertTriangle, LogOut, Menu, X, Terminal, Server, FileText, Flag, Store, Key, Megaphone, RefreshCw, HardDrive, Globe, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -15,6 +16,8 @@ function Sidebar({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const closeMobile = () => setMobileOpen(false);
+
+  const mobileRef = useDismiss(mobileOpen, closeMobile);
 
   const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
 
@@ -41,12 +44,12 @@ function Sidebar({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard roles={['DEVELOPER', 'SUPER_DEVELOPER']}>
       <div className={`sidebar-overlay ${mobileOpen ? 'open' : ''}`} onClick={closeMobile} />
-      <div className={`sidebar ${mobileOpen ? 'open' : ''}`} style={{ width: collapsed ? 64 : 'var(--sidebar)', transition: 'width 0.2s' }}>
+      <div className={`sidebar ${mobileOpen ? 'open' : ''}`} ref={mobileRef} tabIndex={-1} style={{ width: collapsed ? 64 : 'var(--sidebar)', transition: 'width 0.2s' }}>
         <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'space-between' }}>
           {!collapsed && <Link href="/dashboard" onClick={closeMobile} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary)', textDecoration: 'none' }}><Terminal size={22} /> Lyn-nyx Dev</Link>}
-          <button className="btn btn-ghost btn-icon" onClick={() => { if (window.innerWidth < 768) setMobileOpen(false); else setCollapsed(!collapsed); }}>{collapsed ? <Menu size={18} /> : <X size={18} />}</button>
+          <button className="btn btn-ghost btn-icon" onClick={() => { if (window.innerWidth < 768) setMobileOpen(false); else setCollapsed(!collapsed); }} aria-label="Toggle sidebar">{collapsed ? <Menu size={18} /> : <X size={18} />}</button>
         </div>
-        <nav style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+        <nav aria-label="Main navigation" style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
           <a href={storefrontUrl} target="_blank" rel="noreferrer" onClick={closeMobile} className="nav-item" style={{ justifyContent: collapsed ? 'center' : 'flex-start', color: 'var(--primary)' }}>
             <Globe size={18} /> {!collapsed && 'To Main Page'}
           </a>
@@ -66,8 +69,8 @@ function Sidebar({ children }: { children: React.ReactNode }) {
           <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: collapsed ? 'center' : 'flex-start', color: 'var(--error)' }} onClick={logout}><LogOut size={16} /> {!collapsed && 'Sign Out'}</button>
         </div>
       </div>
-      <div className="main-content" style={{ marginLeft: collapsed ? 64 : 'var(--sidebar)', transition: 'margin 0.2s' }}>
-        <button className="btn btn-ghost btn-icon mobile-sidebar-btn" onClick={() => setMobileOpen(true)} style={{ position: 'fixed', top: '0.75rem', left: '0.75rem', zIndex: 50, background: 'var(--bg-card)' }}><Menu size={20} /></button>
+      <div className="main-content" role="main" style={{ marginLeft: collapsed ? 64 : 'var(--sidebar)', transition: 'margin 0.2s' }}>
+        <button className="btn btn-ghost btn-icon mobile-sidebar-btn" onClick={() => setMobileOpen(true)} style={{ position: 'fixed', top: '0.75rem', left: '0.75rem', zIndex: 50, background: 'var(--bg-card)' }} aria-label="Open menu"><Menu size={20} /></button>
         {children}
       </div>
     </AuthGuard>

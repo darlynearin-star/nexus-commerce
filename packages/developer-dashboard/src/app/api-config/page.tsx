@@ -165,9 +165,10 @@ export default function ApiConfigPage() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
                     {svc.keys.map(k => (
                       <div key={k.key}>
-                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>{k.label}</label>
+                        <label htmlFor={`config-${k.key}`} style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>{k.label}</label>
                         <div style={{ display: 'flex', gap: '0.375rem' }}>
                           <input
+                            id={`config-${k.key}`}
                             type={revealed[k.key] ? 'text' : k.type}
                             value={config[k.key] || ''}
                             onChange={e => setConfig(p => ({ ...p, [k.key]: e.target.value }))}
@@ -176,7 +177,7 @@ export default function ApiConfigPage() {
                             style={{ flex: 1, fontFamily: k.type === 'password' && !revealed[k.key] ? 'inherit' : 'monospace' }}
                           />
                           {k.type === 'password' && (
-                            <button className="btn btn-ghost btn-icon" onClick={() => setRevealed(p => ({ ...p, [k.key]: !p[k.key] }))} title={revealed[k.key] ? 'Hide' : 'Show'}>
+                            <button className="btn btn-ghost btn-icon" onClick={() => setRevealed(p => ({ ...p, [k.key]: !p[k.key] }))} title={revealed[k.key] ? 'Hide' : 'Show'} aria-label={revealed[k.key] ? 'Hide password' : 'Show password'}>
                               {revealed[k.key] ? <EyeOff size={16} /> : <Eye size={16} />}
                             </button>
                           )}

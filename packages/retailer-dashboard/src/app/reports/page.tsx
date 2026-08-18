@@ -42,7 +42,7 @@ export default function ReportsPage() {
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Store analytics and revenue breakdown</p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <select className="input" style={{ width: 'auto', padding: '0.375rem 0.75rem' }} value={period} onChange={e => setPeriod(e.target.value)}>
+          <select className="input" style={{ width: 'auto', padding: '0.375rem 0.75rem' }} aria-label="Report period" value={period} onChange={e => setPeriod(e.target.value)}>
             <option value="7d">Last 7 days</option>
             <option value="30d">Last 30 days</option>
             <option value="90d">Last 90 days</option>

@@ -1,12 +1,15 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { useDismiss } from '@/lib/use-dismiss';
 import { Search, Eye, Check, X, Phone, MapPin, StickyNote, Mail, ShoppingBag } from 'lucide-react';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState<any | null>(null);
+
+  const detailRef = useDismiss(!!detail, () => setDetail(null));
 
   useEffect(() => { api.get('/orders', { limit: 50 }).then((r: any) => setOrders(r.data)).catch((e: any) => console.error('API error:', e)).finally(() => setLoading(false)); }, []);
 
@@ -38,10 +41,10 @@ export default function OrdersPage() {
                   <td><span className={`badge ${o.paymentStatus === 'PAID' ? 'badge-success' : 'badge-warning'}`}>{o.paymentStatus}</span></td>
                   <td>
                     <div style={{ display: 'flex', gap: '0.25rem' }}>
-                      <button className="btn btn-ghost btn-icon" onClick={() => setDetail(o)} title="View details"><Eye size={14} /></button>
-                      {o.status === 'PENDING' && <button className="btn btn-ghost btn-icon" onClick={() => updateStatus(o.id, 'PROCESSING')} title="Process"><Check size={14} /></button>}
-                      {o.status === 'PROCESSING' && <button className="btn btn-ghost btn-icon" onClick={() => updateStatus(o.id, 'COMPLETED')} title="Complete"><Check size={14} /></button>}
-                      <button className="btn btn-ghost btn-icon" style={{ color: 'var(--error)' }} onClick={() => updateStatus(o.id, 'CANCELLED')} title="Cancel"><X size={14} /></button>
+                      <button className="btn btn-ghost btn-icon" onClick={() => setDetail(o)} title="View details" aria-label="View details"><Eye size={14} /></button>
+                      {o.status === 'PENDING' && <button className="btn btn-ghost btn-icon" onClick={() => updateStatus(o.id, 'PROCESSING')} title="Process" aria-label="Process"><Check size={14} /></button>}
+                      {o.status === 'PROCESSING' && <button className="btn btn-ghost btn-icon" onClick={() => updateStatus(o.id, 'COMPLETED')} title="Complete" aria-label="Complete"><Check size={14} /></button>}
+                      <button className="btn btn-ghost btn-icon" style={{ color: 'var(--error)' }} onClick={() => updateStatus(o.id, 'CANCELLED')} title="Cancel" aria-label="Cancel"><X size={14} /></button>
                     </div>
                   </td>
                 </tr>
@@ -53,7 +56,7 @@ export default function OrdersPage() {
 
       {detail && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }} onClick={() => setDetail(null)}>
-          <div style={{ background: 'var(--surface)', borderRadius: '0.75rem', padding: '2rem', width: '100%', maxWidth: 560, maxHeight: '90vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
+          <div ref={detailRef} tabIndex={-1} style={{ background: 'var(--surface)', borderRadius: '0.75rem', padding: '2rem', width: '100%', maxWidth: 560, maxHeight: '90vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <div>
                 <h3 style={{ fontWeight: 700, fontSize: '1.125rem' }}>Order {detail.orderNumber}</h3>
@@ -62,7 +65,7 @@ export default function OrdersPage() {
                   <span className={`badge ${detail.paymentStatus === 'PAID' ? 'badge-success' : 'badge-warning'}`}>{detail.paymentStatus}</span>
                 </div>
               </div>
-              <button className="btn btn-ghost btn-icon" onClick={() => setDetail(null)}><X size={18} /></button>
+              <button className="btn btn-ghost btn-icon" onClick={() => setDetail(null)} aria-label="Close order details"><X size={18} /></button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>

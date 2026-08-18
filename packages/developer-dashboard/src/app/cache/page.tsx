@@ -53,7 +53,7 @@ export default function CachePage() {
                 <td style={{ fontSize: '0.875rem' }}>{e.ttl}</td>
                 <td style={{ fontSize: '0.875rem' }}>{e.age}</td>
                 <td><span className={`badge ${e.expired ? 'badge-error' : 'badge-success'}`}>{e.expired ? 'Expired' : 'Active'}</span></td>
-                <td><button className="btn btn-ghost btn-sm" onClick={() => flushKey(e.key)} disabled={flushing === e.key}>{flushing === e.key ? '...' : <RefreshCw size={14} />}</button></td>
+                <td><button className="btn btn-ghost btn-sm" onClick={() => flushKey(e.key)} disabled={flushing === e.key} aria-label="Clear cache entry">{flushing === e.key ? '...' : <RefreshCw size={14} />}</button></td>
               </tr>
             ))}</tbody>
           </table></div>

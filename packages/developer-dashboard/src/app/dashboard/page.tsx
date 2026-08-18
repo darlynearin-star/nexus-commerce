@@ -19,7 +19,13 @@ export default function DashboardPage() {
     ]).then(([s, k]) => { setStats(s.data); setKillSwitch(k.data); }).catch((e: any) => console.error('API error:', e));
   }, [user, loading]);
 
-  if (loading || !user) return <div style={{ padding: '2rem' }}>{loading ? 'Loading...' : 'Redirecting...'}</div>;
+  if (loading || !user) return (
+    <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div className="skeleton" style={{ height: 32, width: '40%' }} />
+      <div className="skeleton" style={{ height: 16, width: '25%' }} />
+      <div className="skeleton" style={{ height: 180 }} />
+    </div>
+  );
 
   const cards = [
     { label: 'Total Revenue', value: `UGX ${(stats.totalRevenue || 0).toLocaleString()}`, icon: <DollarSign size={24} /> },

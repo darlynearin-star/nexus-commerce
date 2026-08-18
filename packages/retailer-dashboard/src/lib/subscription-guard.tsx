@@ -22,7 +22,12 @@ export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
   if (user.role !== 'RETAILER') return <>{children}</>;
   if (pathname === '/subscription' || pathname === '/login') return <>{children}</>;
 
-  if (subLoading) return <div style={{ padding: '2rem', color: 'var(--text-secondary)' }}>Loading...</div>;
+  if (subLoading) return (
+    <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div className="skeleton" style={{ height: 40, width: '40%' }} />
+      <div className="skeleton" style={{ height: 180 }} />
+    </div>
+  );
 
   const trialEnded = sub?.status === 'TRIAL' && sub?.trialEnd && new Date(sub.trialEnd) < new Date();
   const locked = !!sub && (sub.status === 'SUSPENDED' || sub.status === 'CANCELLED' || trialEnded);

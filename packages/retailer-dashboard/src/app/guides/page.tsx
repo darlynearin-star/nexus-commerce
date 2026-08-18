@@ -90,7 +90,13 @@ function GuidesContent() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  if (loading) return <div style={{ padding: '2rem' }}>Loading...</div>;
+  if (loading) return (
+    <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div className="skeleton" style={{ height: 32, width: '40%' }} />
+      <div className="skeleton" style={{ height: 16, width: '25%' }} />
+      <div className="skeleton" style={{ height: 220 }} />
+    </div>
+  );
   if (!user) { router.push('/login'); return null; }
 
   return (
