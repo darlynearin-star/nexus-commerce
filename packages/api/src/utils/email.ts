@@ -176,3 +176,13 @@ export function subscriptionSuspendedHtml(opts: { storeName: string; url: string
   <p style="color:#6b7280;font-size:12px">If you believe this is a mistake, contact support.</p>
 </div>`;
 }
+
+export function announcementEmailHtml(opts: { title: string; message: string }): string {
+  const message = opts.message.replace(/\n/g, '<br />');
+  return `<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px">
+  <p style="margin:0 0 4px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.06em">Lyn-nyx Stores</p>
+  <h2 style="margin:0 0 12px;color:#111">${opts.title}</h2>
+  <p style="color:#374151;font-size:14px;line-height:1.6">${message}</p>
+  <p style="color:#6b7280;font-size:12px;border-top:1px solid #e5e7eb;padding-top:12px;margin-top:20px">You are receiving this because a Lyn-nyx Stores announcement was addressed to you.</p>
+</div>`;
+}

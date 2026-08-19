@@ -4,8 +4,26 @@ import { UserRole } from '@nexus/shared';
 import { authenticate, requireRole } from '../middleware/auth';
 import { logActivity } from '../utils/activity-log';
 import { cacheGet, cacheSet, clearCache } from './cache';
+import { sendEmail, announcementEmailHtml } from '../utils/email';
 
 export const announcementsRouter = Router();
+
+// Accepts either an array of emails or a comma-separated string; validates
+// loosely and returns only well-formed addresses.
+function normalizeRecipients(raw: unknown): string[] {
+  if (!raw) return [];
+  const list = Array.isArray(raw) ? raw : String(raw).split(',').map(s => s.trim());
+  return list.filter((e: any) => typeof e === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())).map((e: any) => e.trim());
+}
+
+async function emailRecipients(recipients: string[], title: string, message: string) {
+  const results: { to: string; success: boolean; message: string }[] = [];
+  for (const to of recipients) {
+    const result = await sendEmail({ to, subject: `[Lyn-nyx Stores] ${title}`, text: message, html: announcementEmailHtml({ title, message }) });
+    results.push({ to, success: result.success, message: result.message });
+  }
+  return results;
+}
 
 announcementsRouter.get('/', async (_req, res, next) => {
   try {
@@ -37,12 +55,14 @@ announcementsRouter.get('/all', authenticate, requireRole(UserRole.DEVELOPER, Us
 announcementsRouter.post('/', authenticate, requireRole(UserRole.DEVELOPER, UserRole.SUPER_DEVELOPER), async (req, res, next) => {
   try {
     const { title, message, type, priority, startsAt, endsAt } = req.body;
+    const recipients = normalizeRecipients(req.body.recipients);
     const setting = await prisma.setting.findUnique({ where: { key: 'platform_announcements' } });
     const announcements: any[] = (setting?.value as any[]) || [];
     announcements.push({
       id: `ann-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       title, message, type: type || 'INFO', priority: priority || 'NORMAL',
       startsAt: startsAt || null, endsAt: endsAt || null,
+      recipients: recipients.length ? recipients : undefined,
       active: true, createdBy: (req as any).user!.userId, createdAt: new Date().toISOString(),
     });
     await prisma.setting.upsert({
@@ -50,9 +70,10 @@ announcementsRouter.post('/', authenticate, requireRole(UserRole.DEVELOPER, User
       update: { value: announcements },
       create: { key: 'platform_announcements', value: announcements },
     });
-    logActivity({ userId: (req as any).user!.userId, action: 'announcement:created', resource: 'announcement', details: { title }, req: req as any });
+    logActivity({ userId: (req as any).user!.userId, action: 'announcement:created', resource: 'announcement', details: { title, recipients: recipients.length }, req: req as any });
     clearCache('public:announcements');
-    res.json({ success: true, data: announcements });
+    const emailResults = recipients.length ? await emailRecipients(recipients, title, message) : [];
+    res.json({ success: true, data: announcements, emailResults });
   } catch (error) { next(error); }
 });
 
@@ -62,7 +83,8 @@ announcementsRouter.put('/:id', authenticate, requireRole(UserRole.DEVELOPER, Us
     const announcements: any[] = (setting?.value as any[]) || [];
     const idx = announcements.findIndex((a: any) => a.id === req.params.id);
     if (idx === -1) return res.status(404).json({ success: false, error: 'Announcement not found' });
-    const { title, message, type, priority, startsAt, endsAt, active } = req.body;
+    const { title, message, type, priority, startsAt, endsAt, active, sendEmail } = req.body;
+    const recipients = normalizeRecipients(req.body.recipients);
     announcements[idx] = { ...announcements[idx] };
     if (title !== undefined) announcements[idx].title = title;
     if (message !== undefined) announcements[idx].message = message;
@@ -71,6 +93,7 @@ announcementsRouter.put('/:id', authenticate, requireRole(UserRole.DEVELOPER, Us
     if (startsAt !== undefined) announcements[idx].startsAt = startsAt;
     if (endsAt !== undefined) announcements[idx].endsAt = endsAt;
     if (active !== undefined) announcements[idx].active = active;
+    if (recipients.length) announcements[idx].recipients = recipients;
     await prisma.setting.upsert({
       where: { key: 'platform_announcements' },
       update: { value: announcements },
@@ -78,7 +101,11 @@ announcementsRouter.put('/:id', authenticate, requireRole(UserRole.DEVELOPER, Us
     });
     logActivity({ userId: (req as any).user!.userId, action: 'announcement:updated', resource: 'announcement', details: { id: req.params.id }, req: req as any });
     clearCache('public:announcements');
-    res.json({ success: true, data: announcements });
+    // Emails are only (re)sent on update when explicitly requested via sendEmail.
+    const emailResults = sendEmail && announcements[idx].recipients?.length
+      ? await emailRecipients(announcements[idx].recipients, announcements[idx].title, announcements[idx].message)
+      : [];
+    res.json({ success: true, data: announcements, emailResults });
   } catch (error) { next(error); }
 });
 

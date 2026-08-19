@@ -194,6 +194,7 @@ model SubscriptionPayment {
   method        String
   status        PaymentStatus      @default(PENDING)
   transactionId String?            @unique
+  customerNote  String?
   periodStart   DateTime
   periodEnd     DateTime
   createdAt     DateTime           @default(now())

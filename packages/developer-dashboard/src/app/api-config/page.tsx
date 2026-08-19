@@ -20,6 +20,7 @@ const INTEGRATIONS: IntegrationService[] = [
     services: [
       { name: 'Pesapal (MTN MoMo + Airtel + Cards)', keys: [{ key: 'PESAPAL_CONSUMER_KEY', label: 'Consumer Key', type: 'text' }, { key: 'PESAPAL_CONSUMER_SECRET', label: 'Consumer Secret', type: 'password' }, { key: 'PESAPAL_IPN_URL', label: 'IPN URL (callback)', type: 'text' }, { key: 'PESAPAL_BASE_URL', label: 'Base URL (test: https://cybqa.pesapal.com)', type: 'text' }] },
       { name: 'Flutterwave (Cards)', keys: [{ key: 'FLUTTERWAVE_PUBLIC_KEY', label: 'Public Key', type: 'text' }, { key: 'FLUTTERWAVE_SECRET_KEY', label: 'Secret Key', type: 'password' }, { key: 'FLUTTERWAVE_WEBHOOK_SECRET', label: 'Webhook Secret', type: 'password' }] },
+      { name: 'Mobile Money (Manual Airtel Pay)', keys: [{ key: 'MOMO_MERCHANT_CODE', label: 'Airtel Pay Merchant Code', type: 'text' }, { key: 'MOMO_NUMBER', label: 'Airtel Number', type: 'text' }, { key: 'MOMO_ACCOUNT_NAME', label: 'Account Name (shown to payers)', type: 'text' }] },
     ],
   },
   {

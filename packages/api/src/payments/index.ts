@@ -1,3 +1,5 @@
+import { manualProvider } from './manual';
+
 export interface PaymentProvider {
   name: string;
   charge(amount: number, currency: string, options: PaymentOptions): Promise<PaymentResult>;
@@ -35,6 +37,12 @@ export function getPaymentProvider(method: string): PaymentProvider | null {
     const { flutterwaveProvider } = require('./flutterwave');
     providers['flutterwave'] = flutterwaveProvider;
   } catch {}
+  // Manual collection to the platform's Airtel Pay merchant code / number,
+  // confirmed by the owner. No gateway KYC needed. Static import so it works
+  // under both CJS (tsx/tsc) and ESM (vitest) module systems.
+  providers['mobile_money'] = manualProvider;
+  providers['airtel_pay'] = manualProvider;
+  providers['manual'] = manualProvider;
 
   const key = method.toLowerCase().replace(/\s+/g, '_');
   return providers[key]?.() || null;

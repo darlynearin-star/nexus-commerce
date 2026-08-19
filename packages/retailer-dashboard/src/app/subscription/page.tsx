@@ -9,6 +9,10 @@ export default function SubscriptionPage() {
   const [sub, setSub] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: string; text: string } | null>(null);
+  const [payInstructions, setPayInstructions] = useState<any>(null);
+  const [payPaymentId, setPayPaymentId] = useState<string | null>(null);
+  const [payerNote, setPayerNote] = useState('');
+  const [reporting, setReporting] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -18,16 +22,37 @@ export default function SubscriptionPage() {
   const subscribe = async () => {
     setMessage(null);
     try {
-      const r: any = await api.post('/subscriptions/subscribe');
+      const r: any = await api.post('/subscriptions/subscribe', { method: 'mobile_money' });
       setSub(r.data);
       if (r.data?.checkoutUrl) {
         setMessage({ type: 'success', text: 'Redirecting to payment...' });
         window.location.href = r.data.checkoutUrl;
+      } else if (r.payment?.instructions) {
+        setPayInstructions(r.payment.instructions);
+        setPayPaymentId(r.payment.id);
+        setMessage({ type: 'success', text: 'Pay via mobile money to the details below, then confirm.' });
       } else {
         setMessage({ type: 'success', text: 'Subscription activated!' });
       }
     } catch (e: any) {
       setMessage({ type: 'error', text: e?.message || 'Failed to activate' });
+    }
+  };
+
+  const reportPaid = async () => {
+    if (!payPaymentId) return;
+    setReporting(true);
+    setMessage(null);
+    try {
+      const r: any = await api.post('/subscriptions/report-paid', { paymentId: payPaymentId, note: payerNote });
+      setMessage({ type: 'success', text: r.message || 'Payment reported. Waiting for confirmation.' });
+      setPayInstructions(null);
+      setPayPaymentId(null);
+      setPayerNote('');
+    } catch (e: any) {
+      setMessage({ type: 'error', text: e?.message || 'Failed to report payment' });
+    } finally {
+      setReporting(false);
     }
   };
 
@@ -105,6 +130,26 @@ export default function SubscriptionPage() {
                 <span style={{ color: p.status === 'PAID' ? '#4ade80' : 'var(--text-secondary)' }}>{p.status}</span>
               </div>
             ))}
+          </div>
+        )}
+
+        {payInstructions && (
+          <div style={{ marginBottom: '1rem', padding: '1rem', border: '1px solid var(--border)', borderRadius: '0.5rem', background: 'var(--bg)' }}>
+            <h3 style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.5rem' }}>Pay with Mobile Money</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.875rem' }}>
+              {payInstructions.accountName && <div><span style={{ color: 'var(--text-secondary)' }}>Account: </span><strong>{payInstructions.accountName}</strong></div>}
+              {payInstructions.merchantCode && <div><span style={{ color: 'var(--text-secondary)' }}>Merchant code: </span><strong>{payInstructions.merchantCode}</strong></div>}
+              {payInstructions.number && <div><span style={{ color: 'var(--text-secondary)' }}>Number: </span><strong>{payInstructions.number}</strong></div>}
+              <div><span style={{ color: 'var(--text-secondary)' }}>Amount: </span><strong>{Number(payInstructions.amount || 0).toLocaleString()} {payInstructions.currency || 'UGX'}</strong></div>
+              {payInstructions.reference && <div><span style={{ color: 'var(--text-secondary)' }}>Reference: </span><strong>{payInstructions.reference}</strong></div>}
+            </div>
+            <div style={{ marginTop: '0.75rem' }}>
+              <label htmlFor="payerNote" style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>After paying, enter the transaction ID or the number you paid from</label>
+              <input id="payerNote" className="input" value={payerNote} onChange={e => setPayerNote(e.target.value)} placeholder="e.g. 8XK2G1M4TQ or 25677XXXXXX" />
+              <button className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%' }} onClick={reportPaid} disabled={reporting || !payerNote.trim()}>
+                {reporting ? 'Submitting...' : 'I have paid — notify the owner'}
+              </button>
+            </div>
           </div>
         )}
 

@@ -30,6 +30,7 @@ subscriptionsRouter.get('/', authenticate, requireRole(UserRole.RETAILER), async
 
 subscriptionsRouter.post('/subscribe', authenticate, requireRole(UserRole.RETAILER), async (req: AuthRequest, res, next) => {
   try {
+    const method = (req.body?.method as string) || 'mobile_money';
     const retailer = await prisma.retailer.findUnique({ where: { userId: req.user!.userId }, include: { subscription: true } });
     if (!retailer) return res.status(404).json({ success: false, error: 'Retailer profile not found' });
 
@@ -40,8 +41,8 @@ subscriptionsRouter.post('/subscribe', authenticate, requireRole(UserRole.RETAIL
     const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
     if (!user) return res.status(404).json({ success: false, error: 'User not found' });
 
-    const provider = getPaymentProvider('pesapal');
-    if (!provider) return res.status(503).json({ success: false, error: 'Pesapal is not configured yet' });
+    const provider = getPaymentProvider(method);
+    if (!provider) return res.status(503).json({ success: false, error: `Payment method not available: ${method}` });
 
     const nextBilling = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const subscription = await prisma.retailerSubscription.upsert({
@@ -67,12 +68,12 @@ subscriptionsRouter.post('/subscribe', authenticate, requireRole(UserRole.RETAIL
       return res.status(502).json({ success: false, error: result.message || 'Failed to initiate payment' });
     }
 
-    await prisma.subscriptionPayment.create({
+    const payment = await prisma.subscriptionPayment.create({
       data: {
         subscriptionId: subscription.id,
         amount: subscription.weeklyAmount,
         currency: subscription.currency,
-        method: 'pesapal',
+        method,
         status: 'PENDING',
         transactionId: result.transactionId,
         periodStart: new Date(),
@@ -80,8 +81,49 @@ subscriptionsRouter.post('/subscribe', authenticate, requireRole(UserRole.RETAIL
       },
     });
 
-    logActivity({ userId: req.user!.userId, action: 'subscription:payment_initiated', resource: 'subscription', resourceId: subscription.id, details: { amount: subscription.weeklyAmount, method: 'pesapal' }, req: req as any });
-    res.json({ success: true, data: { ...subscription, checkoutUrl: result.data?.redirect_url || result.data?.link || null } });
+    logActivity({ userId: req.user!.userId, action: 'subscription:payment_initiated', resource: 'subscription', resourceId: subscription.id, details: { amount: subscription.weeklyAmount, method }, req: req as any });
+    const isManual = method === 'mobile_money' || method === 'airtel_pay' || method === 'manual';
+    res.json({
+      success: true,
+      data: { ...subscription, checkoutUrl: result.data?.redirect_url || result.data?.link || null },
+      payment: isManual ? { id: payment.id, reference, instructions: result.data } : undefined,
+    });
+  } catch (error) { next(error); }
+});
+
+// Retailer reports they have paid a manual mobile-money payment (they include
+// the payer number / mobile-money transaction id so the owner can reconcile).
+subscriptionsRouter.post('/report-paid', authenticate, requireRole(UserRole.RETAILER), async (req: AuthRequest, res, next) => {
+  try {
+    const { paymentId, note } = req.body;
+    if (!paymentId) return res.status(400).json({ success: false, error: 'paymentId is required' });
+
+    const payment = await prisma.subscriptionPayment.findFirst({ where: { id: paymentId, subscription: { retailer: { userId: req.user!.userId } } } });
+    if (!payment) return res.status(404).json({ success: false, error: 'Payment not found' });
+    if (payment.status === 'PAID') return res.json({ success: true, message: 'Already confirmed', data: payment });
+
+    await prisma.subscriptionPayment.update({ where: { id: payment.id }, data: { customerNote: note || payment.customerNote || undefined } });
+    logActivity({ userId: req.user!.userId, action: 'subscription:payment_reported', resource: 'subscription', resourceId: payment.subscriptionId, details: { paymentId: payment.id }, req: req as any });
+    res.json({ success: true, message: 'Payment reported. Waiting for confirmation.', data: payment });
+  } catch (error) { next(error); }
+});
+
+// Owner confirms a manual mobile-money payment (they verified the money landed).
+subscriptionsRouter.post('/confirm', authenticate, requireRole(UserRole.DEVELOPER, UserRole.SUPER_DEVELOPER), async (req: AuthRequest, res, next) => {
+  try {
+    const { paymentId, transactionId } = req.body;
+    const payment = paymentId
+      ? await prisma.subscriptionPayment.findUnique({ where: { id: paymentId } })
+      : transactionId
+        ? await prisma.subscriptionPayment.findFirst({ where: { transactionId } })
+        : null;
+    if (!payment) return res.status(404).json({ success: false, error: 'Payment not found' });
+    if (payment.status === 'PAID') return res.json({ success: true, message: 'Already paid', data: payment });
+
+    await prisma.subscriptionPayment.update({ where: { id: payment.id }, data: { status: 'PAID' } });
+    await activateSubscriptionAndStore(payment.subscriptionId);
+    logActivity({ userId: req.user!.userId, action: 'subscription:payment_confirmed', resource: 'subscription', resourceId: payment.subscriptionId, details: { paymentId: payment.id, method: payment.method }, req: req as any });
+    res.json({ success: true, data: payment });
   } catch (error) { next(error); }
 });
 
@@ -254,7 +296,10 @@ subscriptionsRouter.post('/webhook/flutterwave', async (req, res, next) => {
 subscriptionsRouter.get('/all', authenticate, requireRole(UserRole.SUPER_DEVELOPER), async (_req: AuthRequest, res, next) => {
   try {
     const subscriptions = await prisma.retailerSubscription.findMany({
-      include: { retailer: { include: { user: { select: { id: true, email: true, firstName: true, lastName: true, isActive: true } } } } },
+      include: {
+        retailer: { include: { user: { select: { id: true, email: true, firstName: true, lastName: true, isActive: true } } } },
+        payments: { orderBy: { createdAt: 'desc' }, take: 20 },
+      },
       orderBy: { createdAt: 'desc' },
     });
     const slugs = Array.from(new Set(subscriptions.map(s => s.retailer?.storeSlug).filter(Boolean))) as string[];

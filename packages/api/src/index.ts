@@ -116,6 +116,8 @@ async function runMigrations() {
     await prisma.$executeRawUnsafe('ALTER TABLE retailer_subscriptions ADD COLUMN IF NOT EXISTS "graceNotifiedAt" TIMESTAMP');
     await prisma.$executeRawUnsafe('ALTER TABLE retailer_subscriptions ADD COLUMN IF NOT EXISTS "suspendedAt" TIMESTAMP');
     logger.info('Migration: added subscription grace/suspension tracking columns');
+    await prisma.$executeRawUnsafe('ALTER TABLE subscription_payments ADD COLUMN IF NOT EXISTS "customerNote" TEXT');
+    logger.info('Migration: added customerNote to subscription_payments');
     // Search: pg_trgm trigram index on product searchable columns
     await prisma.$executeRawUnsafe('CREATE EXTENSION IF NOT EXISTS pg_trgm');
     await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS products_name_trgm_idx ON products USING gin (name gin_trgm_ops)');

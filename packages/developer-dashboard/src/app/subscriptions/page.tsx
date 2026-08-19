@@ -72,6 +72,30 @@ export default function SubscriptionsPage() {
     }
   }
 
+  async function confirmPayment(paymentId: string) {
+    if (!window.confirm('Confirm this payment? The subscription and store will be activated.')) return;
+    setBusyId(paymentId);
+    try {
+      await api.post('/subscriptions/confirm', { paymentId });
+      await load();
+    } catch (e: any) {
+      setError(e?.message || 'Confirm failed');
+      console.error('Error:', e);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  const pendingPayments = useMemo(() => {
+    const out: any[] = [];
+    for (const sub of subs) {
+      for (const p of sub.payments || []) {
+        if (p.status === 'PENDING') out.push({ payment: p, sub });
+      }
+    }
+    return out.sort((a, b) => new Date(b.payment.createdAt).getTime() - new Date(a.payment.createdAt).getTime());
+  }, [subs]);
+
   const stats = useMemo(() => {
     const list = subs.map(s => ({ s, p: subPeriod(s) }));
     return {
@@ -97,7 +121,31 @@ export default function SubscriptionsPage() {
         <div className="stat-card" style={{ flex: '1 1 160px' }}><div className="stat-label">Active</div><div className="stat-value" style={{ color: '#86efac' }}>{stats.active}</div></div>
         <div className="stat-card" style={{ flex: '1 1 160px' }}><div className="stat-label">In Trial</div><div className="stat-value" style={{ color: '#5CFFD0' }}>{stats.trial}</div></div>
         <div className="stat-card" style={{ flex: '1 1 160px' }}><div className="stat-label">Expired / Locked</div><div className="stat-value" style={{ color: '#fca5a5' }}>{stats.expiredOrLocked}</div></div>
+        <div className="stat-card" style={{ flex: '1 1 160px' }}><div className="stat-label">Awaiting Confirm</div><div className="stat-value" style={{ color: '#fbbf24' }}>{pendingPayments.length}</div></div>
       </div>
+
+      {pendingPayments.length > 0 && (
+        <div className="card" style={{ marginBottom: '2rem' }}>
+          <h3 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Pending Mobile Money Payments</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {pendingPayments.map(({ payment, sub }) => (
+              <div key={payment.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', padding: '0.75rem', border: '1px solid var(--border)', borderRadius: '0.5rem', flexWrap: 'wrap' }}>
+                <div style={{ minWidth: 200 }}>
+                  <div style={{ fontWeight: 600 }}>{sub.retailer?.storeName || sub.store?.name || '—'}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    UGX {Number(payment.amount).toLocaleString()} · {payment.method} · {new Date(payment.createdAt).toLocaleString()}
+                  </div>
+                  {payment.customerNote && <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Payer note: <strong>{payment.customerNote}</strong></div>}
+                  {payment.transactionId && <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{payment.transactionId}</div>}
+                </div>
+                <button className="btn btn-primary btn-sm" disabled={busyId === payment.id} onClick={() => confirmPayment(payment.id)}>
+                  Confirm Payment
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {error && <div className="alert" style={{ color: 'var(--danger)', marginBottom: '1rem' }}>{error}</div>}
 
