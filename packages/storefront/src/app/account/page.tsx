@@ -115,7 +115,7 @@ export default function AccountPage() {
               {isStoreOwner && (
                 <div style={{ marginBottom: '0.75rem', padding: '0.625rem', borderRadius: '0.5rem', background: 'var(--bg-secondary)', fontSize: '0.8125rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontWeight: 500, marginBottom: '0.25rem' }}>
-                    <Store size={14} /> {retailer.storeName}
+                    <Store size={14} /> {retailer?.storeName || 'Your store'}
                   </div>
                   {storeSlug && (
                     <Link href={`/store/${storeSlug}`} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--primary)', fontSize: '0.75rem' }}>
