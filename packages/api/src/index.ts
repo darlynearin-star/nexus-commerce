@@ -31,6 +31,7 @@ import { backupsRouter } from './routes/backups';
 import { storeSettingsRouter } from './routes/store-settings';
 import { uploadRouter } from './routes/upload';
 import { storage } from './utils/storage';
+import { runSubscriptionEnforcement } from './jobs/subscription-enforcer';
 
 import { resolveStore } from './middleware/resolve-store';
 import { errorHandler } from './middleware/error-handler';
@@ -111,6 +112,10 @@ async function runMigrations() {
     )`);
     await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS password_reset_tokens_email_idx ON password_reset_tokens(email)');
     logger.info('Migration: added password_reset_tokens');
+    // Subscription auto-suspension grace tracking
+    await prisma.$executeRawUnsafe('ALTER TABLE retailer_subscriptions ADD COLUMN IF NOT EXISTS "graceNotifiedAt" TIMESTAMP');
+    await prisma.$executeRawUnsafe('ALTER TABLE retailer_subscriptions ADD COLUMN IF NOT EXISTS "suspendedAt" TIMESTAMP');
+    logger.info('Migration: added subscription grace/suspension tracking columns');
     // Search: pg_trgm trigram index on product searchable columns
     await prisma.$executeRawUnsafe('CREATE EXTENSION IF NOT EXISTS pg_trgm');
     await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS products_name_trgm_idx ON products USING gin (name gin_trgm_ops)');
@@ -302,6 +307,25 @@ app.listen(PORT, async () => {
     } catch (e: any) {
       logger.warn(`Fallback mirror failed: ${e?.message || e}`);
 }
+  }
+
+  // Subscription auto-suspension job: email grace notices, then suspend idle
+  // stores whose unpaid grace period has elapsed. Runs on boot and every 6h.
+  if (process.env.SUBSCRIPTION_ENFORCER_DISABLED !== 'true') {
+    let enforcerRunning = false;
+    const runEnforcer = async () => {
+      if (enforcerRunning) return;
+      enforcerRunning = true;
+      try {
+        await runSubscriptionEnforcement();
+      } catch (e: any) {
+        logger.warn(`Subscription enforcer error: ${e?.message || e}`);
+      } finally {
+        enforcerRunning = false;
+      }
+    };
+    void runEnforcer();
+    setInterval(runEnforcer, 6 * 60 * 60 * 1000).unref();
   }
 });
 }

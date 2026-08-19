@@ -175,6 +175,8 @@ model RetailerSubscription {
   nextBillingDate  DateTime?
   weeklyAmount     Float              @default(3000)
   currency         String             @default("UGX")
+  graceNotifiedAt  DateTime?
+  suspendedAt      DateTime?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
 

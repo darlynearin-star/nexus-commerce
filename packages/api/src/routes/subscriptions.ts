@@ -4,6 +4,7 @@ import { authenticate, requireRole, AuthRequest, invalidateUserCache } from '../
 import { UserRole } from '@nexus/shared';
 import { logActivity } from '../utils/activity-log';
 import { getPaymentProvider } from '../payments';
+import { runSubscriptionEnforcement } from '../jobs/subscription-enforcer';
 
 export const subscriptionsRouter = Router();
 
@@ -116,11 +117,21 @@ async function verifySubscriptionPayment(transactionId: string) {
   if (!payment) return { ok: false as const, message: 'Payment record not found' };
 
   await prisma.subscriptionPayment.update({ where: { id: payment.id }, data: { status: 'PAID', transactionId: result.transactionId || transactionId } });
-  await prisma.retailerSubscription.update({
-    where: { id: payment.subscriptionId },
-    data: { status: 'ACTIVE', lastBillingDate: new Date(), nextBillingDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
-  });
+  await activateSubscriptionAndStore(payment.subscriptionId);
   return { ok: true as const, payment, subscriptionId: payment.subscriptionId };
+}
+
+// Marks a subscription ACTIVE, clears any grace/suspension flags, and
+// reactivates the retailer's store so it is served on the storefront again.
+async function activateSubscriptionAndStore(subscriptionId: string) {
+  await prisma.retailerSubscription.update({
+    where: { id: subscriptionId },
+    data: { status: 'ACTIVE', lastBillingDate: new Date(), nextBillingDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), graceNotifiedAt: null, suspendedAt: null },
+  });
+  const sub = await prisma.retailerSubscription.findUnique({ where: { id: subscriptionId }, include: { retailer: true } });
+  if (sub?.retailer?.storeSlug) {
+    await prisma.store.updateMany({ where: { slug: sub.retailer.storeSlug }, data: { isActive: true } });
+  }
 }
 
 // Pesapal redirects the browser back here after payment
@@ -224,10 +235,7 @@ subscriptionsRouter.post('/webhook/flutterwave', async (req, res, next) => {
             where: { id: payment.id },
             data: { status: 'PAID', transactionId: txId },
           });
-          await prisma.retailerSubscription.update({
-            where: { id: payment.subscriptionId },
-            data: { status: 'ACTIVE', lastBillingDate: new Date(), nextBillingDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
-          });
+          await activateSubscriptionAndStore(payment.subscriptionId);
           logActivity({ userId: 'system', action: 'subscription:webhook_paid', resource: 'subscription', resourceId: payment.subscriptionId, req: req as any });
         }
       } else {
@@ -256,6 +264,14 @@ subscriptionsRouter.get('/all', authenticate, requireRole(UserRole.SUPER_DEVELOP
       success: true,
       data: subscriptions.map(s => ({ ...s, store: s.retailer?.storeSlug ? storeBySlug.get(s.retailer.storeSlug) || null : null })),
     });
+  } catch (error) { next(error); }
+});
+
+// Manually trigger the auto-suspension job (grace notices + suspensions)
+subscriptionsRouter.post('/enforce', authenticate, requireRole(UserRole.SUPER_DEVELOPER), async (_req: AuthRequest, res, next) => {
+  try {
+    const result = await runSubscriptionEnforcement();
+    res.json({ success: true, data: result });
   } catch (error) { next(error); }
 });
 

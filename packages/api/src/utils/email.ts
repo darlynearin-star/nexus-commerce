@@ -156,3 +156,23 @@ export function resetPasswordHtml(url: string): string {
   <p style="color:#6b7280;font-size:12px">If you didn't request a password reset, you can safely ignore this email.</p>
 </div>`;
 }
+
+export function subscriptionExpiredHtml(opts: { storeName: string; days: number; url: string }): string {
+  return `<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px">
+  <h2 style="margin:0 0 8px;color:#111">Your subscription has expired</h2>
+  <p style="color:#374151;font-size:14px;line-height:1.6">Hi there, the subscription for <strong>${opts.storeName}</strong> has expired and is now in its grace period.</p>
+  <p style="color:#374151;font-size:14px;line-height:1.6">Renew within <strong>${opts.days} day${opts.days === 1 ? '' : 's'}</strong> or your store will be suspended.</p>
+  <a href="${opts.url}" style="display:inline-block;margin:16px 0;padding:12px 24px;background:#00D9A3;color:#070B09;text-decoration:none;font-weight:600;border-radius:8px">Renew subscription</a>
+  <p style="color:#6b7280;font-size:12px">If you've already renewed, you can ignore this email.</p>
+</div>`;
+}
+
+export function subscriptionSuspendedHtml(opts: { storeName: string; url: string }): string {
+  return `<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px">
+  <h2 style="margin:0 0 8px;color:#111">Your store has been suspended</h2>
+  <p style="color:#374151;font-size:14px;line-height:1.6">Your store <strong>${opts.storeName}</strong> has been suspended because your subscription expired and was not renewed within the grace period.</p>
+  <p style="color:#374151;font-size:14px;line-height:1.6">Renew your subscription to reactivate your store immediately.</p>
+  <a href="${opts.url}" style="display:inline-block;margin:16px 0;padding:12px 24px;background:#00D9A3;color:#070B09;text-decoration:none;font-weight:600;border-radius:8px">Reactivate store</a>
+  <p style="color:#6b7280;font-size:12px">If you believe this is a mistake, contact support.</p>
+</div>`;
+}

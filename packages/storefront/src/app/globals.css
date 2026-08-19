@@ -115,11 +115,13 @@ button { font-family: inherit; }
   border-radius: 8px;
   font-weight: 500; font-size: 0.9rem; letter-spacing: 0.01em;
   cursor: pointer; border: 1px solid transparent;
-  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s, transform 0.12s ease;
   text-decoration: none; line-height: 1.2;
 }
 .btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn:hover:not(:disabled) { transform: translateY(-1px); }
+.btn:active:not(:disabled) { transform: translateY(0) scale(0.98); }
 
 .btn-primary { background: var(--primary); color: var(--bg); }
 .btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
@@ -138,9 +140,9 @@ button { font-family: inherit; }
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1.25rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.25s ease;
 }
-.card:hover { border-color: var(--text-secondary); box-shadow: 0 1px 0 rgba(0,0,0,0.04); }
+.card:hover { border-color: var(--text-secondary); box-shadow: 0 12px 28px -14px rgba(0,0,0,0.28); transform: translateY(-3px); }
 
 /* ---- Inputs ---- */
 .input {
@@ -232,6 +234,38 @@ select.input { appearance: auto; }
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.75rem;
+}
+
+/* ---- Ambient page background (soft editorial glow, CSS-only) ---- */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(1100px 520px at 50% -180px, color-mix(in srgb, var(--primary) 10%, transparent), transparent 70%),
+    radial-gradient(900px 480px at 100% 108%, color-mix(in srgb, var(--silver) 7%, transparent), transparent 70%);
+}
+
+/* ---- Hero glow breathes gently ---- */
+.hero-overlay::before {
+  animation: heroBreathe 7s ease-in-out infinite;
+}
+@keyframes heroBreathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* ---- Product image zoom on card hover (clipped by the card's overflow) ---- */
+.product-grid .card img { transition: transform 0.4s ease; }
+.product-grid .card:hover img { transform: scale(1.04); }
+
+/* ---- Page entrance ---- */
+main { animation: pageIn 0.45s ease both; }
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ---- Motion (restrained) ---- */
