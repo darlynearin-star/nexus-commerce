@@ -1,18 +1,45 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { Megaphone, Plus, X, Check, AlertTriangle, Info, Calendar, Mail } from 'lucide-react';
+import { Megaphone, Plus, X, Check, AlertTriangle, Info, Calendar, Mail, FileText } from 'lucide-react';
+
+const CATEGORY_LABELS: Record<string, string> = {
+  maintenance: 'Maintenance',
+  incident: 'Incidents & Outages',
+  subscription: 'Subscriptions & Billing',
+  payments: 'Payments',
+  platform: 'Platform & Features',
+  security: 'Security',
+  operations: 'Operations',
+};
 
 export default function AnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', message: '', type: 'INFO', priority: 'NORMAL', startsAt: '', endsAt: '', active: true, recipients: '', sendEmail: false });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [emailMsg, setEmailMsg] = useState('');
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); loadTemplates(); }, []);
 
   const load = async () => { try { const r: any = await api.get('/announcements/all'); setAnnouncements(r.data || []); } catch (e: any) { console.error('Failed:', e); } };
+
+  const loadTemplates = async () => { try { const r: any = await api.get('/announcements/templates'); setTemplates(r.data || []); } catch (e: any) { console.error('Failed:', e); } };
+
+  const useTemplate = (t: any) => {
+    setForm(p => ({
+      ...p,
+      title: t.title, message: t.message,
+      type: t.type === 'IMPORTANT' ? 'ALERT' : t.type,
+      priority: t.priority === 'CRITICAL' ? 'URGENT' : t.priority,
+    }));
+    setEditingId(null);
+    setShowForm(true);
+  };
+
+  const resetForm = () => setForm({ title: '', message: '', type: 'INFO', priority: 'NORMAL', startsAt: '', endsAt: '', active: true, recipients: '', sendEmail: false });
 
   const save = async () => {
     setEmailMsg('');
@@ -47,8 +74,40 @@ export default function AnnouncementsPage() {
     <div style={{ padding: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div><h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Platform Announcements</h1><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Broadcast messages to all platform users</p></div>
-        {!showForm && <button className="btn btn-primary" onClick={() => { setEditingId(null); setForm({ title: '', message: '', type: 'INFO', priority: 'NORMAL', startsAt: '', endsAt: '', active: true, recipients: '', sendEmail: false }); setShowForm(true); }}><Plus size={16} /> New Announcement</button>}
+        {!showForm && <button className="btn btn-primary" onClick={() => { setEditingId(null); resetForm(); setShowForm(true); }}><Plus size={16} /> New Announcement</button>}
       </div>
+
+      {!showForm && (
+        <div style={{ marginBottom: '2rem' }}>
+          <button className="btn btn-ghost" onClick={() => setShowTemplates(p => !p)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <FileText size={16} /> {showTemplates ? 'Hide' : 'Show'} Common Templates
+          </button>
+          {showTemplates && (
+            <div className="card" style={{ marginTop: '1rem', padding: '1.25rem' }}>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Pre-written announcements for situations this platform actually faces. Click a template to pre-fill the form, then replace the {"{tokens}"} (e.g. {"{date}"}, {"{merchantCode}"}) with real values before publishing.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {Object.entries(
+                  templates.reduce<Record<string, any[]>>((acc, t) => { (acc[t.category] = acc[t.category] || []).push(t); return acc; }, {}),
+                ).map(([category, items]) => (
+                  <div key={category}>
+                    <h4 style={{ fontSize: '0.8125rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{CATEGORY_LABELS[category] || category}</h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem' }}>
+                      {items.map(t => (
+                        <div key={t.id} style={{ border: '1px solid var(--border)', borderRadius: '0.5rem', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                          <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{t.title}</p>
+                          <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t.audience}</p>
+                          {t.tokens.length > 0 && <p style={{ fontSize: '0.6875rem', color: 'var(--primary)' }}>Tokens: {t.tokens.join(', ')}</p>}
+                          <button className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => useTemplate(t)}>Use Template</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {showForm && (
         <div className="card" style={{ marginBottom: '2rem' }}>

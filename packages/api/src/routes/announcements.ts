@@ -5,6 +5,7 @@ import { authenticate, requireRole } from '../middleware/auth';
 import { logActivity } from '../utils/activity-log';
 import { cacheGet, cacheSet, clearCache } from './cache';
 import { sendEmail, announcementEmailHtml } from '../utils/email';
+import { ANNOUNCEMENT_TEMPLATES } from '../announcement-templates';
 
 export const announcementsRouter = Router();
 
@@ -43,6 +44,10 @@ announcementsRouter.get('/', async (_req, res, next) => {
     cacheSet('public:announcements', active, 30000);
     res.json({ success: true, data: active });
   } catch (error) { next(error); }
+});
+
+announcementsRouter.get('/templates', authenticate, requireRole(UserRole.DEVELOPER, UserRole.SUPER_DEVELOPER), (_req, res) => {
+  res.json({ success: true, data: ANNOUNCEMENT_TEMPLATES });
 });
 
 announcementsRouter.get('/all', authenticate, requireRole(UserRole.DEVELOPER, UserRole.SUPER_DEVELOPER), async (_req, res, next) => {
