@@ -61,8 +61,7 @@ export default function Header() {
       <header className="glass" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
         <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64, gap: '1.25rem' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', fontSize: '1.125rem', fontWeight: 600, color: 'var(--text)', textDecoration: 'none', flexShrink: 0, letterSpacing: '-0.01em' }}>
-            <span className="brand-mark" style={{ width: 26, height: 26, borderRadius: 8, background: 'var(--primary)', color: 'var(--bg)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.875rem' }}>N</span>
-            <span>Lyn-nyx Stores</span>
+            <img src="/lynnyx-logo.png" alt="Lyn-nyx Stores" style={{ height: 34, width: 'auto', objectFit: 'contain', display: 'block' }} />
           </Link>
 
           {allStores.length > 0 && (
@@ -155,8 +154,7 @@ export default function Header() {
       <div className={`mobile-sidebar ${mobileMenu ? 'open' : ''}`} ref={mobileMenuRef} tabIndex={-1}>
         <div style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
           <Link href="/" onClick={close} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', fontWeight: 600, color: 'var(--text)', textDecoration: 'none' }}>
-            <span style={{ width: 24, height: 24, borderRadius: 7, background: 'var(--primary)', color: 'var(--bg)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8125rem' }}>N</span>
-            Lyn-nyx Stores
+            <img src="/lynnyx-logo.png" alt="Lyn-nyx Stores" style={{ height: 28, width: 'auto', objectFit: 'contain', display: 'block' }} />
           </Link>
           <button className="btn btn-ghost btn-icon" style={{ borderRadius: 8 }} onClick={close} aria-label="Close"><X size={20} /></button>
         </div>

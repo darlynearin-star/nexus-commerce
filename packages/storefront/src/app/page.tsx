@@ -209,6 +209,7 @@ export default function LandingPage() {
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}><CheckCircle size={15} style={{ color: 'var(--success)' }} /> 3,000 UGX/week after</span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}><CreditCard size={15} style={{ color: 'var(--success)' }} /> MTN MoMo &amp; Airtel</span>
             </div>
+            <img src="/lynnyx-hero.png" alt="Lyn-nyx Stores" style={{ marginTop: '2.25rem', width: '100%', maxWidth: 560, borderRadius: 14, border: '1px solid var(--border)', display: 'block' }} />
           </div>
         </div>
       </section>

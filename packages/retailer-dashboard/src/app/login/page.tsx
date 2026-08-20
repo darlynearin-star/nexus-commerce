@@ -17,8 +17,9 @@ export default function LoginPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
       <div className="card" style={{ width: '100%', maxWidth: 400, padding: '2.5rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Lyn-nyx Retailer Dashboard</h1>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>Sign in to manage your store</p>
+        <img src="/lynnyx-logo-portrait.png" alt="Lyn-nyx Retailer" style={{ display: 'block', margin: '0 auto 1.25rem', maxWidth: 150, maxHeight: 130, objectFit: 'contain' }} />
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem', textAlign: 'center' }}>Retailer Dashboard</h1>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.875rem', textAlign: 'center' }}>Sign in to manage your store</p>
         {error && <div style={{ padding: '0.75rem', background: 'var(--error)', color: 'white', borderRadius: '0.5rem', marginBottom: '1rem', fontSize: '0.8125rem' }}>{error}</div>}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <input className="input" type="email" name="email" id="email" placeholder="Email" aria-label="Email" value={email} onChange={e => setEmail(e.target.value)} required />

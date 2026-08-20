@@ -4,7 +4,7 @@ import './globals.css';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/lib/auth-guard';
 import { useDismiss } from '@/lib/use-dismiss';
-import { LayoutDashboard, Users, Shield, Database, Activity, Settings, AlertTriangle, LogOut, Menu, X, Terminal, Server, FileText, Flag, Store, Key, Megaphone, RefreshCw, HardDrive, Globe, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Users, Shield, Database, Activity, Settings, AlertTriangle, LogOut, Menu, X, Server, FileText, Flag, Store, Key, Megaphone, RefreshCw, HardDrive, Globe, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -45,8 +45,12 @@ function Sidebar({ children }: { children: React.ReactNode }) {
     <AuthGuard roles={['DEVELOPER', 'SUPER_DEVELOPER']}>
       <div className={`sidebar-overlay ${mobileOpen ? 'open' : ''}`} onClick={closeMobile} />
       <div className={`sidebar ${mobileOpen ? 'open' : ''}`} ref={mobileRef} tabIndex={-1} style={{ width: collapsed ? 64 : 'var(--sidebar)', transition: 'width 0.2s' }}>
-        <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'space-between' }}>
-          {!collapsed && <Link href="/dashboard" onClick={closeMobile} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary)', textDecoration: 'none' }}><Terminal size={22} /> Lyn-nyx Dev</Link>}
+        <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Link href="/dashboard" onClick={closeMobile} style={{ display: 'flex', alignItems: 'center', color: 'var(--primary)', textDecoration: 'none' }}>
+            {collapsed
+              ? <img src="/lynnyx-logo-square.png" alt="Lyn-nyx" style={{ width: 34, height: 34, objectFit: 'contain', display: 'block' }} />
+              : <img src="/lynnyx-logo.png" alt="Lyn-nyx Dev" style={{ height: 32, width: 'auto', objectFit: 'contain', display: 'block' }} />}
+          </Link>
           <button className="btn btn-ghost btn-icon" onClick={() => { if (window.innerWidth < 768) setMobileOpen(false); else setCollapsed(!collapsed); }} aria-label="Toggle sidebar">{collapsed ? <Menu size={18} /> : <X size={18} />}</button>
         </div>
         <nav aria-label="Main navigation" style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
@@ -80,7 +84,7 @@ function Sidebar({ children }: { children: React.ReactNode }) {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" /></head>
+      <head><link rel="icon" href="/lynnyx-logo-square.png" /><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" /></head>
       <body><AuthProvider><Sidebar>{children}</Sidebar></AuthProvider></body>
     </html>
   );
