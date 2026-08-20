@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { Store, Palette, Globe, Smartphone, Gift, CreditCard, ArrowRight, CheckCircle, Layout, Users, DollarSign, Clock, ExternalLink, ShoppingBag, BookOpen, HelpCircle, EyeOff, Terminal, TrendingUp, ShieldCheck, Truck } from 'lucide-react';
@@ -209,7 +210,7 @@ export default function LandingPage() {
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}><CheckCircle size={15} style={{ color: 'var(--success)' }} /> 3,000 UGX/week after</span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}><CreditCard size={15} style={{ color: 'var(--success)' }} /> MTN MoMo &amp; Airtel</span>
             </div>
-            <img src="/lynnyx-hero.png" alt="Lyn-nyx Stores" style={{ marginTop: '2.25rem', width: '100%', maxWidth: 560, borderRadius: 14, border: '1px solid var(--border)', display: 'block' }} />
+            <Image src="/lynnyx-hero.png" alt="Lyn-nyx Stores" width={1280} height={720} sizes="560px" style={{ marginTop: '2.25rem', width: '100%', maxWidth: 560, height: 'auto', borderRadius: 14, border: '1px solid var(--border)', display: 'block' }} />
           </div>
         </div>
       </section>

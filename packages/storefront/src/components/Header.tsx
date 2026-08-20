@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { ShoppingCart, Heart, Search, User, Sun, Moon, Menu, X, Store, ExternalLink, LayoutDashboard, LogOut, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
@@ -61,7 +62,7 @@ export default function Header() {
       <header className="glass" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
         <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64, gap: '1.25rem' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', fontSize: '1.125rem', fontWeight: 600, color: 'var(--text)', textDecoration: 'none', flexShrink: 0, letterSpacing: '-0.01em' }}>
-            <img src="/lynnyx-logo.png" alt="Lyn-nyx Stores" style={{ height: 34, width: 'auto', objectFit: 'contain', display: 'block' }} />
+            <Image src="/lynnyx-logo.png" alt="Lyn-nyx Stores" width={96} height={72} priority sizes="96px" style={{ height: 34, width: 'auto', objectFit: 'contain', display: 'block' }} />
           </Link>
 
           {allStores.length > 0 && (
@@ -154,7 +155,7 @@ export default function Header() {
       <div className={`mobile-sidebar ${mobileMenu ? 'open' : ''}`} ref={mobileMenuRef} tabIndex={-1}>
         <div style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
           <Link href="/" onClick={close} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', fontWeight: 600, color: 'var(--text)', textDecoration: 'none' }}>
-            <img src="/lynnyx-logo.png" alt="Lyn-nyx Stores" style={{ height: 28, width: 'auto', objectFit: 'contain', display: 'block' }} />
+            <Image src="/lynnyx-logo.png" alt="Lyn-nyx Stores" width={80} height={60} sizes="80px" style={{ height: 28, width: 'auto', objectFit: 'contain', display: 'block' }} />
           </Link>
           <button className="btn btn-ghost btn-icon" style={{ borderRadius: 8 }} onClick={close} aria-label="Close"><X size={20} /></button>
         </div>

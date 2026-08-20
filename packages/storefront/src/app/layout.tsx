@@ -38,7 +38,7 @@ export const metadata: Metadata = {
       'Create a personalized online fashion store in minutes. Pick a template, set your colors, add your products, and start selling across Uganda. No coding needed.',
     url: SITE_URL,
     locale: 'en_US',
-    images: [{ url: '/lynnyx-hero.png', width: 1600, height: 900, alt: 'Lyn-nyx Stores' }],
+    images: [{ url: '/lynnyx-hero.png', width: 1280, height: 720, alt: 'Lyn-nyx Stores' }],
   },
   twitter: {
     card: 'summary_large_image',
