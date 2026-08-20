@@ -118,6 +118,11 @@ async function runMigrations() {
     logger.info('Migration: added subscription grace/suspension tracking columns');
     await prisma.$executeRawUnsafe('ALTER TABLE subscription_payments ADD COLUMN IF NOT EXISTS "customerNote" TEXT');
     logger.info('Migration: added customerNote to subscription_payments');
+    // NotificationType enum: TIER_WARNING value is missing on databases created
+    // before it existed in the schema (enum ADD VALUE is idempotent, safe on
+    // Postgres 12+; executed here in autocommit so it also works on older PG).
+    await prisma.$executeRawUnsafe('ALTER TYPE "NotificationType" ADD VALUE IF NOT EXISTS \'TIER_WARNING\'');
+    logger.info('Migration: added TIER_WARNING to NotificationType enum');
     // Search: pg_trgm trigram index on product searchable columns
     await prisma.$executeRawUnsafe('CREATE EXTENSION IF NOT EXISTS pg_trgm');
     await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS products_name_trgm_idx ON products USING gin (name gin_trgm_ops)');
