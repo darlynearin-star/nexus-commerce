@@ -12,6 +12,7 @@ import { wishlistRouter } from './routes/wishlist';
 import { reviewsRouter } from './routes/reviews';
 import { couponsRouter } from './routes/coupons';
 import { mediaRouter } from './routes/media';
+import { adsRouter } from './routes/ads';
 import { analyticsRouter } from './routes/analytics';
 import { notificationsRouter } from './routes/notifications';
 import { adminRouter } from './routes/admin';
@@ -129,6 +130,23 @@ async function runMigrations() {
     await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS products_description_trgm_idx ON products USING gin (description gin_trgm_ops)');
     await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS products_brand_trgm_idx ON products USING gin (brand gin_trgm_ops)');
     logger.info('Migration: added pg_trgm search indexes on products');
+    // Ad Studio: jobs table (R2/S3 video storage reuses storage.ts; DB blob fallback)
+    await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "ad_videos" (
+      "id" TEXT PRIMARY KEY,
+      "sourceUrl" TEXT NOT NULL,
+      "templateId" TEXT NOT NULL,
+      "format" TEXT NOT NULL DEFAULT '9:16',
+      "status" TEXT NOT NULL DEFAULT 'QUEUED',
+      "videoUrl" TEXT,
+      "script" JSONB,
+      "error" TEXT,
+      "createdBy" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT now(),
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT now()
+    )`);
+    await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "ad_videos_status_idx" ON "ad_videos"("status")');
+    await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "ad_videos_templateId_idx" ON "ad_videos"("templateId")');
+    logger.info('Migration: ensured ad_videos table');
   } catch (e: any) {
     logger.warn(`Migrations skipped: ${e.message}`);
   }
@@ -265,6 +283,7 @@ app.use('/api/api-config', apiConfigRouter);
 app.use('/api/subscriptions', subscriptionsRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/announcements', announcementsRouter);
+app.use('/api/ads', adsRouter);
 app.use('/api/cache', cacheRouter);
 app.use('/api/backups', backupsRouter);
 app.use('/api/store-settings', storeSettingsRouter);

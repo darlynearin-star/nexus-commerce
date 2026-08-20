@@ -745,3 +745,21 @@ model AnalyticsEvent {
 
   @@map("analytics_events")
 }
+
+model AdVideo {
+  id         String   @id @default(uuid())
+  sourceUrl  String
+  templateId String
+  format     String   @default("9:16")
+  status     String   @default("QUEUED")
+  videoUrl   String?
+  script     Json?
+  error      String?
+  createdBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([status])
+  @@index([templateId])
+  @@map("ad_videos")
+}

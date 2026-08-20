@@ -1,0 +1,25 @@
+# Render Dockerfile for the API — ffmpeg + Playwright chromium + deps for Ad Studio
+# Use it: Render → your API service → Settings → Runtime → Docker (set Dockerfile Path = Dockerfile.api)
+# Otherwise copy the apt-get lines into Render's NATIVE build command.
+
+FROM node:20-bullseye-slim
+
+# System deps: ffmpeg (video compose) + Playwright chromium deps (screen capture: nss, nspr, dbus, atspi, drm, xcomposite, xdamage, xfixes, xrandr, gb-...)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    ca-certificates \
+    libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2 \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY package.json package-lock.json* ./
+COPY packages/api/package.json packages/api/package.json
+COPY packages/database/package.json packages/database/package.json
+COPY packages/shared/package.json packages/shared/package.json
+RUN npm ci
+COPY . .
+RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
+RUN npx playwright install --with-deps chromium
+RUN npm run build -w packages/api
+EXPOSE 4000
+CMD ["node", "packages/api/dist/index.js"]

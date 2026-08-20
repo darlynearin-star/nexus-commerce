@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { Eye, EyeOff, Check, RefreshCw, Save, AlertCircle, Wifi, WifiOff, CreditCard, Zap, Mail, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, Check, RefreshCw, Save, AlertCircle, Wifi, WifiOff, CreditCard, Zap, Mail, ShieldCheck, Megaphone, HardDrive } from 'lucide-react';
 
 interface IntegrationService {
   category: string;
@@ -21,6 +21,13 @@ const INTEGRATIONS: IntegrationService[] = [
       { name: 'Pesapal (MTN MoMo + Airtel + Cards)', keys: [{ key: 'PESAPAL_CONSUMER_KEY', label: 'Consumer Key', type: 'text' }, { key: 'PESAPAL_CONSUMER_SECRET', label: 'Consumer Secret', type: 'password' }, { key: 'PESAPAL_IPN_URL', label: 'IPN URL (callback)', type: 'text' }, { key: 'PESAPAL_BASE_URL', label: 'Base URL (test: https://cybqa.pesapal.com)', type: 'text' }] },
       { name: 'Flutterwave (Cards)', keys: [{ key: 'FLUTTERWAVE_PUBLIC_KEY', label: 'Public Key', type: 'text' }, { key: 'FLUTTERWAVE_SECRET_KEY', label: 'Secret Key', type: 'password' }, { key: 'FLUTTERWAVE_WEBHOOK_SECRET', label: 'Webhook Secret', type: 'password' }] },
       { name: 'Mobile Money (Manual Airtel Pay)', keys: [{ key: 'MOMO_MERCHANT_CODE', label: 'Airtel Pay Merchant Code', type: 'text' }, { key: 'MOMO_NUMBER', label: 'Airtel Number', type: 'text' }, { key: 'MOMO_ACCOUNT_NAME', label: 'Account Name (shown to payers)', type: 'text' }] },
+    ],
+  },
+  {
+    category: 'Content & Voice', icon: <Megaphone size={18} />,
+    services: [
+      { name: 'ElevenLabs (Ad Studio voiceover)', keys: [{ key: 'ELEVENLABS_API_KEY', label: 'API Key', type: 'password' }, { key: 'ELEVENLABS_VOICE_ID', label: 'Voice ID (default Rachel)', type: 'text' }, { key: 'ELEVENLABS_MODEL', label: 'Model (default eleven_multilingual_v2)', type: 'text' }] },
+      { name: 'Storage (R2 / S3 — Ad Studio videos)', icon: <HardDrive size={14} />, keys: [{ key: 'STORAGE_PROVIDER', label: 'Provider (s3 or db)', type: 'text' }, { key: 'STORAGE_ENDPOINT', label: 'S3 Endpoint (e.g. R2)', type: 'text' }, { key: 'STORAGE_BUCKET', label: 'Bucket', type: 'text' }, { key: 'STORAGE_REGION', label: 'Region (auto for R2)', type: 'text' }, { key: 'STORAGE_ACCESS_KEY_ID', label: 'Access Key ID', type: 'password' }, { key: 'STORAGE_SECRET_ACCESS_KEY', label: 'Secret Access Key', type: 'password' }, { key: 'STORAGE_PUBLIC_BASE_URL', label: 'Public Base URL (serving)', type: 'text' }] },
     ],
   },
   {
