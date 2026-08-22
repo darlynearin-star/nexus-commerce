@@ -25,11 +25,19 @@ export async function getElevenLabsVoice(): Promise<string> {
   return process.env.ELEVENLABS_VOICE_ID || 'EXAVITQu4vr4xnSDxMaL'; // Rachel — clean default
 }
 
+export async function getElevenLabsModel(): Promise<string> {
+  try {
+    const row = await prisma.setting.findUnique({ where: { key: 'ELEVENLABS_MODEL' } });
+    if (row?.value) return String(row.value).trim();
+  } catch {}
+  return process.env.ELEVENLABS_MODEL || 'eleven_multilingual_v2';
+}
+
 export async function ttsElevenLabs(text: string): Promise<Buffer | null> {
   const key = await getElevenLabsKey();
   if (!key || !text.trim()) return null;
   const voiceId = await getElevenLabsVoice();
-  const model = process.env.ELEVENLABS_MODEL || 'eleven_multilingual_v2';
+  const model = await getElevenLabsModel();
   const res = await fetch(`https://${ELEVENLABS_LISTEN_HOST}/v1/text-to-speech/${encodeURIComponent(voiceId)}`, {
     method: 'POST',
     headers: {

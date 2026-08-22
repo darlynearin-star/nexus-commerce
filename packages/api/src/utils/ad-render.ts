@@ -5,7 +5,7 @@ import path from 'node:path';
 import prisma from '@nexus/database';
 import { AD_VIDEO_TEMPLATES, getAdTemplate } from '../ad-video-templates';
 import { ttsElevenLabs } from './tts';
-import { storage } from './storage';
+import { storage, type StorageConfig } from './storage';
 import { logger } from './logger';
 
 const isUrl = (s: string) => /^https?:\/\//i.test(s);
@@ -280,6 +280,43 @@ export function renderCapabilities(): { ffmpeg: boolean; playwright: boolean } {
 
 // ---- Async job runner (fire-and-forget from the route) ----
 
+/**
+ * Storage config resolution: env vars win (storage.ts default), but the
+ * dev-dashboard api-config page saves STORAGE_* into the settings table —
+ * honor those too so the owner can configure R2 without touching Render.
+ * Returns undefined when S3/R2 isn't fully configured (caller passes it
+ * through and storage.store falls back to its env/db default).
+ */
+async function resolveStorageCfg(): Promise<StorageConfig | undefined> {
+  try {
+    const keys = ['STORAGE_PROVIDER', 'STORAGE_ENDPOINT', 'STORAGE_BUCKET', 'STORAGE_REGION', 'STORAGE_ACCESS_KEY_ID', 'STORAGE_SECRET_ACCESS_KEY', 'STORAGE_PUBLIC_BASE_URL', 'STORAGE_FORCE_PATH_STYLE'];
+    const rows = await prisma.setting.findMany({ where: { key: { in: keys } } });
+    const map = new Map(rows.map(r => [r.key, String(r.value ?? '').trim()]));
+    const val = (k: string) => map.get(k) || (process.env[k] || '');
+    if (
+      val('STORAGE_PROVIDER').toLowerCase() === 's3' &&
+      val('STORAGE_ENDPOINT') && val('STORAGE_BUCKET') &&
+      val('STORAGE_ACCESS_KEY_ID') && val('STORAGE_SECRET_ACCESS_KEY') &&
+      val('STORAGE_PUBLIC_BASE_URL')
+    ) {
+      return {
+        provider: 's3',
+        endpoint: val('STORAGE_ENDPOINT'),
+        region: val('STORAGE_REGION') || 'auto',
+        accessKeyId: val('STORAGE_ACCESS_KEY_ID'),
+        secretAccessKey: val('STORAGE_SECRET_ACCESS_KEY'),
+        bucket: val('STORAGE_BUCKET'),
+        publicBaseUrl: val('STORAGE_PUBLIC_BASE_URL'),
+        forcePathStyle: val('STORAGE_FORCE_PATH_STYLE') === 'true',
+      };
+    }
+    if (val('STORAGE_PROVIDER') || val('STORAGE_ENDPOINT')) {
+      logger.warn('R2/S3 storage partially configured — missing endpoint/bucket/keys/public URL. Falling back to DB blob storage.');
+    }
+  } catch {}
+  return undefined;
+}
+
 export async function runAdVideoJob(id: string): Promise<void> {
   const row = await prisma.adVideo.findUnique({ where: { id } });
   if (!row) return;
@@ -293,14 +330,15 @@ export async function runAdVideoJob(id: string): Promise<void> {
       format,
     });
     // Store the MP4 through the existing storage layer: R2 when
-    // STORAGE_PROVIDER=s3 (Cloudflare, zero egress — best for free tier),
-    // DB blob fallback when not configured. Reuses storage.ts which already
-    // handles both. We mint a per-video storeId of 'ad-studio' so videos
-    // are not tied to a retailer's store.
+    // STORAGE_PROVIDER=s3 is set on Render OR saved in the dev-dashboard
+    // api-config (Cloudflare R2, zero egress — best for the free tier).
+    // Falls back to DB blob storage when not configured. storage.store
+    // handles both paths; passing undefined cfg keeps its env default.
     const filename = `ad-${row.id}-${format.replace(':', 'x')}.mp4`;
+    const cfg = await resolveStorageCfg();
     const { media } = await storage.store(
       { storeId: 'ad-studio', buffer: result.bytes, filename, folder: 'ads' },
-      // storage.store reads STORAGE_* env itself — no cfg needed.
+      cfg,
     );
     const videoUrl: string = (media as any).url || '';
     await prisma.adVideo.update({
