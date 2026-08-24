@@ -21,6 +21,13 @@ const ALL_KEYS = [
   'GMAIL_USER', 'GMAIL_APP_PASSWORD', 'GMAIL_FROM_EMAIL',
   'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET',
   'AUTH_REDIRECT_URL',
+  // Mobile Money (manual Airtel Pay) collection details — subscriptions.ts / payments/manual.ts
+  'MOMO_MERCHANT_CODE', 'MOMO_NUMBER', 'MOMO_ACCOUNT_NAME',
+  // Ad Studio voiceover (ElevenLabs BYO) — utils/tts.ts
+  'ELEVENLABS_API_KEY', 'ELEVENLABS_VOICE_ID', 'ELEVENLABS_MODEL',
+  // Object storage (R2/S3) for Ad Studio videos — utils/storage.ts + utils/ad-render.ts
+  'STORAGE_PROVIDER', 'STORAGE_ENDPOINT', 'STORAGE_BUCKET', 'STORAGE_REGION',
+  'STORAGE_ACCESS_KEY_ID', 'STORAGE_SECRET_ACCESS_KEY', 'STORAGE_PUBLIC_BASE_URL', 'STORAGE_FORCE_PATH_STYLE',
   ...KEY_PREFIXES.map(p => `${p}ENABLED`),
   ...KEY_PREFIXES.map(p => `${p}LAST_TESTED`),
 ];
