@@ -756,6 +756,7 @@ model AdVideo {
   script     Json?
   error      String?
   createdBy  String?
+  data       String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

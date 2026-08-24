@@ -10,6 +10,13 @@ export const adsRouter = Router();
 
 const ALLOWED_FORMATS = new Set(['9:16', '16:9']);
 
+// Never select AdVideo.data outside the download route — it can hold the
+// entire base64 MP4.
+const AD_VIDEO_FIELDS = {
+  id: true, sourceUrl: true, templateId: true, format: true, status: true,
+  videoUrl: true, script: true, error: true, createdBy: true, createdAt: true, updatedAt: true,
+};
+
 function isUrl(s: unknown): boolean {
   return typeof s === 'string' && /^https?:\/\//i.test(s.trim());
 }
@@ -31,17 +38,37 @@ adsRouter.get('/capabilities', authenticate, requireRole(UserRole.DEVELOPER, Use
 
 adsRouter.get('/', authenticate, requireRole(UserRole.DEVELOPER, UserRole.SUPER_DEVELOPER), async (_req, res, next) => {
   try {
-    const rows = await prisma.adVideo.findMany({ orderBy: { createdAt: 'desc' }, take: 100 });
+    const rows = await prisma.adVideo.findMany({ orderBy: { createdAt: 'desc' }, take: 100, select: AD_VIDEO_FIELDS });
     res.json({ success: true, data: rows.map(stripPrivate) });
   } catch (e) { next(e); }
 });
 
 adsRouter.get('/:id', authenticate, requireRole(UserRole.DEVELOPER, UserRole.SUPER_DEVELOPER), async (req, res, next) => {
   try {
-    const row = await prisma.adVideo.findUnique({ where: { id: req.params.id } });
+    const row = await prisma.adVideo.findUnique({ where: { id: req.params.id }, select: AD_VIDEO_FIELDS });
     if (!row) return res.status(404).json({ success: false, error: 'Ad not found' });
     res.json({ success: true, data: stripPrivate(row) });
   } catch (e) { next(e); }
+});
+
+// DB-fallback serving for rendered ads. Public capability URL (UUID-keyed,
+// same trust model as /uploads) — the dashboard's Copy-link/Open buttons are
+// meant for sharing. S3/R2-backed ads never hit this route (their videoUrl
+// points at the object-storage public base URL).
+adsRouter.get('/:id/download', async (req, res) => {
+  try {
+    const row = await prisma.adVideo.findUnique({ where: { id: req.params.id }, select: { data: true, format: true } });
+    if (!row?.data) return res.status(404).send('Not found');
+    const buffer = Buffer.from(row.data, 'base64');
+    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.setHeader('Accept-Ranges', 'none');
+    res.send(buffer);
+  } catch {
+    res.status(500).send('Server error');
+  }
 });
 
 adsRouter.post('/', authenticate, requireRole(UserRole.DEVELOPER, UserRole.SUPER_DEVELOPER), async (req, res, next) => {

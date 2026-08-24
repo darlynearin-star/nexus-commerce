@@ -146,6 +146,7 @@ async function runMigrations() {
     )`);
     await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "ad_videos_status_idx" ON "ad_videos"("status")');
     await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "ad_videos_templateId_idx" ON "ad_videos"("templateId")');
+    await prisma.$executeRawUnsafe('ALTER TABLE "ad_videos" ADD COLUMN IF NOT EXISTS "data" TEXT');
     logger.info('Migration: ensured ad_videos table');
   } catch (e: any) {
     logger.warn(`Migrations skipped: ${e.message}`);

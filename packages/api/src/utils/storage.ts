@@ -4,6 +4,12 @@ import prisma from '@nexus/database';
 
 const API_BASE = process.env.RENDER_EXTERNAL_URL || 'https://nexus-api-69q5.onrender.com';
 
+// Public origin of this API — used to build absolute URLs for assets that are
+// served by this process (e.g. Ad Studio DB-fallback downloads).
+export function getApiBase(): string {
+  return API_BASE;
+}
+
 // Server-derived content type from the file extension, never the client-supplied
 // mimetype, so a spoofed file cannot be served as active content.
 const EXT_TO_MIME: Record<string, string> = {
@@ -104,7 +110,10 @@ export function signS3Request(req: S3Request): { host: string; path: string; hea
   const endpoint = new URL(cfg.endpoint!);
   const bucket = cfg.bucket!;
   const host = cfg.forcePathStyle ? endpoint.host : `${bucket}.${endpoint.host}`;
-  const path = cfg.forcePathStyle ? `/${bucket}${uriEncode(key)}` : `/${uriEncode(key)}`;
+  // Path-style addressing needs the slash between bucket and key:
+  // https://endpoint/<bucket>/<key>. (Virtual-host style keeps the bucket in
+  // the hostname and signs only /<key>.)
+  const path = cfg.forcePathStyle ? `/${bucket}/${uriEncode(key)}` : `/${uriEncode(key)}`;
   const payloadHash = req.body.length === 0 ? EMPTY_SHA256 : sha256Hex(req.body.toString('utf8'));
   const { amzDate, dateStamp } = amzDateParts();
   const region = cfg.region;
@@ -164,7 +173,10 @@ async function s3Request(req: S3Request): Promise<Buffer> {
   return Buffer.from(await res.arrayBuffer());
 }
 
-async function putS3Object(cfg: StorageConfig, key: string, body: Buffer, contentType: string): Promise<void> {
+// Exported for asset pipelines that own their storage key namespace and must
+// NOT create Media rows (e.g. Ad Studio videos — Media.storeId is a hard FK to
+// stores and platform assets have no store).
+export async function putS3Object(cfg: StorageConfig, key: string, body: Buffer, contentType: string): Promise<void> {
   await s3Request({ cfg, method: 'PUT', key, body, contentType });
 }
 

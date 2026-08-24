@@ -5,7 +5,7 @@ import path from 'node:path';
 import prisma from '@nexus/database';
 import { AD_VIDEO_TEMPLATES, getAdTemplate } from '../ad-video-templates';
 import { ttsElevenLabs } from './tts';
-import { storage, type StorageConfig } from './storage';
+import { putS3Object, getApiBase, type StorageConfig } from './storage';
 import { logger } from './logger';
 
 const isUrl = (s: string) => /^https?:\/\//i.test(s);
@@ -317,8 +317,36 @@ async function resolveStorageCfg(): Promise<StorageConfig | undefined> {
   return undefined;
 }
 
+/**
+ * Persist a rendered ad MP4. Ads are PLATFORM assets — they deliberately do
+ * NOT go through the Media table, whose storeId is a hard FK to stores
+ * (no store owns an ad; using a fake storeId violates the FK on any clean DB).
+ *  - R2/S3 configured → object-storage PUT under the ad-studio/ namespace,
+ *    videoUrl = public base URL. No Media row. `data` stays NULL.
+ *  - Otherwise → base64 into AdVideo.data, videoUrl = this API's download
+ *    route (capability URL, consistent with /uploads).
+ * Returns the update payload the caller should persist (single-row update,
+ * no multi-step write).
+ */
+export async function storeAdResult(id: string, format: string, bytes: Buffer): Promise<{ status: string; videoUrl: string; data?: string }> {
+  const cfg = await resolveStorageCfg();
+  if (cfg) {
+    const key = `ad-studio/${id}-${format.replace(':', 'x')}.mp4`;
+    await putS3Object(cfg, key, bytes, 'video/mp4');
+    return { status: 'DONE', videoUrl: `${cfg.publicBaseUrl}/${key}` };
+  }
+  return {
+    status: 'DONE',
+    videoUrl: `${getApiBase()}/api/ads/${id}/download`,
+    data: bytes.toString('base64'),
+  };
+}
+
 export async function runAdVideoJob(id: string): Promise<void> {
-  const row = await prisma.adVideo.findUnique({ where: { id } });
+  const row = await prisma.adVideo.findUnique({
+    where: { id },
+    select: { id: true, sourceUrl: true, templateId: true, format: true, script: true },
+  });
   if (!row) return;
   await prisma.adVideo.update({ where: { id }, data: { status: 'RENDERING' } });
   try {
@@ -329,21 +357,10 @@ export async function runAdVideoJob(id: string): Promise<void> {
       templateId: row.templateId,
       format,
     });
-    // Store the MP4 through the existing storage layer: R2 when
-    // STORAGE_PROVIDER=s3 is set on Render OR saved in the dev-dashboard
-    // api-config (Cloudflare R2, zero egress — best for the free tier).
-    // Falls back to DB blob storage when not configured. storage.store
-    // handles both paths; passing undefined cfg keeps its env default.
-    const filename = `ad-${row.id}-${format.replace(':', 'x')}.mp4`;
-    const cfg = await resolveStorageCfg();
-    const { media } = await storage.store(
-      { storeId: 'ad-studio', buffer: result.bytes, filename, folder: 'ads' },
-      cfg,
-    );
-    const videoUrl: string = (media as any).url || '';
+    const payload = await storeAdResult(id, format, result.bytes);
     await prisma.adVideo.update({
       where: { id },
-      data: { status: 'DONE', videoUrl, script: (row.script as any) || {} },
+      data: { ...payload, script: (row.script as any) || {} },
     });
   } catch (e: any) {
     const msg = e?.message || String(e);
