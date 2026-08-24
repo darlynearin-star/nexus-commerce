@@ -120,10 +120,12 @@ subscriptionsRouter.post('/confirm', authenticate, requireRole(UserRole.DEVELOPE
     if (!payment) return res.status(404).json({ success: false, error: 'Payment not found' });
     if (payment.status === 'PAID') return res.json({ success: true, message: 'Already paid', data: payment });
 
-    await prisma.subscriptionPayment.update({ where: { id: payment.id }, data: { status: 'PAID' } });
-    await activateSubscriptionAndStore(payment.subscriptionId);
+    // Atomic claim + activation in one transaction: a double-click or racing
+    // second confirm can only win once (CAS on status != PAID).
+    const applied = await finalizeSubscriptionPayment(payment, { status: 'PAID' });
+    if (!applied) return res.json({ success: true, message: 'Already paid', data: payment });
     logActivity({ userId: req.user!.userId, action: 'subscription:payment_confirmed', resource: 'subscription', resourceId: payment.subscriptionId, details: { paymentId: payment.id, method: payment.method }, req: req as any });
-    res.json({ success: true, data: payment });
+    res.json({ success: true, data: { ...payment, status: 'PAID' } });
   } catch (error) { next(error); }
 });
 
@@ -142,6 +144,35 @@ subscriptionsRouter.post('/cancel', authenticate, requireRole(UserRole.RETAILER)
   } catch (error) { next(error); }
 });
 
+/**
+ * Atomically claims a PENDING subscription payment: the conditional update is
+ * a database-level compare-and-set, so a replayed or concurrent event can
+ * never claim the same payment twice (once status is PAID the update matches
+ * 0 rows). Must run inside a transaction with the activation it guards.
+ */
+async function claimSubscriptionPayment(paymentId: string, tx: any, data: Record<string, any>): Promise<boolean> {
+  const claimed = await tx.subscriptionPayment.updateMany({
+    where: { id: paymentId, status: { not: 'PAID' } },
+    data,
+  });
+  return (claimed?.count ?? 0) === 1;
+}
+
+/**
+ * One business operation = mark PAID + activate subscription + reactivate
+ * store, atomically. Returns false when the payment was already claimed
+ * (replayed event / lost race) — in that case NOTHING is written.
+ * Invariant: a replayed payment event grants no additional entitlement.
+ */
+async function finalizeSubscriptionPayment(payment: { id: string; subscriptionId: string }, data: Record<string, any>): Promise<boolean> {
+  return prisma.$transaction(async (tx: any) => {
+    const claimed = await claimSubscriptionPayment(payment.id, tx, data);
+    if (!claimed) return false;
+    await activateSubscriptionAndStore(payment.subscriptionId, tx);
+    return true;
+  });
+}
+
 async function verifySubscriptionPayment(transactionId: string) {
   const provider = getPaymentProvider('pesapal');
   if (!provider) return { ok: false as const, message: 'Pesapal not configured' };
@@ -158,21 +189,34 @@ async function verifySubscriptionPayment(transactionId: string) {
   });
   if (!payment) return { ok: false as const, message: 'Payment record not found' };
 
-  await prisma.subscriptionPayment.update({ where: { id: payment.id }, data: { status: 'PAID', transactionId: result.transactionId || transactionId } });
-  await activateSubscriptionAndStore(payment.subscriptionId);
-  return { ok: true as const, payment, subscriptionId: payment.subscriptionId };
+  // Replay of an already-processed event: acknowledge WITHOUT re-activating
+  // and WITHOUT extending nextBillingDate (the free-subscription bug).
+  if (payment.status === 'PAID') {
+    return { ok: true as const, payment, subscriptionId: payment.subscriptionId, alreadyPaid: true as const };
+  }
+
+  const applied = await finalizeSubscriptionPayment(
+    payment,
+    { status: 'PAID', transactionId: result.transactionId || transactionId },
+  );
+  if (!applied) {
+    // Lost a concurrent race — the winner activated; acknowledge idempotently.
+    return { ok: true as const, payment: { ...payment, status: 'PAID' }, subscriptionId: payment.subscriptionId, alreadyPaid: true as const };
+  }
+  return { ok: true as const, payment: { ...payment, status: 'PAID' }, subscriptionId: payment.subscriptionId };
 }
 
 // Marks a subscription ACTIVE, clears any grace/suspension flags, and
 // reactivates the retailer's store so it is served on the storefront again.
-async function activateSubscriptionAndStore(subscriptionId: string) {
-  await prisma.retailerSubscription.update({
+// Accepts a transaction client so claim+activate commit atomically.
+async function activateSubscriptionAndStore(subscriptionId: string, tx: any = prisma) {
+  await tx.retailerSubscription.update({
     where: { id: subscriptionId },
     data: { status: 'ACTIVE', lastBillingDate: new Date(), nextBillingDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), graceNotifiedAt: null, suspendedAt: null },
   });
-  const sub = await prisma.retailerSubscription.findUnique({ where: { id: subscriptionId }, include: { retailer: true } });
+  const sub = await tx.retailerSubscription.findUnique({ where: { id: subscriptionId }, include: { retailer: true } });
   if (sub?.retailer?.storeSlug) {
-    await prisma.store.updateMany({ where: { slug: sub.retailer.storeSlug }, data: { isActive: true } });
+    await tx.store.updateMany({ where: { slug: sub.retailer.storeSlug }, data: { isActive: true } });
   }
 }
 
@@ -186,7 +230,11 @@ subscriptionsRouter.get('/callback/pesapal', async (req, res, next) => {
 
     const verified = await verifySubscriptionPayment(transactionId || merchantReference);
     if (verified.ok) {
-      logActivity({ userId: 'system', action: 'subscription:renewed', resource: 'subscription', resourceId: verified.subscriptionId, req: req as any });
+      // Audit only genuine renewals — replays of an already-processed payment
+      // must not inflate the renewal log.
+      if (!verified.alreadyPaid) {
+        logActivity({ userId: 'system', action: 'subscription:renewed', resource: 'subscription', resourceId: verified.subscriptionId, req: req as any });
+      }
       return res.redirect(`${RETAILER_URL}/subscription?payment=success`);
     }
     res.redirect(`${RETAILER_URL}/subscription?payment=error`);
@@ -229,7 +277,9 @@ subscriptionsRouter.get('/callback', async (req, res, next) => {
     if (result.success && result.status === 'PAID') {
       const verified = await verifySubscriptionPayment(transactionId || txRef!);
       if (verified.ok) {
-        logActivity({ userId: 'system', action: 'subscription:renewed', resource: 'subscription', resourceId: verified.subscriptionId, req: req as any });
+        if (!verified.alreadyPaid) {
+          logActivity({ userId: 'system', action: 'subscription:renewed', resource: 'subscription', resourceId: verified.subscriptionId, req: req as any });
+        }
         return res.redirect(`${RETAILER_URL}/subscription?payment=success`);
       }
     }
@@ -266,19 +316,21 @@ subscriptionsRouter.post('/webhook/flutterwave', async (req, res, next) => {
     if (event === 'charge.completed' && (data.status === 'successful' || data.status === 'completed')) {
       const txRef = (data.tx_ref as string) || '';
       if (txRef.startsWith('SUB-')) {
-        const parts = txRef.split('-');
-        const subscriptionId = parts[1];
+        // Reference format: `SUB-<subscriptionId>-<timestamp>`. Subscription ids
+        // are dashed UUIDs, so split('-')[1] truncates them — take everything
+        // between the 'SUB-' prefix and the final timestamp segment.
+        const subscriptionId = txRef.slice(4, txRef.lastIndexOf('-'));
         const txId = data.id?.toString() || txRef;
         const payment = subscriptionId ? await prisma.subscriptionPayment.findFirst({
           where: { subscriptionId, transactionId: txRef },
         }) : null;
         if (payment) {
-          await prisma.subscriptionPayment.update({
-            where: { id: payment.id },
-            data: { status: 'PAID', transactionId: txId },
-          });
-          await activateSubscriptionAndStore(payment.subscriptionId);
-          logActivity({ userId: 'system', action: 'subscription:webhook_paid', resource: 'subscription', resourceId: payment.subscriptionId, req: req as any });
+          // Same CAS + transaction discipline as the Pesapal/manual paths: a
+          // replayed webhook can only win once.
+          const applied = await finalizeSubscriptionPayment(payment, { status: 'PAID', transactionId: txId });
+          if (applied) {
+            logActivity({ userId: 'system', action: 'subscription:webhook_paid', resource: 'subscription', resourceId: payment.subscriptionId, req: req as any });
+          }
         }
       } else {
         const payment = await prisma.payment.findFirst({ where: { transactionId: txRef } });

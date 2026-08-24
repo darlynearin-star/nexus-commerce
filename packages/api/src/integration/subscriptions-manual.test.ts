@@ -122,10 +122,11 @@ describe('manual mobile-money subscription flow', () => {
     expect(res.body.message).toContain('Waiting for confirmation');
   });
 
-  it('owner confirms a manual payment and reactivates the subscription + store', async () => {
+  it('owner confirms a manual payment and reactivates the subscription + store (atomic CAS)', async () => {
     prismaMock.user.findUnique.mockResolvedValue({ id: 'u_dev', role: 'SUPER_DEVELOPER', isActive: true });
     prismaMock.subscriptionPayment.findUnique.mockResolvedValue({ id: 'pay_1', status: 'PENDING', subscriptionId: 'sub_1', method: 'mobile_money' });
-    prismaMock.subscriptionPayment.update.mockResolvedValue({ id: 'pay_1', status: 'PAID' });
+    prismaMock.$transaction = vi.fn(async (fn: any) => fn(prismaMock));
+    prismaMock.subscriptionPayment.updateMany.mockResolvedValue({ count: 1 });
     prismaMock.retailerSubscription.update.mockResolvedValue({ id: 'sub_1', status: 'ACTIVE' });
     prismaMock.retailerSubscription.findUnique.mockResolvedValue({ id: 'sub_1', retailer: { storeSlug: 'myshop' } });
     prismaMock.store.updateMany.mockResolvedValue({ count: 1 });
@@ -137,11 +138,30 @@ describe('manual mobile-money subscription flow', () => {
       .send({ paymentId: 'pay_1' });
 
     expect(res.status).toBe(200);
-    expect(prismaMock.subscriptionPayment.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ status: 'PAID' }) }));
+    // The claim is a compare-and-set, not a blind update.
+    expect(prismaMock.subscriptionPayment.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ id: 'pay_1', status: { not: 'PAID' } }), data: expect.objectContaining({ status: 'PAID' }) }),
+    );
     expect(prismaMock.retailerSubscription.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ status: 'ACTIVE', suspendedAt: null }) }),
     );
     expect(prismaMock.store.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ isActive: true }) }));
+  });
+
+  it('confirm on an already-PAID payment is a no-op ("Already paid")', async () => {
+    prismaMock.user.findUnique.mockResolvedValue({ id: 'u_dev', role: 'SUPER_DEVELOPER', isActive: true });
+    prismaMock.subscriptionPayment.findUnique.mockResolvedValue({ id: 'pay_1', status: 'PAID', subscriptionId: 'sub_1', method: 'mobile_money' });
+
+    const token = tokenFor({ userId: 'u_dev', email: 'dev@example.com', role: 'SUPER_DEVELOPER' });
+    const res = await request(app)
+      .post('/api/subscriptions/confirm')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ paymentId: 'pay_1' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toContain('Already paid');
+    expect(prismaMock.subscriptionPayment.updateMany).not.toHaveBeenCalled();
+    expect(prismaMock.retailerSubscription.update).not.toHaveBeenCalled();
   });
 
   it('rejects a RETAILER who tries to confirm a payment (owner-only)', async () => {
