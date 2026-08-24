@@ -587,6 +587,11 @@ authRouter.get('/google/callback', async (req, res, next) => {
 
     logActivity({ userId: user.id, action: 'user:google_login', resource: 'auth', req: req as any });
 
-    res.redirect(`${frontendUrl}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`);
+    // Deliver tokens in the URL FRAGMENT, never the query: fragments are not
+    // sent to any server, so the tokens cannot land in access logs, proxy
+    // logs, or Referer headers. The callback page strips them from the
+    // address bar immediately after reading.
+    const params = new URLSearchParams({ access_token: accessToken, refresh_token: refreshToken });
+    res.redirect(`${frontendUrl}/auth/callback#${params.toString()}`);
   } catch (error) { next(error); }
 });

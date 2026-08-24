@@ -1,13 +1,44 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { Loader2, AlertCircle } from 'lucide-react';
 
+/**
+ * Reads OAuth tokens from the URL fragment (#access_token=...) — the API
+ * delivers them there because fragments are never sent to any server. Falls
+ * back to legacy query params (?accessToken=...) for older deployments, and
+ * ALWAYS scrubs both from the address bar before doing anything else, so no
+ * token survives in browser history or the visible URL.
+ */
+function readAndScrubTokens(): { accessToken: string | null; refreshToken: string | null } {
+  let accessToken: string | null = null;
+  let refreshToken: string | null = null;
+
+  const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
+  if (hash) {
+    const frag = new URLSearchParams(hash);
+    accessToken = frag.get('access_token');
+    refreshToken = frag.get('refresh_token');
+  }
+
+  const search = window.location.search.startsWith('?') ? window.location.search.slice(1) : '';
+  if ((!accessToken || !refreshToken) && search) {
+    const query = new URLSearchParams(search);
+    accessToken = accessToken || query.get('accessToken');
+    refreshToken = refreshToken || query.get('refreshToken');
+  }
+
+  // Strip tokens from the URL (history, address bar) before any await.
+  if (hash || /accessToken|refreshToken|access_token|refresh_token/.test(search)) {
+    window.history.replaceState(window.history.state, '', window.location.pathname);
+  }
+
+  return { accessToken, refreshToken };
+}
+
 export default function AuthCallbackPage() {
-  const searchParams = useSearchParams();
   const { completeSession } = useAuth();
   const [status, setStatus] = useState<'verifying' | 'error'>('verifying');
   const [error, setError] = useState('');
@@ -15,15 +46,13 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     if (done.current) return;
-    const accessToken = searchParams.get('accessToken');
-    const refreshToken = searchParams.get('refreshToken');
+    done.current = true;
+    const { accessToken, refreshToken } = readAndScrubTokens();
     if (!accessToken || !refreshToken) {
-      done.current = true;
       setStatus('error');
       setError('Sign-in did not complete. Please try again.');
       return;
     }
-    done.current = true;
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
     api.get<any>('/auth/me').then((res: any) => {
@@ -32,7 +61,7 @@ export default function AuthCallbackPage() {
       setStatus('error');
       setError('Could not load your account. Please try again.');
     });
-  }, [searchParams, completeSession]);
+  }, [completeSession]);
 
   return (
     <div className="container" style={{ padding: 'clamp(2rem, 6vw, 4rem) 1rem', display: 'flex', justifyContent: 'center' }}>
