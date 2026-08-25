@@ -515,7 +515,7 @@ model Payment {
   orderId       String
   order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
   amount        Float
-  currency      String        @default("USD")
+  currency      String        @default("UGX")
   method        String
   status        PaymentStatus @default(PENDING)
   transactionId String?       @unique

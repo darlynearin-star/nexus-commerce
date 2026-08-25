@@ -182,6 +182,9 @@ async function runMigrations() {
       await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "${name}" ON "${table}" (${cols})`);
     }
     logger.info(`Migration: ensured ${hotPathIndexes.length} hot-path indexes`);
+    // M-money: payments.currency defaulted to USD; the platform sells in UGX.
+    await prisma.$executeRawUnsafe("ALTER TABLE payments ALTER COLUMN currency SET DEFAULT 'UGX'");
+    logger.info('Migration: payments currency default aligned to UGX');
   } catch (e: any) {
     logger.warn(`Migrations skipped: ${e.message}`);
   }
