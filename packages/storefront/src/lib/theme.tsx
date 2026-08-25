@@ -20,6 +20,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // H11: a mounted store shell owns the page theme — don't stomp it here.
+    if (document.documentElement.dataset.storeTheme) return;
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
     localStorage.setItem('linnxy-theme', isDark ? 'dark' : 'light');
   }, [isDark]);
