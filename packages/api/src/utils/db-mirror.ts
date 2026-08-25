@@ -9,20 +9,25 @@ export const BACKUP_TABLES = [
   'kill_switch', 'settings', 'announcements', 'analytics_events', 'store_emails', 'product_downloads',
 ];
 
-const rawFallbackUrl: string = process.env.DATABASE_URL_FALLBACK || '';
+// Read lazily (not at module load) so runtime/test configuration changes are
+// honored and boot order doesn't freeze the value.
+function rawFallbackUrl(): string {
+  return process.env.DATABASE_URL_FALLBACK || '';
+}
 let fallbackClient: PrismaClient | null = null;
 
 function normalizedFallbackUrl(): string {
-  if (!rawFallbackUrl) return rawFallbackUrl;
-  if (rawFallbackUrl.includes('pooler.supabase.com') && !rawFallbackUrl.includes('pgbouncer')) {
-    const sep = rawFallbackUrl.includes('?') ? '&' : '?';
-    return `${rawFallbackUrl}${sep}pgbouncer=true&connection_limit=1`;
+  const raw = rawFallbackUrl();
+  if (!raw) return raw;
+  if (raw.includes('pooler.supabase.com') && !raw.includes('pgbouncer')) {
+    const sep = raw.includes('?') ? '&' : '?';
+    return `${raw}${sep}pgbouncer=true&connection_limit=1`;
   }
-  return rawFallbackUrl;
+  return raw;
 }
 
 export function getFallbackClient(): PrismaClient | null {
-  if (!rawFallbackUrl) return null;
+  if (!rawFallbackUrl()) return null;
   if (!fallbackClient) {
     fallbackClient = new PrismaClient({ datasources: { db: { url: normalizedFallbackUrl() } } });
   }
@@ -123,6 +128,27 @@ export async function computeDigest(prisma: PrismaClient): Promise<Record<string
   return digest;
 }
 
+/**
+ * H7: row counts alone cannot see UPDATEs (a price edit or password change
+ * keeps the count identical, so the fallback snapshot silently went stale).
+ * Postgres tracks tuple-level counters per table in pg_stat_user_tables —
+ * ONE cheap query covers every table and moves on any INSERT/UPDATE/DELETE.
+ */
+async function changeCounters(prisma: PrismaClient): Promise<Record<string, number>> {
+  try {
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT relname AS tbl, n_tup_ins, n_tup_upd, n_tup_del FROM pg_stat_user_tables`,
+    );
+    const map: Record<string, number> = {};
+    for (const r of rows) {
+      map[r.tbl] = Number(r.n_tup_ins || 0) + Number(r.n_tup_upd || 0) + Number(r.n_tup_del || 0);
+    }
+    return map;
+  } catch {
+    return {};
+  }
+}
+
 export async function mirrorToFallback(prisma: PrismaClient): Promise<void> {
   const fb = getFallbackClient();
   if (!fb) return;
@@ -143,12 +169,16 @@ export async function mirrorToFallback(prisma: PrismaClient): Promise<void> {
 export async function mirrorToFallbackIfChanged(prisma: PrismaClient): Promise<{ mirrored: boolean; skipped: boolean }> {
   const fb = getFallbackClient();
   if (!fb) return { mirrored: false, skipped: false };
-  const digest = await computeDigest(prisma);
+  const [digest, changes] = [await computeDigest(prisma), await changeCounters(prisma)];
   const stored = await fb.setting.findUnique({ where: { key: 'fallback_mirror' } }).catch(() => null);
-  const storedDigest = stored?.value && typeof stored.value === 'object'
-    ? (stored.value as any)?.digest
-    : null;
-  if (storedDigest && JSON.stringify(storedDigest) === JSON.stringify(digest)) {
+  const storedValue = stored?.value && typeof stored.value === 'object' ? (stored.value as any) : null;
+  const storedDigest = storedValue?.digest ?? null;
+  const storedChanges = storedValue?.changes ?? null;
+  if (
+    storedDigest && storedChanges &&
+    JSON.stringify(storedDigest) === JSON.stringify(digest) &&
+    JSON.stringify(storedChanges) === JSON.stringify(changes)
+  ) {
     return { mirrored: false, skipped: true };
   }
   const sql = await buildTableSql(prisma);
@@ -156,6 +186,7 @@ export async function mirrorToFallbackIfChanged(prisma: PrismaClient): Promise<{
     createdAt: new Date().toISOString(),
     tables: sql,
     digest,
+    changes,
   };
   await fb.setting.upsert({
     where: { key: 'fallback_mirror' },
@@ -184,13 +215,17 @@ export async function restoreFallbackIfEmpty(prisma: PrismaClient): Promise<{ re
   const payload = mirror.value as any;
   const tables: string[] = Object.keys(payload?.tables || {});
 
-  await prisma.$executeRawUnsafe('SET session_replication_role = replica');
-  try {
+  // Atomic restore: previously the inserts ran one-by-one, so a mid-way
+  // failure left a half-restored DB that hasData() then treated as healthy —
+  // permanently skipping repair. One transaction fixes both the partial
+  // state and the once-only skip.
+  // SET LOCAL is transaction-scoped: FK enforcement is restored automatically
+  // at commit and the connection returns to the pool un-poisoned.
+  await prisma.$transaction(async (tx: any) => {
+    await tx.$executeRawUnsafe('SET LOCAL session_replication_role = replica');
     for (const table of tables) {
-      await prisma.$executeRawUnsafe(payload.tables[table]);
+      await tx.$executeRawUnsafe(payload.tables[table]);
     }
-  } finally {
-    await prisma.$executeRawUnsafe('SET session_replication_role = origin').catch(() => {});
-  }
+  });
   return { restored: true, tables, skipped: false };
 }

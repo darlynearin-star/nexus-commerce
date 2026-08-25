@@ -329,6 +329,7 @@ app.listen(PORT, async () => {
   await runMigrations();
 
   if (db.usingFallback) {
+    logger.warn('FALLBACK DATABASE ACTIVE: orders and other writes made while on the fallback are NOT reconciled back to the primary. Treat this mode as degraded.');
     try {
       const result = await restoreFallbackIfEmpty(prisma);
       if (result.restored) logger.info(`Fallback restored ${result.tables.length} tables from mirrored snapshot`);
