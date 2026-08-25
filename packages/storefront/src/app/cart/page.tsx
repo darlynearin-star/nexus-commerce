@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { storeApi } from '@/lib/store-api';
+import { getStoreSlugFromUrl } from '@nexus/web';
 import { Trash2, ShoppingBag, Minus, Plus, ArrowLeft, Info } from 'lucide-react';
 import Link from 'next/link';
 
@@ -9,9 +10,15 @@ export default function CartPage() {
   const [cart, setCart] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
-  const storeSlug = typeof window !== 'undefined' ? localStorage.getItem('activeStoreSlug') || 'adorn' : 'adorn';
+  // H12: single source of truth — the last store the visitor actually visited.
+  // No invented fallback store (was 'adorn'), so a cart can never silently
+  // belong to a shop the user never opened.
+  const [storeSlug, setStoreSlug] = useState('');
 
-  useEffect(() => { loadCart(); }, []);
+  useEffect(() => {
+    setStoreSlug(localStorage.getItem('activeStoreSlug') || getStoreSlugFromUrl() || '');
+    loadCart();
+  }, []);
 
   const loadCart = async () => {
     try {
@@ -55,7 +62,7 @@ export default function CartPage() {
           <ShoppingBag size={64} style={{ margin: '0 auto 1rem', color: 'var(--text-secondary)', opacity: 0.5 }} />
           <h2 style={{ marginBottom: '0.5rem' }}>Your cart is empty</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Looks like you haven&apos;t added anything yet.</p>
-          <Link href={`/store/${storeSlug}/shop`} className="btn btn-primary">Continue Shopping</Link>
+          <Link href={storeSlug ? `/store/${storeSlug}/shop` : '/shop'} className="btn btn-primary">Continue Shopping</Link>
         </div>
       ) : (
         <div className="cart-layout">

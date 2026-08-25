@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { storeApi } from '@/lib/store-api';
+import { getStoreSlugFromUrl } from '@nexus/web';
 import { useAuth } from '@/lib/auth';
 import { CheckCircle, Phone, MapPin, FileText, Info } from 'lucide-react';
 import Link from 'next/link';
@@ -59,7 +60,8 @@ export default function CheckoutPage() {
 
   if (order) {
     const total = order.total || 0;
-    const storeSlug = typeof window !== 'undefined' ? localStorage.getItem('activeStoreSlug') || 'shop' : 'shop';
+    // H12: same single source of truth as the cart — no invented fallback store.
+    const storeSlug = typeof window !== 'undefined' ? localStorage.getItem('activeStoreSlug') || getStoreSlugFromUrl() || '' : '';
     return (
       <div className="container" style={{ padding: 'clamp(1rem, 3vw, 2rem) 1rem', maxWidth: 600 }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
@@ -105,7 +107,7 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        <Link href={`/store/${storeSlug}/shop`} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Continue Shopping</Link>
+        <Link href={storeSlug ? `/store/${storeSlug}/shop` : '/shop'} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Continue Shopping</Link>
       </div>
     );
   }
