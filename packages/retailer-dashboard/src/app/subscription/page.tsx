@@ -13,6 +13,9 @@ export default function SubscriptionPage() {
   const [payPaymentId, setPayPaymentId] = useState<string | null>(null);
   const [payerNote, setPayerNote] = useState('');
   const [reporting, setReporting] = useState(false);
+  // H13: payment-initiating buttons must be double-click safe.
+  const [subscribing, setSubscribing] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -21,6 +24,7 @@ export default function SubscriptionPage() {
 
   const subscribe = async () => {
     setMessage(null);
+    setSubscribing(true);
     try {
       const r: any = await api.post('/subscriptions/subscribe', { method: 'mobile_money' });
       setSub(r.data);
@@ -36,6 +40,8 @@ export default function SubscriptionPage() {
       }
     } catch (e: any) {
       setMessage({ type: 'error', text: e?.message || 'Failed to activate' });
+    } finally {
+      setSubscribing(false);
     }
   };
 
@@ -59,12 +65,15 @@ export default function SubscriptionPage() {
   const cancel = async () => {
     if (!confirm('Cancel your subscription?')) return;
     setMessage(null);
+    setCancelling(true);
     try {
       const r: any = await api.post('/subscriptions/cancel');
       setSub(r.data);
       setMessage({ type: 'success', text: 'Subscription cancelled' });
     } catch (e: any) {
       setMessage({ type: 'error', text: e?.message || 'Failed to cancel' });
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -155,12 +164,12 @@ export default function SubscriptionPage() {
 
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
           {(sub?.status === 'TRIAL' || sub?.status === 'SUSPENDED') && (
-            <button className="btn btn-primary" onClick={subscribe} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button className="btn btn-primary" onClick={subscribe} disabled={subscribing} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <CreditCard size={16} /> Activate Subscription
             </button>
           )}
           {sub?.status === 'ACTIVE' && (
-            <button className="btn btn-secondary" onClick={cancel} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button className="btn btn-secondary" onClick={cancel} disabled={cancelling} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               Cancel Subscription
             </button>
           )}

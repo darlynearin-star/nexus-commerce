@@ -8,15 +8,28 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState<any | null>(null);
+  // H13: money-adjacent actions get busy states, surfaced errors, and a
+  // confirm on the destructive path (reference: dev subscriptions page).
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState('');
 
   const detailRef = useDismiss(!!detail, () => setDetail(null));
 
   useEffect(() => { api.get('/orders', { limit: 50 }).then((r: any) => setOrders(r.data)).catch((e: any) => console.error('API error:', e)).finally(() => setLoading(false)); }, []);
 
   const updateStatus = async (id: string, status: string) => {
-    await api.put(`/orders/${id}/status`, { status });
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
-    setDetail((prev: any) => prev && prev.id === id ? { ...prev, status } : prev);
+    if (status === 'CANCELLED' && !confirm('Cancel this order? This cannot be undone.')) return;
+    setBusyId(id);
+    setActionError('');
+    try {
+      await api.put(`/orders/${id}/status`, { status });
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+      setDetail((prev: any) => prev && prev.id === id ? { ...prev, status } : prev);
+    } catch (e: any) {
+      setActionError(e?.message || 'Could not update the order. Please try again.');
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const statusBadge = (s: string) => (
@@ -26,6 +39,9 @@ export default function OrdersPage() {
   return (
     <div style={{ padding: '2rem' }}>
       <div style={{ marginBottom: '1.5rem' }}><h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Orders</h1><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{orders.length} orders</p></div>
+      {actionError && (
+        <div style={{ padding: '0.75rem 1rem', borderRadius: '0.5rem', marginBottom: '1rem', background: '#2e0505', color: '#f87171', border: '1px solid #f87171', fontSize: '0.875rem' }}>{actionError}</div>
+      )}
       {loading ? <div className="card"><div className="skeleton" style={{ height: 200 }} /></div> : (
         <div className="card" style={{ padding: 0 }}>
           <div className="table-container"><table className="table">
@@ -41,10 +57,10 @@ export default function OrdersPage() {
                   <td><span className={`badge ${o.paymentStatus === 'PAID' ? 'badge-success' : 'badge-warning'}`}>{o.paymentStatus}</span></td>
                   <td>
                     <div style={{ display: 'flex', gap: '0.25rem' }}>
-                      <button className="btn btn-ghost btn-icon" onClick={() => setDetail(o)} title="View details" aria-label="View details"><Eye size={14} /></button>
-                      {o.status === 'PENDING' && <button className="btn btn-ghost btn-icon" onClick={() => updateStatus(o.id, 'PROCESSING')} title="Process" aria-label="Process"><Check size={14} /></button>}
-                      {o.status === 'PROCESSING' && <button className="btn btn-ghost btn-icon" onClick={() => updateStatus(o.id, 'COMPLETED')} title="Complete" aria-label="Complete"><Check size={14} /></button>}
-                      <button className="btn btn-ghost btn-icon" style={{ color: 'var(--error)' }} onClick={() => updateStatus(o.id, 'CANCELLED')} title="Cancel" aria-label="Cancel"><X size={14} /></button>
+                      <button className="btn btn-ghost btn-icon" onClick={() => setDetail(o)} title="View details" aria-label="View details" disabled={busyId === o.id}><Eye size={14} /></button>
+                      {o.status === 'PENDING' && <button className="btn btn-ghost btn-icon" onClick={() => updateStatus(o.id, 'PROCESSING')} title="Process" aria-label="Process" disabled={busyId === o.id}><Check size={14} /></button>}
+                      {o.status === 'PROCESSING' && <button className="btn btn-ghost btn-icon" onClick={() => updateStatus(o.id, 'COMPLETED')} title="Complete" aria-label="Complete" disabled={busyId === o.id}><Check size={14} /></button>}
+                      <button className="btn btn-ghost btn-icon" style={{ color: 'var(--error)' }} onClick={() => updateStatus(o.id, 'CANCELLED')} title="Cancel" aria-label="Cancel" disabled={busyId === o.id}><X size={14} /></button>
                     </div>
                   </td>
                 </tr>
@@ -118,9 +134,9 @@ export default function OrdersPage() {
             </div>
 
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-              {detail.status === 'PENDING' && <button className="btn btn-primary" onClick={() => updateStatus(detail.id, 'PROCESSING')}><Check size={16} /> Process Order</button>}
-              {detail.status === 'PROCESSING' && <button className="btn btn-primary" onClick={() => updateStatus(detail.id, 'COMPLETED')}><Check size={16} /> Mark Completed</button>}
-              <button className="btn btn-ghost" style={{ color: 'var(--error)' }} onClick={() => updateStatus(detail.id, 'CANCELLED')}><X size={16} /> Cancel Order</button>
+              {detail.status === 'PENDING' && <button className="btn btn-primary" onClick={() => updateStatus(detail.id, 'PROCESSING')} disabled={busyId === detail.id}><Check size={16} /> Process Order</button>}
+              {detail.status === 'PROCESSING' && <button className="btn btn-primary" onClick={() => updateStatus(detail.id, 'COMPLETED')} disabled={busyId === detail.id}><Check size={16} /> Mark Completed</button>}
+              <button className="btn btn-ghost" style={{ color: 'var(--error)' }} onClick={() => updateStatus(detail.id, 'CANCELLED')} disabled={busyId === detail.id}><X size={16} /> Cancel Order</button>
             </div>
           </div>
         </div>
