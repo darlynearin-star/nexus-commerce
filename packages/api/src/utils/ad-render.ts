@@ -369,4 +369,25 @@ export async function runAdVideoJob(id: string): Promise<void> {
   }
 }
 
+/**
+ * M-sigterm recovery: a deploy (SIGTERM) or crash mid-render leaves rows stuck
+ * in RENDERING forever — they were never retried. Called at boot: requeue the
+ * stuck jobs and run them again. Returns how many were recovered.
+ */
+export async function recoverStuckAdRenders(runner: (id: string) => Promise<void> = runAdVideoJob): Promise<number> {
+  try {
+    const stuck = await prisma.adVideo.findMany({ where: { status: 'RENDERING' }, select: { id: true } });
+    if (!stuck.length) return 0;
+    await prisma.adVideo.updateMany({ where: { status: 'RENDERING' }, data: { status: 'QUEUED' } });
+    for (const row of stuck) {
+      setImmediate(() => { void runner(row.id); });
+    }
+    logger.info(`Ad recovery: requeued ${stuck.length} interrupted render(s)`);
+    return stuck.length;
+  } catch (e: any) {
+    logger.warn(`Ad recovery failed: ${e?.message || e}`);
+    return 0;
+  }
+}
+
 export { AD_VIDEO_TEMPLATES };

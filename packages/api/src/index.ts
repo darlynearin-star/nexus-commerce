@@ -34,6 +34,7 @@ import { uploadRouter } from './routes/upload';
 import { storage } from './utils/storage';
 import { runSubscriptionEnforcement } from './jobs/subscription-enforcer';
 import { runRetentionSweeps } from './jobs/retention';
+import { recoverStuckAdRenders } from './utils/ad-render';
 
 import { resolveStore } from './middleware/resolve-store';
 import { errorHandler } from './middleware/error-handler';
@@ -340,7 +341,7 @@ const app = createApp();
 export default app;
 
 if (require.main === module) {
-app.listen(PORT, async () => {
+const server = app.listen(PORT, async () => {
   logger.info(`Lyn-nyx Stores API running on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
   await initDatabase();
@@ -348,6 +349,9 @@ app.listen(PORT, async () => {
   logger.info(`Database: ${db.usingFallback ? 'FALLBACK ACTIVE' : 'primary'} (${db.activeUrl ? db.activeUrl.split('@').pop() : 'unset'})`);
   logger.info(`Database switching: ${db.manualSwitch ? 'MANUAL (dashboard controlled)' : 'AUTO'}`);
   await runMigrations();
+
+  // M-sigterm recovery: deploys/crashes leave ad renders stuck in RENDERING.
+  await recoverStuckAdRenders();
 
   if (db.usingFallback) {
     logger.warn('FALLBACK DATABASE ACTIVE: orders and other writes made while on the fallback are NOT reconciled back to the primary. Treat this mode as degraded.');
@@ -407,4 +411,24 @@ app.listen(PORT, async () => {
     setInterval(runRetention, 24 * 60 * 60 * 1000).unref();
   }
 });
+
+// M-sigterm: Render sends SIGTERM on deploys. Close the listener, give
+// in-flight requests a grace window, then disconnect and exit — instead of
+// the hard kill that previously truncated renders and jobs mid-write.
+let shuttingDown = false;
+async function shutdown(signal: string) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  logger.info(`${signal} received — shutting down gracefully`);
+  server.close(() => {
+    prisma.$disconnect().catch(() => {}).finally(() => process.exit(0));
+  });
+  // Safety net: a hung connection must not block the deploy forever.
+  setTimeout(() => {
+    logger.warn('Graceful shutdown timed out — forcing exit');
+    process.exit(0);
+  }, 10_000).unref();
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 }
