@@ -29,6 +29,7 @@ async function getGraceDays(): Promise<number> {
 interface EnforcementResult {
   notice: number;
   suspended: number;
+  errors: number;
 }
 
 /**
@@ -38,11 +39,15 @@ interface EnforcementResult {
  *      deadline (default 3 days, configurable via SUBSCRIPTION_GRACE_DAYS).
  *   2. If the grace period elapses without renewal: suspends the subscription,
  *      deactivates the store, emails the owner, and posts an in-app alert.
+ *
+ * Each subscription is processed in isolation: a failure on one row (bad
+ * retailer link, FK issue, email outage) is logged and counted, and the
+ * remaining subscriptions are still processed.
  */
 export async function runSubscriptionEnforcement(): Promise<EnforcementResult> {
   const graceDays = await getGraceDays();
   const now = new Date();
-  const result: EnforcementResult = { notice: 0, suspended: 0 };
+  const result: EnforcementResult = { notice: 0, suspended: 0, errors: 0 };
 
   const expired = await prisma.retailerSubscription.findMany({
     where: {
@@ -60,11 +65,29 @@ export async function runSubscriptionEnforcement(): Promise<EnforcementResult> {
   });
 
   for (const sub of expired) {
-    const user = sub.retailer?.user;
-    const email = user?.email;
-    const storeName = sub.retailer?.storeName || 'your store';
-    const renewUrl = `${RETAILER_URL}/subscription`;
-    const userId = user?.id || 'system';
+    try {
+      await processLapsedSubscription(sub, graceDays, now, result);
+    } catch (e: any) {
+      // Isolate failures: one broken subscription must never abort the sweep
+      // (previously a single throw left every remaining retailer unprocessed
+      // for that run — and could strand a store suspended without its notice).
+      result.errors += 1;
+      logger.warn(`Enforcer: subscription ${sub.id} failed: ${e?.message || e}`);
+    }
+  }
+
+  if (result.notice || result.suspended || result.errors) {
+    logger.info(`Subscription enforcer: ${result.notice} grace notice(s), ${result.suspended} suspension(s), ${result.errors} error(s)`);
+  }
+  return result;
+}
+
+async function processLapsedSubscription(sub: any, graceDays: number, now: Date, result: EnforcementResult): Promise<void> {
+  const user = sub.retailer?.user;
+  const email = user?.email;
+  const storeName = sub.retailer?.storeName || 'your store';
+  const renewUrl = `${RETAILER_URL}/subscription`;
+  const userId = user?.id || 'system';
 
     if (!sub.graceNotifiedAt) {
       await prisma.retailerSubscription.update({ where: { id: sub.id }, data: { graceNotifiedAt: now } });
@@ -130,10 +153,4 @@ export async function runSubscriptionEnforcement(): Promise<EnforcementResult> {
         details: { storeSlug },
       });
     }
-  }
-
-  if (result.notice || result.suspended) {
-    logger.info(`Subscription enforcer: ${result.notice} grace notice(s), ${result.suspended} suspension(s)`);
-  }
-  return result;
 }

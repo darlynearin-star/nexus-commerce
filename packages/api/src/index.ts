@@ -124,6 +124,17 @@ async function runMigrations() {
     // Postgres 12+; executed here in autocommit so it also works on older PG).
     await prisma.$executeRawUnsafe('ALTER TYPE "NotificationType" ADD VALUE IF NOT EXISTS \'TIER_WARNING\'');
     logger.info('Migration: added TIER_WARNING to NotificationType enum');
+    // System actor: FK target for automated actions (enforcer notifications,
+    // webhook/subscription audit logs) so the 'system' userId never violates
+    // the users FK. Passwordless + inactive → it can never authenticate.
+    try {
+      await prisma.$executeRawUnsafe(`INSERT INTO users (id, email, "firstName", "lastName", role, "isActive", "emailVerified")
+        VALUES ('system', 'system@lynnyx.internal', 'System', 'Actor', 'CUSTOMER', false, true)
+        ON CONFLICT (id) DO NOTHING`);
+      logger.info('Migration: ensured system actor user');
+    } catch (e: any) {
+      logger.warn(`System actor upsert skipped: ${e?.message || e}`);
+    }
     // Search: pg_trgm trigram index on product searchable columns
     await prisma.$executeRawUnsafe('CREATE EXTENSION IF NOT EXISTS pg_trgm');
     await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS products_name_trgm_idx ON products USING gin (name gin_trgm_ops)');
