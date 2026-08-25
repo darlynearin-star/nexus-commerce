@@ -3,6 +3,7 @@ import prisma from '@nexus/database';
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth';
 import { UserRole } from '@nexus/shared';
 import { logActivity } from '../utils/activity-log';
+import { maskSettingsForRole, isMaskPlaceholder } from '../utils/secrets';
 
 // Provider credentials (GMAIL/BREVO/GOOGLE/FLUTTERWAVE etc.) are platform
 // secrets. Only developers may view/update/test them. Retailers manage their
@@ -32,23 +33,28 @@ const ALL_KEYS = [
   ...KEY_PREFIXES.map(p => `${p}LAST_TESTED`),
 ];
 
-apiConfigRouter.get('/', authenticate, requireProviderAdmin, async (_req: AuthRequest, res, next) => {
+apiConfigRouter.get('/', authenticate, requireProviderAdmin, async (req: AuthRequest, res, next) => {
   try {
     const settings = await prisma.setting.findMany({ where: { key: { in: ALL_KEYS } } });
     const config: Record<string, any> = {};
     for (const s of settings) config[s.key] = s.value;
-    res.json({ success: true, data: config, keys: ALL_KEYS });
+    // H9: DEVELOPER sees masked secrets; SUPER_DEVELOPER (platform owner) sees raw.
+    res.json({ success: true, data: maskSettingsForRole(req.user!.role, config), keys: ALL_KEYS });
   } catch (error) { next(error); }
 });
 
-apiConfigRouter.put('/', authenticate, requireProviderAdmin, async (req: AuthRequest, res, next) => {
+apiConfigRouter.put('/', authenticate, requireProviderAdmin, async (req, res, next) => {
   try {
     const bodyKeys = Object.keys(req.body).filter(k => ALL_KEYS.includes(k));
+    let skipped = 0;
     for (const key of bodyKeys) {
+      // H9 companion: a masked value echoed back by the dashboard must never
+      // overwrite the real secret.
+      if (isMaskPlaceholder(req.body[key])) { skipped += 1; continue; }
       await prisma.setting.upsert({ where: { key }, create: { key, value: req.body[key] }, update: { value: req.body[key] } });
     }
-    logActivity({ userId: req.user!.userId, action: 'api-config:updated', resource: 'api-config', details: { keys: bodyKeys }, req: req as any });
-    res.json({ success: true, message: `${bodyKeys.length} key(s) saved` });
+    logActivity({ userId: req.user!.userId, action: 'api-config:updated', resource: 'api-config', details: { keys: bodyKeys, skippedMasks: skipped }, req: req as any });
+    res.json({ success: true, message: `${bodyKeys.length - skipped} key(s) saved` });
   } catch (error) { next(error); }
 });
 
