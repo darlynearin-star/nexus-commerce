@@ -14,9 +14,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const urlToken = captureTokenFromUrl();
-
   useEffect(() => {
+    // Capture (and strip) any #token= handoff inside an effect — never during
+    // render, which must stay side-effect free.
+    const urlToken = captureTokenFromUrl();
     const token = urlToken || localStorage.getItem('accessToken');
     if (token) {
       const payload = decodeJwt(token);
