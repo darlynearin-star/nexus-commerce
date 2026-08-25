@@ -163,6 +163,13 @@ describe('C4: Flutterwave webhook subscription branch', () => {
     );
     expect(prismaMock.retailerSubscription.update).toHaveBeenCalledTimes(1);
     expect(prismaMock.store.updateMany).toHaveBeenCalledTimes(1);
+    // H2: the audit record must actually be written (system actor exists now,
+    // so this insert no longer silently fails on the users FK).
+    expect(prismaMock.activityLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ userId: 'system', action: 'subscription:webhook_paid' }),
+      }),
+    );
   });
 
   it('replayed webhook (CAS matches 0 rows) does not re-activate or extend billing', async () => {
