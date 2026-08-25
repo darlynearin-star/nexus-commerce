@@ -32,6 +32,7 @@ import { backupsRouter } from './routes/backups';
 import { storeSettingsRouter } from './routes/store-settings';
 import { uploadRouter } from './routes/upload';
 import { storage } from './utils/storage';
+import { serveRangeBuffer } from './utils/range';
 import { runSubscriptionEnforcement } from './jobs/subscription-enforcer';
 import { runRetentionSweeps } from './jobs/retention';
 import { recoverStuckAdRenders } from './utils/ad-render';
@@ -264,12 +265,11 @@ app.get('/uploads/:storeId/:mediaId', async (req, res) => {
     if (!file) return res.status(404).send('Not found');
     // Derive content type from the stored filename, not the client-supplied
     // mimetype, and force nosniff so a spoofed file can never execute inline.
-    res.setHeader('Content-Type', file.mimeType);
-    res.setHeader('Content-Disposition', file.type === 'document' ? 'inline; filename="' + encodeURIComponent(file.filename) + '"' : 'inline');
-    res.setHeader('Content-Length', file.buffer.length);
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    res.send(file.buffer);
+    serveRangeBuffer(req, res, file.buffer, {
+      'Content-Type': file.mimeType,
+      'Content-Disposition': file.type === 'document' ? 'inline; filename="' + encodeURIComponent(file.filename) + '"' : 'inline',
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    });
   } catch {
     res.status(500).send('Server error');
   }

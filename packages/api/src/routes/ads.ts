@@ -3,6 +3,7 @@ import prisma from '@nexus/database';
 import { UserRole } from '@nexus/shared';
 import { authenticate, requireRole } from '../middleware/auth';
 import { logActivity } from '../utils/activity-log';
+import { serveRangeBuffer } from '../utils/range';
 import { AD_VIDEO_TEMPLATES, getAdTemplate } from '../ad-video-templates';
 import { runAdVideoJob, renderCapabilities } from '../utils/ad-render';
 import { assertPublicHttpUrl } from '../utils/url-guard';
@@ -73,12 +74,10 @@ adsRouter.get('/:id/download', async (req, res) => {
     const row = await prisma.adVideo.findUnique({ where: { id: req.params.id }, select: { data: true, format: true } });
     if (!row?.data) return res.status(404).send('Not found');
     const buffer = Buffer.from(row.data, 'base64');
-    res.setHeader('Content-Type', 'video/mp4');
-    res.setHeader('Content-Length', buffer.length);
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    res.setHeader('Accept-Ranges', 'none');
-    res.send(buffer);
+    serveRangeBuffer(req, res, buffer, {
+      'Content-Type': 'video/mp4',
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    });
   } catch {
     res.status(500).send('Server error');
   }
