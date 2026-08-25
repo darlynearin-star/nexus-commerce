@@ -22,7 +22,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (token) {
       const payload = decodeJwt(token);
       if (payload) {
+        // M-authmodels: instant paint from the JWT, then reconcile with the
+        // server (/auth/me) like the storefront does — expired-but-decodable
+        // tokens no longer look "logged in", and profile data is DB-accurate.
         setUser({ id: payload.userId, email: payload.email, role: payload.role, firstName: '', lastName: '' });
+        api.get<any>('/auth/me').then((r: any) => {
+          setUser({ id: r.data.id, email: r.data.email, role: r.data.role, firstName: r.data.firstName || '', lastName: r.data.lastName || '' });
+        }).catch(() => { /* 401s clear the session + redirect via the api client */ });
       }
     }
     setLoading(false);
