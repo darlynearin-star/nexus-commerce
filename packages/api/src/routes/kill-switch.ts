@@ -3,6 +3,7 @@ import prisma from '@nexus/database';
 import { authenticate, requirePermission, AuthRequest } from '../middleware/auth';
 import { Permission } from '@nexus/shared';
 import { logActivity } from '../utils/activity-log';
+import { invalidateKillSwitchCache } from '../middleware/kill-switch';
 
 export const killSwitchRouter = Router();
 
@@ -26,6 +27,8 @@ killSwitchRouter.put('/', authenticate, requirePermission(Permission.MANAGE_KILL
       details: req.body,
       req: req as any,
     });
+    // Emergency lever must take effect immediately, not on the next cache tick.
+    invalidateKillSwitchCache();
     res.json({ success: true, message: 'Kill switch updated' });
   } catch (error) { next(error); }
 });

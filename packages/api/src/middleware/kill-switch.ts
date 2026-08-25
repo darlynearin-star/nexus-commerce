@@ -1,9 +1,46 @@
 import prisma from '@nexus/database';
 import { Request, Response, NextFunction } from 'express';
+import { logger } from '../utils/logger';
+
+// M-killswitch fix, two halves:
+//
+// 1. CU burn: this middleware ran on EVERY /api request and hit the database
+//    each time. A 15s in-memory cache cuts that to ~4 queries/minute for the
+//    whole platform. The kill switch is an emergency lever — a few seconds of
+//    propagation delay is acceptable; per-request DB load was not.
+// 2. Fail behavior: on query ERROR we now serve the last-known state (stale)
+//    instead of silently failing open. Only when we have never read a state
+//    do we fail open — and loudly.
+
+const TTL_MS = process.env.NODE_ENV === 'test' ? 0 : 15_000;
+
+let cachedState: any = null;
+let cacheExpiresAt = 0;
+
+export function invalidateKillSwitchCache(): void {
+  cacheExpiresAt = 0;
+}
+
+async function loadState(): Promise<any> {
+  if (TTL_MS > 0 && cachedState !== null && cacheExpiresAt > Date.now()) return cachedState;
+  try {
+    const state = await prisma.killSwitch.findFirst();
+    cachedState = state;
+    cacheExpiresAt = Date.now() + TTL_MS;
+    return state;
+  } catch (e: any) {
+    if (cachedState !== null) {
+      logger.warn(`Kill switch: DB read failed, serving last-known state (${e?.message || e})`);
+      return cachedState;
+    }
+    logger.warn(`Kill switch: DB read failed before any state was known — failing open (${e?.message || e})`);
+    return null;
+  }
+}
 
 export async function checkKillSwitch(req: Request, res: Response, next: NextFunction) {
   try {
-    const killSwitch = await prisma.killSwitch.findFirst();
+    const killSwitch = await loadState();
     if (!killSwitch) return next();
 
     if (killSwitch.apis) {
@@ -62,7 +99,8 @@ export async function checkKillSwitch(req: Request, res: Response, next: NextFun
     }
 
     next();
-  } catch {
+  } catch (e: any) {
+    logger.warn(`Kill switch middleware error: ${e?.message || e}`);
     next();
   }
 }
