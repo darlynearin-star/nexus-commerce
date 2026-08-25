@@ -370,13 +370,15 @@ categoriesRouter.get('/', async (req: StoreRequest, res, next) => {
       await prisma.category.deleteMany({ where: { storeId } });
     }
     const sortBy = req.query.sortBy as string | undefined;
+    // M-categories: this is a HOT public read (every storefront category
+    // view). It used to run the full jiji-tree sync + a second findMany on
+    // every request — dozens of sequential queries per view. Reads are now
+    // pure: seed only when empty (fresh store), and drift sync stays an
+    // explicit operation (store creation / /reseed endpoint).
     let categories = await prisma.category.findMany({ where: { storeId }, include: { _count: { select: { products: true } } }, orderBy: { name: 'asc' } });
     if (categories.length === 0) {
       const seeded = await seedStoreCategories(storeId);
       if (seeded > 0) categories = await prisma.category.findMany({ where: { storeId }, include: { _count: { select: { products: true } } }, orderBy: { name: 'asc' } });
-    } else {
-      await syncStoreCategories(storeId);
-      categories = await prisma.category.findMany({ where: { storeId }, include: { _count: { select: { products: true } } }, orderBy: { name: 'asc' } });
     }
     const directCounts = new Map<string, number>(categories.map(c => [c.id, c._count?.products || 0]));
     const childrenByParent = new Map<string, string[]>();

@@ -35,7 +35,7 @@
 | M-timing | Medium | Flutterwave compare not timing-safe | NOT STARTED | — | — | — | — |
 | M-deps | Medium | prisma CLI/client mismatch; multer 1.x; tsx prod | NOT STARTED | — | — | — | — |
 | M-authmodels | Medium | 3 divergent auth trust models | NOT STARTED | — | — | — | — |
-| M-categories | Medium | Categories GET performs writes | NOT STARTED | — | — | — | — |
+| M-categories | Medium | Categories GET performs writes | VERIFIED | api/src/routes/categories.ts (GET is now read-only: single findMany; seed-if-empty for fresh stores kept; tree-sync removed from hot path — remains exported as an explicit drift-repair utility) | tsc clean (also caught a retention.ts typing slip); suite 110/110 | Impact: every storefront category view ran the full jiji-tree walk (dozens of sequential queries) + a second full fetch. Reads are pure now; ~1 query per view. Drift repair stays available via explicit call/reseed. Verified 2026-08-25. |
 | M-img | Medium | Image remotePatterns mismatch | NOT STARTED | — | — | — | — |
 | M-grid | Medium | minmax(400px) overflow on settings pages | NOT STARTED | — | — | — | — |
 | L-magicidx | Low | magic_link_tokens email index missing in migrations | NOT STARTED | — | — | — | — |

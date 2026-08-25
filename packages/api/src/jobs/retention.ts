@@ -27,7 +27,7 @@ export async function runRetentionSweeps(): Promise<RetentionResult> {
   if (process.env.RETENTION_DISABLED === 'true') return result;
 
   const now = Date.now();
-  const sweeps: [keyof RetentionResult, string, () => Promise<number>][] = [
+  const sweeps: [keyof RetentionResult, string, () => Promise<{ count: number }>][] = [
     ['analyticsEvents', 'analytics_events', () => prisma.analyticsEvent.deleteMany({ where: { createdAt: { lt: new Date(now - days('RETENTION_ANALYTICS_DAYS', 90) * DAY_MS) } } })],
     ['activityLogs', 'activity_logs', () => prisma.activityLog.deleteMany({ where: { createdAt: { lt: new Date(now - days('RETENTION_ACTIVITY_DAYS', 365) * DAY_MS) } } })],
     ['notifications', 'notifications', () => prisma.notification.deleteMany({ where: { isRead: true, createdAt: { lt: new Date(now - days('RETENTION_NOTIFICATIONS_DAYS', 30) * DAY_MS) } } })],
