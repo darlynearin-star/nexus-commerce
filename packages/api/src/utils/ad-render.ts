@@ -6,6 +6,7 @@ import prisma from '@nexus/database';
 import { AD_VIDEO_TEMPLATES, getAdTemplate } from '../ad-video-templates';
 import { ttsElevenLabs } from './tts';
 import { putS3Object, getApiBase, type StorageConfig } from './storage';
+import { assertPublicHttpUrl, isPrivateHostname } from './url-guard';
 import { logger } from './logger';
 
 const isUrl = (s: string) => /^https?:\/\//i.test(s);
@@ -72,6 +73,10 @@ async function ttsForBeats(beats: string[], workdir: string): Promise<string | n
  * lyn-nyx hero artwork already in the repo.
  */
 async function captureUrl(url: string, workdir: string): Promise<string | null> {
+  // M-ssrf: validate BEFORE launching, and intercept every request Chrome
+  // makes (redirects included) so a public URL cannot bounce to an internal
+  // host.
+  await assertPublicHttpUrl(url);
   let pw: any = null;
   try {
     // Lazy-require so the API still boots when Playwright isn't installed.
@@ -88,6 +93,16 @@ async function captureUrl(url: string, workdir: string): Promise<string | null> 
   try {
     browser = await chromium.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await ctx.route('**/*', (route: any) => {
+      try {
+        const u = new URL(route.request().url());
+        if (isPrivateHostname(u.hostname) || (u.protocol !== 'http:' && u.protocol !== 'https:')) {
+          logger.warn(`Capture blocked internal request to ${u.hostname}`);
+          return route.abort();
+        }
+      } catch {}
+      return route.continue();
+    });
     const page = await ctx.newPage();
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
     await page.waitForTimeout(1200);

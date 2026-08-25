@@ -5,10 +5,23 @@ import { authenticate, requireRole } from '../middleware/auth';
 import { logActivity } from '../utils/activity-log';
 import { AD_VIDEO_TEMPLATES, getAdTemplate } from '../ad-video-templates';
 import { runAdVideoJob, renderCapabilities } from '../utils/ad-render';
+import { assertPublicHttpUrl } from '../utils/url-guard';
 
 export const adsRouter = Router();
 
 const ALLOWED_FORMATS = new Set(['9:16', '16:9']);
+// Batch ceiling: one paste → at most all templates, bounded hard.
+const MAX_BATCH = 10;
+
+/** M-ssrf: reject private/internal targets at the door, with a clear error. */
+async function validateSourceUrl(sourceUrl: unknown): Promise<string | null> {
+  try {
+    await assertPublicHttpUrl(String(sourceUrl ?? ''));
+    return null;
+  } catch (e: any) {
+    return `Blocked sourceUrl: ${e?.message || 'not a public http(s) URL'}`;
+  }
+}
 
 // Never select AdVideo.data outside the download route — it can hold the
 // entire base64 MP4.
@@ -76,6 +89,8 @@ adsRouter.post('/', authenticate, requireRole(UserRole.DEVELOPER, UserRole.SUPER
     const { sourceUrl, templateId, format } = req.body as { sourceUrl?: string; templateId?: string; format?: string };
     const fmt = (format || '9:16').trim();
     if (!isUrl(sourceUrl)) return res.status(400).json({ success: false, error: 'sourceUrl must be http(s)://...' });
+    const urlError = await validateSourceUrl(sourceUrl);
+    if (urlError) return res.status(400).json({ success: false, error: urlError });
     if (!templateId || !getAdTemplate(templateId)) return res.status(400).json({ success: false, error: `Unknown templateId ${templateId}` });
     if (!ALLOWED_FORMATS.has(fmt)) return res.status(400).json({ success: false, error: 'format must be 9:16 or 16:9' });
 
@@ -109,8 +124,11 @@ adsRouter.post('/batch', authenticate, requireRole(UserRole.DEVELOPER, UserRole.
     const { sourceUrl, templateIds, format } = req.body as { sourceUrl?: string; templateIds?: string[]; format?: string };
     const fmt = (format || '9:16').trim();
     if (!isUrl(sourceUrl)) return res.status(400).json({ success: false, error: 'sourceUrl must be http(s)://...' });
+    const urlError = await validateSourceUrl(sourceUrl);
+    if (urlError) return res.status(400).json({ success: false, error: urlError });
     const ids: string[] = Array.isArray(templateIds) ? templateIds : [];
     if (ids.length === 0) return res.status(400).json({ success: false, error: 'templateIds is required (array)' });
+    if (ids.length > MAX_BATCH) return res.status(400).json({ success: false, error: `templateIds limited to ${MAX_BATCH} per batch` });
     const bad = ids.find(id => !getAdTemplate(id));
     if (bad) return res.status(400).json({ success: false, error: `Unknown templateId ${bad}` });
     if (!ALLOWED_FORMATS.has(fmt)) return res.status(400).json({ success: false, error: 'format must be 9:16 or 16:9' });
