@@ -1,0 +1,12 @@
+node_modules
+.git
+.next
+dist
+packages/*/dist
+packages/*/.next
+packages/*/node_modules
+.env
+.env.*
+*.log
+AUDIT_REFERENCE.md
+AUDIT_STATUS.md

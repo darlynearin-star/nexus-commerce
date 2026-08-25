@@ -43,7 +43,7 @@ apiConfigRouter.get('/', authenticate, requireProviderAdmin, async (req: AuthReq
   } catch (error) { next(error); }
 });
 
-apiConfigRouter.put('/', authenticate, requireProviderAdmin, async (req, res, next) => {
+apiConfigRouter.put('/', authenticate, requireProviderAdmin, async (req: AuthRequest, res, next) => {
   try {
     const bodyKeys = Object.keys(req.body).filter(k => ALL_KEYS.includes(k));
     let skipped = 0;

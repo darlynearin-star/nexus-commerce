@@ -1,25 +1,50 @@
-# Render Dockerfile for the API — ffmpeg + Playwright chromium + deps for Ad Studio
-# Use it: Render → your API service → Settings → Runtime → Docker (set Dockerfile Path = Dockerfile.api)
-# Otherwise copy the apt-get lines into Render's NATIVE build command.
+# Render Dockerfile for the API service — ffmpeg + Playwright chromium for Ad Studio.
+# Use: Render → API service → Runtime = Docker → Dockerfile Path = ./Dockerfile.api
+#
+# Build chain facts this file depends on (see AUDIT_REFERENCE.md):
+# - npm workspaces: npm ci requires ALL workspace package.json files present.
+# - packages/database has postinstall `prisma generate` → the schema must be
+#   COPYed BEFORE `npm ci`.
+# - packages/api imports @nexus/database and @nexus/shared via their dist/ —
+#   build order MUST be shared → database → api.
 
 FROM node:20-bullseye-slim
 
-# System deps: ffmpeg (video compose) + Playwright chromium deps (screen capture: nss, nspr, dbus, atspi, drm, xcomposite, xdamage, xfixes, xrandr, gb-...)
+# ffmpeg (video compose) + Playwright chromium system deps (headless capture)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     ca-certificates \
-    libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2 \
+    libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 \
+    libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 \
+    libcairo2 libasound2 \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+
+# Manifests first for Docker layer caching. EVERY workspace manifest must be
+# present or `npm ci` refuses to run.
 COPY package.json package-lock.json* ./
-COPY packages/api/package.json packages/api/package.json
-COPY packages/database/package.json packages/database/package.json
 COPY packages/shared/package.json packages/shared/package.json
+COPY packages/database/package.json packages/database/package.json
+COPY packages/api/package.json packages/api/package.json
+COPY packages/web/package.json packages/web/package.json
+COPY packages/storefront/package.json packages/storefront/package.json
+COPY packages/retailer-dashboard/package.json packages/retailer-dashboard/package.json
+COPY packages/developer-dashboard/package.json packages/developer-dashboard/package.json
+# database postinstall runs `prisma generate` during npm ci — schema needed now.
+COPY packages/database/prisma/schema.prisma packages/database/prisma/schema.prisma
+
 RUN npm ci
+
 COPY . .
+
+# Generate the client against the full schema, install the capture browser,
+# then build in dependency order (shared → database → api).
 RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
 RUN npx playwright install --with-deps chromium
-RUN npm run build -w packages/api
+RUN npm run build -w packages/shared \
+ && npm run build -w packages/database \
+ && npm run build -w packages/api
+
 EXPOSE 4000
 CMD ["node", "packages/api/dist/index.js"]
