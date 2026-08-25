@@ -17,9 +17,11 @@ const nextConfig = {
   transpilePackages: ['@nexus/shared'],
   images: {
     remotePatterns: [
-      { protocol: 'https', hostname: 'picsum.photos' },
-      { protocol: 'https', hostname: 'nexus-api-69q5.onrender.com' },
-      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      // M-img: retailers paste their own logo/product image URLs from any
+      // host — the dashboards already allow all hosts; the storefront was the
+      // odd one out and broke on anything outside this list. CSP img-src
+      // already permits https: platform-wide.
+      { protocol: 'https', hostname: '**' },
     ],
   },
   async headers() {

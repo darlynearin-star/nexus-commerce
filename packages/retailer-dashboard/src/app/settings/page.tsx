@@ -93,7 +93,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(400px, 100%), 1fr))', gap: '1.5rem' }}>
         <div className="card" style={{ padding: '1.5rem' }}>
           <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>General</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>

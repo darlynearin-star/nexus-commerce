@@ -36,8 +36,8 @@
 | M-deps | Medium | prisma CLI/client mismatch; multer 1.x; tsx prod | NOT STARTED | — | — | — | — |
 | M-authmodels | Medium | 3 divergent auth trust models | NOT STARTED | — | — | — | — |
 | M-categories | Medium | Categories GET performs writes | VERIFIED | api/src/routes/categories.ts (GET is now read-only: single findMany; seed-if-empty for fresh stores kept; tree-sync removed from hot path — remains exported as an explicit drift-repair utility) | tsc clean (also caught a retention.ts typing slip); suite 110/110 | Impact: every storefront category view ran the full jiji-tree walk (dozens of sequential queries) + a second full fetch. Reads are pure now; ~1 query per view. Drift repair stays available via explicit call/reseed. Verified 2026-08-25. |
-| M-img | Medium | Image remotePatterns mismatch | NOT STARTED | — | — | — | — |
-| M-grid | Medium | minmax(400px) overflow on settings pages | NOT STARTED | — | — | — | — |
+| M-img | Medium | Image remotePatterns mismatch | VERIFIED | storefront/next.config.js (remotePatterns → https hostname '**' with rationale) | Storefront build green (Next validates config at build) | Root cause: dashboards allowed all hosts, storefront whitelisted 3 → retailer-pasted logos/product images from any other host threw "Invalid src" on the storefront. User-supplied URLs are core platform behavior; CSP img-src already permits https: platform-wide. Verified 2026-08-25. |
+| M-grid | Medium | minmax(400px) overflow on settings pages | VERIFIED | retailer-dashboard/src/app/settings/page.tsx + developer-dashboard/src/app/settings/page.tsx (minmax(min(400px,100%),1fr) — same fix pattern as the product-grid phone fix) | Both dashboard builds green | Same overflow class as the Phase-0 phone fix: grids forced 400px columns on narrow phones → horizontal push. Verified 2026-08-25. |
 | L-magicidx | Low | magic_link_tokens email index missing in migrations | NOT STARTED | — | — | — | — |
 | L-verified | Low | isVerifiedPurchase always true | NOT STARTED | — | — | — | — |
 | L-wishlist | Low | Wishlist ignores real product images | NOT STARTED | — | — | — | — |

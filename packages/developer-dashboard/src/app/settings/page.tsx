@@ -34,7 +34,7 @@ export default function SettingsPage() {
           {message.type === 'success' ? <Check size={16} /> : <AlertTriangle size={16} />} {message.text}
         </div>
       )}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(400px, 100%), 1fr))', gap: '1.5rem' }}>
         <div className="card">
           <h3 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Application Config</h3>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Application-level configuration is managed in the API Configuration section.</p>
