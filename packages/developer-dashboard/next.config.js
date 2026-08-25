@@ -23,7 +23,9 @@ const nextConfig = {
       { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
       { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
     ];
-    if (process.env.NODE_ENV === 'production') {
+    // M-csp: when CSP_NONCE is enabled, middleware handles CSP with a per-request
+    // nonce + strict-dynamic (no unsafe-inline). When off, static CSP applies.
+    if (process.env.NODE_ENV === 'production' && !process.env.CSP_NONCE) {
       securityHeaders.unshift({ key: 'Content-Security-Policy', value: Object.entries(csp).map(([k, v]) => `${k} ${v}`).join('; ') });
     }
     return [{ source: '/:path*', headers: securityHeaders }];
