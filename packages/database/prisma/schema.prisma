@@ -197,8 +197,9 @@ model SubscriptionPayment {
   customerNote  String?
   periodStart   DateTime
   periodEnd     DateTime
-  createdAt     DateTime           @default(now())
+  createdAt     DateTime   @default(now())
 
+  @@index([subscriptionId, createdAt])
   @@map("subscription_payments")
 }
 
@@ -223,6 +224,7 @@ model Session {
   expiresAt   DateTime
   createdAt   DateTime @default(now())
 
+  @@index([userId, isActive])
   @@map("sessions")
 }
 
@@ -423,6 +425,7 @@ model Media {
   productId    String?
   createdAt    DateTime @default(now())
 
+  @@index([storeId, createdAt])
   @@map("media")
 }
 
@@ -502,6 +505,8 @@ model OrderItem {
   totalPrice   Float
   image        String   @default("")
 
+  @@index([orderId])
+  @@index([productId])
   @@map("order_items")
 }
 
@@ -573,6 +578,7 @@ model Review {
   helpfulCount     Int      @default(0)
   createdAt        DateTime @default(now())
 
+  @@index([productId, createdAt])
   @@map("reviews")
 }
 
@@ -618,6 +624,8 @@ model Cart {
 
   items CartItem[]
 
+  @@index([storeId, customerId])
+  @@index([storeId, sessionId])
   @@map("carts")
 }
 
@@ -743,6 +751,10 @@ model AnalyticsEvent {
   userId     String?
   createdAt  DateTime @default(now())
 
+  @@index([createdAt])
+  @@index([eventType, createdAt])
+  @@index([sessionId])
+  @@index([userId])
   @@map("analytics_events")
 }
 

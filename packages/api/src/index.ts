@@ -159,6 +159,26 @@ async function runMigrations() {
     await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "ad_videos_templateId_idx" ON "ad_videos"("templateId")');
     await prisma.$executeRawUnsafe('ALTER TABLE "ad_videos" ADD COLUMN IF NOT EXISTS "data" TEXT');
     logger.info('Migration: ensured ad_videos table');
+    // H14: FK/hot-path indexes (Postgres does not auto-index FK columns).
+    // Names match migrations/0010 so both paths create identical objects.
+    const hotPathIndexes = [
+      ['order_items_orderId_idx', 'order_items', '"orderId"'],
+      ['order_items_productId_idx', 'order_items', '"productId"'],
+      ['carts_storeId_customerId_idx', 'carts', '"storeId", "customerId"'],
+      ['carts_storeId_sessionId_idx', 'carts', '"storeId", "sessionId"'],
+      ['media_storeId_createdAt_idx', 'media', '"storeId", "createdAt"'],
+      ['sessions_userId_isActive_idx', 'sessions', '"userId", "isActive"'],
+      ['reviews_productId_createdAt_idx', 'reviews', '"productId", "createdAt"'],
+      ['subscription_payments_subscriptionId_createdAt_idx', 'subscription_payments', '"subscriptionId", "createdAt"'],
+      ['analytics_events_createdAt_idx', 'analytics_events', '"createdAt"'],
+      ['analytics_events_eventType_createdAt_idx', 'analytics_events', '"eventType", "createdAt"'],
+      ['analytics_events_sessionId_idx', 'analytics_events', '"sessionId"'],
+      ['analytics_events_userId_idx', 'analytics_events', '"userId"'],
+    ] as const;
+    for (const [name, table, cols] of hotPathIndexes) {
+      await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "${name}" ON "${table}" (${cols})`);
+    }
+    logger.info(`Migration: ensured ${hotPathIndexes.length} hot-path indexes`);
   } catch (e: any) {
     logger.warn(`Migrations skipped: ${e.message}`);
   }
