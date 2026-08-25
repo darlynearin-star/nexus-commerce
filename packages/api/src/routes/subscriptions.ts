@@ -5,6 +5,7 @@ import { UserRole } from '@nexus/shared';
 import { logActivity } from '../utils/activity-log';
 import { getPaymentProvider } from '../payments';
 import { runSubscriptionEnforcement } from '../jobs/subscription-enforcer';
+import { safeEqual } from '../utils/crypto';
 
 export const subscriptionsRouter = Router();
 
@@ -306,8 +307,10 @@ subscriptionsRouter.post('/webhook/flutterwave', async (req, res, next) => {
     const webhookSecret = (secret?.value as string) || '';
     if (!webhookSecret) return res.status(503).json({ success: false, error: 'Webhook secret not configured' });
 
-    const hash = req.headers['verif-hash'];
-    if (!hash || hash !== webhookSecret) {
+      const hash = req.headers['verif-hash'];
+      // M-timing: constant-time compare — a naive !== leaks prefix-match
+      // timing to anyone probing the webhook endpoint.
+      if (!hash || !safeEqual(String(hash), webhookSecret)) {
       return res.status(401).json({ success: false, error: 'Invalid webhook signature' });
     }
 
