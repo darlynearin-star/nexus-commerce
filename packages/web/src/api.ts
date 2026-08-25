@@ -36,9 +36,84 @@ function getRefreshToken(): string | null {
   return localStorage.getItem('refreshToken');
 }
 
+// True when this browser shows signs of a session (tokens in localStorage).
+// Guests (never logged in on this device) must get a clean 401 instead of a
+// pointless refresh attempt + hard redirect to /login while browsing public
+// pages. (The httpOnly refresh cookie is invisible to JS, so cookie-only
+// sessions are treated as guests — they re-authenticate via SSO/login.)
+function hasSession(): boolean {
+  return !!(getToken() || getRefreshToken());
+}
+
+function clearSession() {
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+}
+
+function redirectToLogin() {
+  if (typeof window === 'undefined') return;
+  if (window.location.pathname.startsWith('/login')) return; // no loop
+  window.location.href = '/login';
+}
+
 export function createApiClient(options: ApiClientOptions = {}): ApiClient {
   const apiBase = options.apiBase ?? '';
   const uploadBase = options.uploadBase ?? apiBase;
+
+  // Single-flight refresh: N concurrent 401s share ONE /auth/refresh call.
+  // (Without this, a dashboard firing 6 requests on mount fires 6 refreshes —
+  // six wasted DB session lookups per burst.)
+  let refreshInFlight: Promise<string | null> | null = null;
+  function refreshAccessToken(): Promise<string | null> {
+    if (!refreshInFlight) {
+      refreshInFlight = (async () => {
+        try {
+          const refreshRes = await fetch(`${apiBase}/api/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            // Cookie-based refresh: no body needed. Fall back to stored token only when
+            // we know a cookie is unavailable (cross-origin SSO).
+            body: getRefreshToken() ? JSON.stringify({ refreshToken: getRefreshToken() }) : undefined,
+          });
+          if (!refreshRes.ok) return null;
+          const refreshData = await refreshRes.json();
+          localStorage.setItem('accessToken', refreshData.data.accessToken);
+          return refreshData.data.accessToken as string;
+        } catch {
+          return null;
+        } finally {
+          refreshInFlight = null; // future 401s may refresh again
+        }
+      })();
+    }
+    return refreshInFlight;
+  }
+
+  /** Shared 401 handling for request() and upload(). Throws on failure. */
+  async function handle401(res: Response, url: string, init: RequestInit, currentHeaders: Record<string, string>): Promise<any> {
+    // Guest: never refresh, never redirect — the caller decides what an
+    // unauthenticated visitor sees.
+    if (!hasSession()) {
+      const err = await res.clone().json().catch(() => ({ error: 'Request failed' }));
+      throw new ApiError(401, err.error || 'Request failed');
+    }
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      currentHeaders['Authorization'] = `Bearer ${newToken}`;
+      const retryRes = await fetch(url, { ...init, headers: currentHeaders, credentials: 'include' });
+      if (!retryRes.ok) {
+        const err = await retryRes.json().catch(() => ({ error: 'Request failed' }));
+        throw new ApiError(retryRes.status, err.error || 'Request failed');
+      }
+      return retryRes.json();
+    }
+    // Refresh failed: end the session; only bounce to /login when the user
+    // was actually logged in and isn't already there.
+    clearSession();
+    redirectToLogin();
+    throw new ApiError(401, 'Session expired');
+  }
 
   function buildHeaders(headers?: HeadersInit, forUpload = false): Record<string, string> {
     const h: Record<string, string> = {};
@@ -69,31 +144,8 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
     const headers = buildHeaders(requestOptions.headers);
     const res = await fetch(url, { ...fetchOptions, headers, credentials: 'include' });
 
-    if (res.status === 401 && (getRefreshToken() || typeof document !== 'undefined')) {
-      const refreshRes = await fetch(`${apiBase}/api/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        // Cookie-based refresh: no body needed. Fall back to stored token only when
-        // we know a cookie is unavailable (cross-origin SSO).
-        body: getRefreshToken() ? JSON.stringify({ refreshToken: getRefreshToken() }) : undefined,
-      });
-      if (refreshRes.ok) {
-        const refreshData = await refreshRes.json();
-        localStorage.setItem('accessToken', refreshData.data.accessToken);
-        headers['Authorization'] = `Bearer ${refreshData.data.accessToken}`;
-        const retryRes = await fetch(url, { ...fetchOptions, headers, credentials: 'include' });
-        if (!retryRes.ok) {
-          const err = await retryRes.json().catch(() => ({ error: 'Request failed' }));
-          throw new ApiError(retryRes.status, err.error || 'Request failed');
-        }
-        return retryRes.json();
-      } else {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        if (typeof window !== 'undefined') window.location.href = '/login';
-        throw new ApiError(401, 'Session expired');
-      }
+    if (res.status === 401) {
+      return handle401(res, url, fetchOptions, headers);
     }
 
     if (!res.ok) {
@@ -107,26 +159,11 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
   async function upload<T = any>(endpoint: string, formData: FormData): Promise<T> {
     const url = `${uploadBase}/api${endpoint}`;
     const headers = buildHeaders(undefined, true);
-    const res = await fetch(url, { method: 'POST', headers, body: formData, credentials: 'include' });
+    const init: RequestInit = { method: 'POST', body: formData };
+    const res = await fetch(url, { ...init, headers, credentials: 'include' });
 
-    if (res.status === 401 && (getRefreshToken() || typeof document !== 'undefined')) {
-      const refreshRes = await fetch(`${uploadBase}/api/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: getRefreshToken() ? JSON.stringify({ refreshToken: getRefreshToken() }) : undefined,
-      });
-      if (refreshRes.ok) {
-        const refreshData = await refreshRes.json();
-        localStorage.setItem('accessToken', refreshData.data.accessToken);
-        headers['Authorization'] = `Bearer ${refreshData.data.accessToken}`;
-        const retryRes = await fetch(url, { method: 'POST', headers, body: formData, credentials: 'include' });
-        if (!retryRes.ok) {
-          const err = await retryRes.json().catch(() => ({ error: 'Upload failed' }));
-          throw new ApiError(retryRes.status, err.error || 'Upload failed');
-        }
-        return retryRes.json();
-      }
+    if (res.status === 401) {
+      return handle401(res, url, init, headers);
     }
 
     if (!res.ok) {
