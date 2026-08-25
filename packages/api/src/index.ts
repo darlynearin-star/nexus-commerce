@@ -33,6 +33,7 @@ import { storeSettingsRouter } from './routes/store-settings';
 import { uploadRouter } from './routes/upload';
 import { storage } from './utils/storage';
 import { runSubscriptionEnforcement } from './jobs/subscription-enforcer';
+import { runRetentionSweeps } from './jobs/retention';
 
 import { resolveStore } from './middleware/resolve-store';
 import { errorHandler } from './middleware/error-handler';
@@ -385,6 +386,25 @@ app.listen(PORT, async () => {
     };
     void runEnforcer();
     setInterval(runEnforcer, 6 * 60 * 60 * 1000).unref();
+  }
+
+  // M-prune: bound ever-growing tables (analytics, activity logs, read
+  // notifications, dead sessions). Runs on boot and daily.
+  if (process.env.RETENTION_DISABLED !== 'true') {
+    let retentionRunning = false;
+    const runRetention = async () => {
+      if (retentionRunning) return;
+      retentionRunning = true;
+      try {
+        await runRetentionSweeps();
+      } catch (e: any) {
+        logger.warn(`Retention job error: ${e?.message || e}`);
+      } finally {
+        retentionRunning = false;
+      }
+    };
+    void runRetention();
+    setInterval(runRetention, 24 * 60 * 60 * 1000).unref();
   }
 });
 }
