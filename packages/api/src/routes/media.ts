@@ -8,10 +8,33 @@ import { storage } from '../utils/storage';
 export const mediaRouter = Router();
 mediaRouter.use(requireStore);
 
+// H6: never SELECT the base64 `data` column in list queries — with blobs
+// stored inline, a 200-asset store previously shipped ~1GB from Postgres to
+// the API just to strip the field from the response afterwards.
+const MEDIA_LIST_SELECT = {
+  id: true,
+  storeId: true,
+  url: true,
+  thumbnailUrl: true,
+  alt: true,
+  type: true,
+  mimeType: true,
+  size: true,
+  width: true,
+  height: true,
+  folder: true,
+  productId: true,
+  createdAt: true,
+};
+
 mediaRouter.get('/', authenticate, requireStoreOwner, async (req: StoreRequest, res, next) => {
   try {
-    const media = await prisma.media.findMany({ where: { storeId: req.storeId! }, orderBy: { createdAt: 'desc' } });
-    res.json({ success: true, data: media.map(({ data: _data, ...rest }) => rest) });
+    const media = await prisma.media.findMany({
+      where: { storeId: req.storeId! },
+      orderBy: { createdAt: 'desc' },
+      select: MEDIA_LIST_SELECT,
+    });
+    res.json({ success: true, data: media });
   } catch (error) { next(error); }
 });
 
