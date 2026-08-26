@@ -5,8 +5,37 @@ import { authenticate, requirePermission, AuthRequest, invalidateUserCache } fro
 import { Permission, UserRole } from '@nexus/shared';
 import { logActivity } from '../utils/activity-log';
 import { validatePassword } from '../utils/password-policy';
+import { backfillStorage } from '../utils/backfill';
+import { getStorageConfig, isS3Configured } from '../utils/storage';
 
 export const adminRouter = Router();
+
+// R2/S3 blob backfill (M-mirror): moves Media.data + AdVideo.data base64 blobs
+// into object storage and nulls them out. GET = dry-run report; POST = run.
+adminRouter.get('/storage/backfill', authenticate, requirePermission(Permission.MANAGE_SYSTEM), async (req: AuthRequest, res, next) => {
+  try {
+    const cfg = getStorageConfig();
+    if (!isS3Configured(cfg)) {
+      return res.json({ success: true, configured: false, message: 'R2/S3 not configured — set STORAGE_* env vars first.' });
+    }
+    return res.json({ success: true, configured: true, report: await backfillStorage(cfg, true) });
+  } catch (error) { next(error); }
+});
+
+adminRouter.post('/storage/backfill', authenticate, requirePermission(Permission.MANAGE_SYSTEM), async (req: AuthRequest, res, next) => {
+  try {
+    const cfg = getStorageConfig();
+    if (!isS3Configured(cfg)) return res.status(400).json({ success: false, error: 'R2/S3 not configured — set STORAGE_* env vars first.' });
+    const report = await backfillStorage(cfg, false);
+    logActivity({ userId: req.user!.userId, action: 'storage:backfill', resource: 'system', details: { moved: report.moved, failed: report.failed }, req: req as any });
+    return res.json({
+      success: true,
+      report,
+      done: report.mediaRemaining === 0 && report.adsRemaining === 0,
+      message: report.mediaRemaining + report.adsRemaining > 0 ? 'Items remain — re-run until the report shows zero.' : 'All blobs migrated.',
+    });
+  } catch (error) { next(error); }
+});
 
 adminRouter.get('/users', authenticate, requirePermission(Permission.MANAGE_USERS), async (req, res, next) => {
   try {
