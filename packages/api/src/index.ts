@@ -392,7 +392,10 @@ const server = app.listen(PORT, async () => {
       }
     };
     void runEnforcer();
-    setInterval(runEnforcer, 6 * 60 * 60 * 1000).unref();
+    // CU-crunch knob: stretch the interval instead of disabling entirely —
+    // subscriptions still get enforced, just less often.
+    const enforcerHours = Math.max(1, Number(process.env.ENFORCER_INTERVAL_HOURS) || 6);
+    setInterval(runEnforcer, enforcerHours * 60 * 60 * 1000).unref();
   }
 
   // M-prune: bound ever-growing tables (analytics, activity logs, read
@@ -411,7 +414,8 @@ const server = app.listen(PORT, async () => {
       }
     };
     void runRetention();
-    setInterval(runRetention, 24 * 60 * 60 * 1000).unref();
+    const retentionHours = Math.max(6, Number(process.env.RETENTION_INTERVAL_HOURS) || 24);
+    setInterval(runRetention, retentionHours * 60 * 60 * 1000).unref();
   }
 });
 
