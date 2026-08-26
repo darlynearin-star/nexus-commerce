@@ -1,5 +1,13 @@
 # Primary Database Swap: Neon → Supabase
 
+> **✅ EXECUTED 2026-08-26.** Live verification: marker row written directly to
+> Supabase was served by the production API (`SWAP-CHECK-*` probe), then removed.
+> Schema push included 4 drift columns from legacy Neon schema
+> (orders.shippingAddressId/billingAddressId, store_themes.animation,
+> store_settings.taxRate→numeric). Runtime connection uses the **6543 transaction
+> pooler** with `?pgbouncer=true&connection_limit=1` (the 5432 session path proved
+> unreliable from the owner's network).
+
 One-time migration that makes Supabase the live primary and turns Neon into a
 near-zero-cost dormant fallback. Kills the compute-hours ceiling permanently.
 
