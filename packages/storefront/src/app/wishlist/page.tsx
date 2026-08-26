@@ -34,7 +34,7 @@ export default function WishlistPage() {
             <div key={item.id} className="card">
               <Link href={`/product/${item.product.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: '0.5rem', overflow: 'hidden', marginBottom: '0.75rem', position: 'relative' }}>
-                  <Image src={`https://picsum.photos/seed/${item.product.id}/300/300`} alt={item.product.name} fill sizes="(max-width: 768px) 50vw, 300px" style={{ objectFit: 'cover' }} loading="lazy" />
+                  <Image src={item.product.images?.[0] || '/lynnyx-logo-long.png'} alt={item.product.name} fill sizes="(max-width: 768px) 50vw, 300px" style={{ objectFit: 'cover' }} loading="lazy" />
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{item.product.brand}</p>
                 <p style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{item.product.name}</p>

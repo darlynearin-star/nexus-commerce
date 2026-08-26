@@ -15,8 +15,7 @@ export function createAuthGuard<TUser = any>(useAuth: () => AuthState<TUser>) {
     useEffect(() => {
       if (loading) return;
       if (!user) { router.push('/login'); return; }
-      if (roles && !roles.includes((user as any).role)) { router.push('/login'); return; }
-    }, [user, loading, roles, router]);
+    }, [user, loading, router]);
 
     if (loading) return (
       <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -25,7 +24,17 @@ export function createAuthGuard<TUser = any>(useAuth: () => AuthState<TUser>) {
       </div>
     );
     if (!user) return null;
-    if (roles && !roles.includes((user as any).role)) return null;
+    // L-role: show "Access Denied" instead of redirecting to /login when the
+    // user is logged in but lacks the required role.
+    if (roles && !roles.includes((user as any).role)) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center', padding: '2rem' }}>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Access Denied</h1>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>You don&apos;t have permission to view this page.</p>
+          <a href="/" className="btn btn-primary" style={{ textDecoration: 'none' }}>Go Home</a>
+        </div>
+      );
+    }
 
     return <>{children}</>;
   };

@@ -142,7 +142,7 @@ export default function Header() {
           <div style={{ padding: '1rem', borderTop: '1px solid var(--border)' }}>
             <div className="container">
               <input className="input" placeholder="Search products..." autoFocus style={{ fontSize: '1rem', padding: '0.75rem 1rem' }}
-                onKeyDown={async (e) => { if (e.key === 'Enter') window.location.href = `/shop?search=${e.currentTarget.value}`; }} />
+                onKeyDown={async (e) => { if (e.key === 'Enter') window.location.href = `/shop?search=${encodeURIComponent(e.currentTarget.value)}`; }} />
             </div>
           </div>
         )}

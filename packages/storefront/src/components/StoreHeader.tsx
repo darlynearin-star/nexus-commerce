@@ -76,7 +76,7 @@ export default function StoreHeader() {
         <div style={{ padding: '1rem', borderTop: '1px solid var(--border)' }}>
           <div className="container">
             <input className="input" placeholder="Search products..." autoFocus style={{ fontSize: '1rem', padding: '0.75rem 1rem' }}
-              onKeyDown={(e) => { if (e.key === 'Enter') window.location.href = `/store/${store.slug}/shop?search=${e.currentTarget.value}`; }} />
+              onKeyDown={(e) => { if (e.key === 'Enter') window.location.href = `/store/${store.slug}/shop?search=${encodeURIComponent(e.currentTarget.value)}`; }} />
           </div>
         </div>
       )}

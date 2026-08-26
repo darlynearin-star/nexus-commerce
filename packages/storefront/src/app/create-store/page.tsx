@@ -59,7 +59,10 @@ export default function CreateStorePage() {
 
   useEffect(() => {
     if (slug.length >= 3) {
-      api.get(`/stores/check-slug/${slug}`).then((r: any) => setSlugAvailable(r.data.available));
+      const timer = setTimeout(() => {
+        api.get(`/stores/check-slug/${slug}`).then((r: any) => setSlugAvailable(r.data.available));
+      }, 400);
+      return () => clearTimeout(timer);
     }
   }, [slug]);
 

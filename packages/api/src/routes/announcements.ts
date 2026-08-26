@@ -63,6 +63,7 @@ announcementsRouter.post('/', authenticate, requireRole(UserRole.DEVELOPER, User
     const recipients = normalizeRecipients(req.body.recipients);
     const setting = await prisma.setting.findUnique({ where: { key: 'platform_announcements' } });
     const announcements: any[] = (setting?.value as any[]) || [];
+    if (announcements.length >= 100) return res.status(400).json({ success: false, error: 'Announcement cap reached (100). Delete older announcements first.' });
     announcements.push({
       id: `ann-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       title, message, type: type || 'INFO', priority: priority || 'NORMAL',

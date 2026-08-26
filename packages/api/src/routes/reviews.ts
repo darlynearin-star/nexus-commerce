@@ -27,8 +27,13 @@ reviewsRouter.post('/', authenticate, requireFeatureEnabled('reviews'), async (r
 
     const { productId, rating, title, content, images } = req.body;
     if (!productId) return res.status(400).json({ success: false, error: 'productId is required' });
+    // L-verified: only mark as verified if the customer has a delivered order for this product
+    const hasDeliveredOrder = await prisma.orderItem.findFirst({
+      where: { productId, order: { customerId: customer.id, status: 'DELIVERED' } },
+      select: { id: true },
+    });
     const review = await prisma.review.create({
-      data: { productId, rating: Math.max(1, Math.min(5, rating || 5)), title: title || '', content: content || '', images: images || [], storeId: req.storeId!, customerId: customer.id, isVerifiedPurchase: true },
+      data: { productId, rating: Math.max(1, Math.min(5, rating || 5)), title: title || '', content: content || '', images: images || [], storeId: req.storeId!, customerId: customer.id, isVerifiedPurchase: !!hasDeliveredOrder },
     });
     res.status(201).json({ success: true, data: review });
   } catch (error) { next(error); }

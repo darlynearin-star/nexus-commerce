@@ -38,15 +38,15 @@
 | M-categories | Medium | Categories GET performs writes | VERIFIED | api/src/routes/categories.ts (GET is now read-only: single findMany; seed-if-empty for fresh stores kept; tree-sync removed from hot path — remains exported as an explicit drift-repair utility) | tsc clean (also caught a retention.ts typing slip); suite 110/110 | Impact: every storefront category view ran the full jiji-tree walk (dozens of sequential queries) + a second full fetch. Reads are pure now; ~1 query per view. Drift repair stays available via explicit call/reseed. Verified 2026-08-25. |
 | M-img | Medium | Image remotePatterns mismatch | VERIFIED | storefront/next.config.js (remotePatterns → https hostname '**' with rationale) | Storefront build green (Next validates config at build) | Root cause: dashboards allowed all hosts, storefront whitelisted 3 → retailer-pasted logos/product images from any other host threw "Invalid src" on the storefront. User-supplied URLs are core platform behavior; CSP img-src already permits https: platform-wide. Verified 2026-08-25. |
 | M-grid | Medium | minmax(400px) overflow on settings pages | VERIFIED | retailer-dashboard/src/app/settings/page.tsx + developer-dashboard/src/app/settings/page.tsx (minmax(min(400px,100%),1fr) — same fix pattern as the product-grid phone fix) | Both dashboard builds green | Same overflow class as the Phase-0 phone fix: grids forced 400px columns on narrow phones → horizontal push. Verified 2026-08-25. |
-| L-magicidx | Low | magic_link_tokens email index missing in migrations | NOT STARTED | — | — | — | — |
-| L-verified | Low | isVerifiedPurchase always true | NOT STARTED | — | — | — | — |
-| L-wishlist | Low | Wishlist ignores real product images | NOT STARTED | — | — | — | — |
-| L-membersince | Low | Member Since shows today | NOT STARTED | — | — | — | — |
-| L-urlenc | Low | Search query not URL-encoded | NOT STARTED | — | — | — | — |
-| L-slug | Low | Slug check per keystroke, no abort | NOT STARTED | — | — | — | — |
-| L-dates | Low | Date format drift | NOT STARTED | — | — | — | — |
-| L-ann | Low | Announcements unbounded growth | NOT STARTED | — | — | — | — |
-| L-role | Low | Role-mismatch → /login instead of no-access | NOT STARTED | — | — | — | — |
+| L-magicidx | Low | magic_link_tokens email index missing in migrations | ACCEPTED | schema.prisma:110 already has `@@index([email])` | — | Audit sub-finding inaccurate; index exists. Verified 2026-08-25. |
+| L-verified | Low | isVerifiedPurchase always true | VERIFIED | api/src/routes/reviews.ts (now checks orderItem.findFirst for DELIVERED status) | Suite 131/131 | Verified 2026-08-25. |
+| L-wishlist | Low | Wishlist ignores real product images | VERIFIED | storefront/src/app/wishlist/page.tsx (uses product.images?.[0] with logo fallback) | Storefront build green | Verified 2026-08-25. |
+| L-membersince | Low | Member Since shows today | VERIFIED | storefront/src/app/account/page.tsx (uses user.createdAt from /auth/me) | Storefront build green | Verified 2026-08-25. |
+| L-urlenc | Low | Search query not URL-encoded | VERIFIED | storefront/src/components/Header.tsx + StoreHeader.tsx (encodeURIComponent) | Storefront build green | Verified 2026-08-25. |
+| L-slug | Low | Slug check per keystroke, no abort | VERIFIED | storefront/src/app/create-store/page.tsx (400ms debounce + cleanup) | Storefront build green | Verified 2026-08-25. |
+| L-dates | Low | Date format drift | ACCEPTED | — | — | Cosmetic: platform Uganda-focused; en-US consistent across pages. Verified 2026-08-25. |
+| L-ann | Low | Announcements unbounded growth | VERIFIED | api/src/routes/announcements.ts (cap at 100, returns 400 when exceeded) | Suite 131/131 | Verified 2026-08-25. |
+| L-role | Low | Role-mismatch → /login instead of no-access | VERIFIED | packages/web/src/auth-guard.tsx (shows Access Denied overlay for wrong role; /login only when unauthenticated) | All 4 builds green | Verified 2026-08-25. |
 
 ---
 
