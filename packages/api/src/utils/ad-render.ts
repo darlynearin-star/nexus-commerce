@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -10,6 +10,16 @@ import { assertPublicHttpUrl, isPrivateHostname } from './url-guard';
 import { logger } from './logger';
 
 const isUrl = (s: string) => /^https?:\/\//i.test(s);
+
+const FONT_CANDIDATES = [
+  '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+  '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+  path.join(process.cwd(), 'packages/api/src/utils/ad-font.ttf'),
+];
+
+export function findFontFile(): string | undefined {
+  return FONT_CANDIDATES.find(p => existsSync(p));
+}
 
 function tokensForUrl(url: string): Record<string, string> {
   let host = url;
@@ -200,12 +210,7 @@ export async function renderAdVideo(opts: RenderOpts): Promise<{ bytes: Buffer; 
   const totalSec = beats.reduce((s, b) => s + b.seconds, 0);
   const bgHex = '0x14120E';
   const fps = 24;
-  const fontCandidates = [
-    '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-    '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
-    path.join(process.cwd(), 'packages/api/src/utils/ad-font.ttf'),
-  ];
-  const fontfile = fontCandidates.find(p => existsSync(p));
+  const fontfile = findFontFile();
   const escapedBeats = beats.map(b => escapeDrawText(b.caption));
 
   // Drawtext needs a fontfile on Linux headless; if none is available, skip the label
@@ -278,19 +283,24 @@ export async function renderAdVideo(opts: RenderOpts): Promise<{ bytes: Buffer; 
 }
 
 /**
- * Totally synchronous guard helpers for the routes layer to surface a
- * good 503 when ffmpeg/Playwright are unavailable, rather than committing
- * a QUEUED row that can't render on this host.
+ * Honest host probe. The route layer adds async checks (ElevenLabs key) and
+ * assembles the human hint. `spawnSync` here keeps `/api/ads/capabilities`
+ * fast; the real render still surfaces ENOENT at spawn as a FAILED row.
  */
-export function renderCapabilities(): { ffmpeg: boolean; playwright: boolean } {
+export function renderCapabilities(): { ffmpeg: boolean; playwright: boolean; font: boolean } {
   let playwright = false;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     require('playwright');
     playwright = true;
   } catch {}
-  // ffmpeg is assumed available by presence on PATH; the real error surfaces at spawn.
-  return { ffmpeg: true, playwright };
+  const ffmpegBin = process.env.FFMPEG_PATH || 'ffmpeg';
+  let ffmpeg = false;
+  try {
+    const probe = spawnSync(ffmpegBin, ['-version'], { stdio: 'ignore' });
+    ffmpeg = probe.status === 0;
+  } catch {}
+  return { ffmpeg, playwright, font: !!findFontFile() };
 }
 
 // ---- Async job runner (fire-and-forget from the route) ----

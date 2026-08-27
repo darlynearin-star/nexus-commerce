@@ -6,6 +6,7 @@ import { logActivity } from '../utils/activity-log';
 import { serveRangeBuffer } from '../utils/range';
 import { AD_VIDEO_TEMPLATES, getAdTemplate } from '../ad-video-templates';
 import { runAdVideoJob, renderCapabilities } from '../utils/ad-render';
+import { getElevenLabsKey } from '../utils/tts';
 import { assertPublicHttpUrl } from '../utils/url-guard';
 
 export const adsRouter = Router();
@@ -44,10 +45,20 @@ adsRouter.get('/templates', authenticate, requireRole(UserRole.DEVELOPER, UserRo
   res.json({ success: true, data: AD_VIDEO_TEMPLATES });
 });
 
-adsRouter.get('/capabilities', authenticate, requireRole(UserRole.DEVELOPER, UserRole.SUPER_DEVELOPER), (_req, res) => {
-  const caps = renderCapabilities();
-  const ffmpegHint = caps.ffmpeg ? null : 'ffmpeg not on PATH — ads render as FAILED until the Render Dockerfile is deployed';
-  res.json({ success: true, data: { ...caps, hint: ffmpegHint } });
+adsRouter.get('/capabilities', authenticate, requireRole(UserRole.DEVELOPER, UserRole.SUPER_DEVELOPER), async (_req, res, next) => {
+  try {
+    const host = renderCapabilities();
+    const elevenlabs = !!(await getElevenLabsKey());
+    const missing: string[] = [];
+    if (!host.ffmpeg) missing.push('ffmpeg not on PATH — renders fail until Render runs the Docker image');
+    if (!host.playwright) missing.push('Playwright chromium missing — no storefront screenshot in videos');
+    if (!host.font) missing.push('no TTF font on this host — caption text will be omitted');
+    if (!elevenlabs) missing.push('no ElevenLabs key — voiceover will be silent');
+    res.json({
+      success: true,
+      data: { ...host, elevenlabs, ready: missing.length === 0, hint: missing.length ? missing.join(' · ') : null },
+    });
+  } catch (e) { next(e); }
 });
 
 adsRouter.get('/', authenticate, requireRole(UserRole.DEVELOPER, UserRole.SUPER_DEVELOPER), async (_req, res, next) => {

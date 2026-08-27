@@ -73,7 +73,20 @@ export default function AdStudioPage() {
     <div style={{ padding: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div><h1 style={{ fontSize: '1.5rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Film size={22} /> Ad Studio</h1><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Paste any store/product URL and it renders tutorial-style ad videos — one per template.</p></div>
-        <span style={{ fontSize: '0.75rem', color: caps?.ffmpeg ? '#4ade80' : '#f87171' }}>{caps ? (caps.ffmpeg ? 'Engine ready' : caps.hint || 'Needs ffmpeg') : ''}</span>
+        <div style={{ textAlign: 'right' }}>
+          <p style={{ fontSize: '0.75rem', fontWeight: 600, color: caps ? (caps.ready ? '#4ade80' : '#f87171') : 'var(--text-secondary)', marginBottom: '0.375rem' }}>{caps ? (caps.ready ? 'Ready to render' : 'Incomplete setup') : 'Checking engine…'}</p>
+          {caps && <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {[
+              { ok: caps.ffmpeg, label: 'ffmpeg' },
+              { ok: caps.font, label: 'captions' },
+              { ok: caps.playwright, label: 'screenshot' },
+              { ok: caps.elevenlabs, label: 'voiceover' },
+            ].map(c => (
+              <span key={c.label} style={{ fontSize: '0.625rem', padding: '0.125rem 0.5rem', borderRadius: 999, background: c.ok ? '#052e16' : '#2e0505', color: c.ok ? '#4ade80' : '#f87171' }}>{c.ok ? '✓' : '✗'} {c.label}</span>
+            ))}
+          </div>}
+          {caps?.hint && <p style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', marginTop: '0.375rem', maxWidth: 300, marginLeft: 'auto' }}>{caps.hint}</p>}
+        </div>
       </div>
 
       {msg && <p style={{ fontSize: '0.875rem', color: msg.includes('Queued') ? '#4ade80' : '#f87171', marginBottom: '1rem' }}>{msg}</p>}
@@ -134,6 +147,9 @@ export default function AdStudioPage() {
                   <button className="btn btn-ghost btn-sm" onClick={() => remove(r.id)} style={{ color: 'var(--error)' }}><Trash2 size={14} /></button>
                 </div>
               </div>
+              {r.status === 'DONE' && r.videoUrl && (
+                <video key={r.videoUrl} src={r.videoUrl} controls preload="metadata" style={{ width: '100%', maxWidth: 280, maxHeight: 168, borderRadius: '0.5rem', marginTop: '0.75rem', background: '#000' }} />
+              )}
             </div>
           ))}
         </div>
