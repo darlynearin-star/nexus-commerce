@@ -31,6 +31,9 @@ jobs:
       - name: Generate Prisma client
         run: npm run db:generate
 
+      - name: Build internal libraries
+        run: npm run build -w packages/shared && npm run build -w packages/web && npm run build -w packages/database && npm run build -w packages/api
+
       - name: Typecheck
         run: npm run typecheck
 
