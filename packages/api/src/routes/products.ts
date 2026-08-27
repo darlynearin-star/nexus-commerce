@@ -9,6 +9,9 @@ import { StoreRequest, requireStore, requireStoreOwner } from '../middleware/res
 import { validate } from '../middleware/validate';
 import { createProductSchema, updateProductSchema, createVariantSchema, updateVariantSchema, bulkVariantsSchema } from '../validation/product';
 import { cacheGet, cacheSet, cacheInvalidateStore } from '../utils/cache';
+import { parseBulkProducts, type ParsedProduct } from '../utils/product-parser';
+
+const BOOLEAN_TRUE = new Set(['yes', 'y', 'true', '1']);
 
 function generateShortCode(): string {
   return crypto.randomBytes(5).toString('base64url').slice(0, 8);
@@ -366,5 +369,117 @@ productsRouter.post('/:id/duplicate', authenticate, requireStoreOwner, requirePe
     }
     cacheInvalidateStore(req.store!.slug);
     res.status(201).json({ success: true, data: duplicate });
+  } catch (error) { next(error); }
+});
+
+// ============================================================
+// Bulk import from a pdtguide.txt-syntax file (see /pdtguide.txt)
+// ============================================================
+
+function slugifyName(name: string): string {
+  return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'product';
+}
+
+async function resolveOrCreateCategory(storeId: string, raw: string, storeSlugForCache: string, created: Set<string>): Promise<string | null> {
+  const wanted = raw.trim();
+  if (!wanted) return null;
+  const cats = await prisma.category.findMany({ where: { storeId }, select: { id: true, name: true, slug: true } });
+  const hit = cats.find((c) => c.name.toLowerCase() === wanted.toLowerCase() || c.slug === slugifyName(wanted));
+  if (hit) return hit.id;
+  const cat = await prisma.category.create({ data: { storeId, name: wanted, slug: `${slugifyName(wanted)}-${generateShortCode().slice(0, 4)}` } });
+  created.add(wanted);
+  cacheInvalidateStore(storeSlugForCache);
+  return cat.id;
+}
+
+function buildProductData(p: ParsedProduct, storeId: string): Record<string, any> {
+  const d = p.data;
+  const name = String(d.name).trim();
+  const specsObject: Record<string, string> = {};
+  if (Array.isArray(d.specs)) {
+    for (const line of d.specs as string[]) {
+      const idx = line.indexOf(':');
+      if (idx > 0) specsObject[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
+    }
+  }
+  const boolVal = (k: string, fallback: boolean) => (d[k] === undefined ? fallback : BOOLEAN_TRUE.has(String(d[k]).trim().toLowerCase()));
+  return {
+    storeId,
+    name,
+    slug: `${slugifyName(name)}-${generateShortCode()}`,
+    brand: String(d.brand ?? ''),
+    sku: String(d.sku ?? '').trim() || `BULK-${generateShortCode()}`,
+    description: String(d.description ?? ''),
+    specifications: specsObject,
+    features: typeof d.features === 'string' ? (d.features as string).split(/\r?\n/).map((f) => f.trim()).filter(Boolean) : [],
+    price: Number(String(d.price).replace(/,/g, '')),
+    compareAtPrice: d.compare_at_price !== undefined ? Number(String(d.compare_at_price)) : null,
+    costPerItem: d.cost_per_item !== undefined ? Number(String(d.cost_per_item)) : null,
+    stock: d.stock !== undefined ? parseInt(String(d.stock), 10) : 0,
+    lowStockThreshold: d.low_stock_threshold !== undefined ? parseInt(String(d.low_stock_threshold), 10) : 10,
+    trackInventory: boolVal('track_inventory', true),
+    allowBackorder: boolVal('allow_backorder', false),
+    status: boolVal('published', false) ? ProductStatus.PUBLISHED : ProductStatus.DRAFT,
+    tags: typeof d.tags === 'string' ? (d.tags as string).split(',').map((t) => t.trim()).filter(Boolean) : [],
+    seoTitle: String(d.seo_title ?? ''),
+    seoDescription: String(d.seo_description ?? ''),
+    warranty: String(d.warranty ?? ''),
+    isFeatured: boolVal('featured', false),
+    isNew: boolVal('new', false),
+  };
+}
+
+productsRouter.post('/bulk-preview', authenticate, requireStoreOwner, requirePermission(Permission.MANAGE_PRODUCTS), async (req: StoreRequest & AuthRequest, res, next) => {
+  try {
+    const content = String(req.body.content || '');
+    const { products, issues } = parseBulkProducts(content);
+    const cats = await prisma.category.findMany({ where: { storeId: req.storeId! }, select: { id: true, name: true, slug: true } });
+    const rows = products.map((p) => {
+      const catRaw = String(p.data.category ?? '').trim();
+      let categoryAction = 'uncategorised';
+      if (catRaw) {
+        categoryAction = cats.some((c) => c.name.toLowerCase() === catRaw.toLowerCase() || c.slug === slugifyName(catRaw))
+          ? 'existing'
+          : 'will create';
+      }
+      return { startLine: p.startLine, name: String(p.data.name ?? ''), price: p.data.price ?? '', category: catRaw, categoryAction, errors: p.errors, warnings: p.warnings };
+    });
+    res.json({ success: true, data: { rows, fileIssues: issues, total: products.length } });
+  } catch (error) { next(error); }
+});
+
+productsRouter.post('/bulk-import', authenticate, requireStoreOwner, requirePermission(Permission.MANAGE_PRODUCTS), async (req: StoreRequest & AuthRequest, res, next) => {
+  try {
+    const content = String(req.body.content || '');
+    const { products, issues } = parseBulkProducts(content);
+    if (issues.length) return res.status(400).json({ success: false, error: issues.map((i) => i.message).join(' ') });
+
+    const valid = products.filter((p) => p.errors.length === 0);
+    const skipped = products.filter((p) => p.errors.length > 0);
+    if (valid.length === 0) {
+      return res.status(400).json({ success: false, error: 'No importable products — every block has errors', details: skipped.map((s) => ({ startLine: s.startLine, name: s.data.name ?? '', errors: s.errors })) });
+    }
+
+    const createdCategories = new Set<string>();
+    const created: any[] = [];
+    for (const p of valid) {
+      const categoryId = await resolveOrCreateCategory(req.storeId!, String(p.data.category ?? ''), req.store!.slug, createdCategories);
+      const data = buildProductData(p, req.storeId!);
+      if (categoryId) data.categoryId = categoryId;
+      const product = await prisma.product.create({ data: data as any });
+      created.push({ id: product.id, name: product.name, status: product.status });
+      logActivity({ userId: req.user!.userId, action: 'product:bulk-created', resource: 'product', resourceId: product.id, details: { name: product.name }, req: req as any });
+    }
+    cacheInvalidateStore(req.store!.slug);
+    res.json({
+      success: true,
+      data: {
+        createdCount: created.length,
+        skippedCount: skipped.length,
+        created,
+        newCategories: [...createdCategories],
+        skipped: skipped.map((s) => ({ startLine: s.startLine, name: s.data.name ?? '', errors: s.errors })),
+      },
+    });
   } catch (error) { next(error); }
 });

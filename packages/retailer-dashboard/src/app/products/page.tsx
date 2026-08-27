@@ -1,10 +1,17 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { Plus, Edit2, Trash2, Copy, Search, ExternalLink, Package, Link2, Check } from 'lucide-react';
+import { Plus, Edit2, Trash2, Copy, Search, ExternalLink, Package, Link2, Check, Upload } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProductsPage() {
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkContent, setBulkContent] = useState('');
+  const [bulkParsing, setBulkParsing] = useState(false);
+  const [bulkPreview, setBulkPreview] = useState<any>(null);
+  const [bulkImporting, setBulkImporting] = useState(false);
+  const [bulkResult, setBulkResult] = useState<any>(null);
+  const [bulkError, setBulkError] = useState<string | null>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -69,8 +76,88 @@ export default function ProductsPage() {
     <div style={{ padding: '2rem', maxWidth: 1200, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div><h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Products</h1><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{products.length} product{products.length !== 1 ? 's' : ''}</p></div>
-        <Link href="/products/new" className="btn btn-primary btn-sm"><Plus size={16} /> Add Product</Link>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button className="btn btn-secondary btn-sm" onClick={() => { setBulkOpen(!bulkOpen); setBulkPreview(null); setBulkResult(null); setBulkError(null); }}><Upload size={16} /> Bulk upload</button>
+          <Link href="/products/new" className="btn btn-primary btn-sm"><Plus size={16} /> Add Product</Link>
+        </div>
       </div>
+
+      {bulkOpen && (
+        <div className="card" style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 600 }}>Bulk upload products</h2>
+            <a href="/pdtguide.txt" target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ fontSize: '0.8125rem' }}>View the file guide</a>
+          </div>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+            Paste your product file contents or choose a .txt file. Nothing is saved until you press Import — imported products land as drafts you can edit and add photos to.
+          </p>
+          <input type="file" accept=".txt,.pdt,text/plain" aria-label="Choose product file" style={{ fontSize: '0.8125rem', marginBottom: '0.75rem', display: 'block' }}
+            onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const reader = new FileReader(); reader.onload = () => setBulkContent(String(reader.result || '')); reader.readAsText(f); }} />
+          <textarea className="input" aria-label="Product file contents" rows={10} style={{ fontFamily: 'monospace', fontSize: '0.8125rem', whiteSpace: 'pre', marginBottom: '0.75rem' }}
+            placeholder={'---\nname: African Print Dress\nprice: 45000\ncategory: Dresses\nstock: 12\nfeatured: yes\ndescription: |\n  Handmade in Kampala.\n---\nname: Next product\nprice: 20000'}
+            value={bulkContent} onChange={(e) => setBulkContent(e.target.value)} />
+          {bulkError && <p style={{ color: 'var(--error)', fontSize: '0.8125rem', marginBottom: '0.75rem' }}>{bulkError}</p>}
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button className="btn btn-secondary btn-sm" disabled={!bulkContent.trim() || bulkParsing}
+              onClick={async () => {
+                setBulkParsing(true); setBulkError(null); setBulkResult(null);
+                try { const r = await api.post('/products/bulk-preview', { content: bulkContent }); setBulkPreview(r.data); }
+                catch (e: any) { setBulkError(e.message || 'Parse failed'); } finally { setBulkParsing(false); }
+              }}>{bulkParsing ? 'Checking…' : '1. Parse & Preview'}</button>
+            <button className="btn btn-primary btn-sm" disabled={!bulkPreview || bulkImporting || !bulkPreview?.data?.rows?.some((r: any) => r.errors.length === 0)}
+              onClick={async () => {
+                setBulkImporting(true); setBulkError(null);
+                try { const r = await api.post('/products/bulk-import', { content: bulkContent }); setBulkResult(r.data); await loadProducts(); }
+                catch (e: any) { setBulkError(e.message || 'Import failed'); } finally { setBulkImporting(false); }
+              }}>{bulkImporting ? 'Importing…' : '2. Import'}</button>
+          </div>
+
+          {bulkPreview && (
+            <div style={{ marginTop: '1rem' }}>
+              {bulkPreview.data.fileIssues?.length > 0 && bulkPreview.data.fileIssues.map((i: any, k: number) => (
+                <p key={k} style={{ color: 'var(--error)', fontSize: '0.8125rem' }}>{i.message}</p>
+              ))}
+              <div className="card" style={{ padding: 0, overflow: 'auto', maxHeight: 320 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+                  <thead><tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
+                    <th style={{ padding: '0.5rem 0.75rem' }}>Status</th><th style={{ padding: '0.5rem 0.75rem' }}>Name</th>
+                    <th style={{ padding: '0.5rem 0.75rem' }}>Price</th><th style={{ padding: '0.5rem 0.75rem' }}>Category</th>
+                  </tr></thead>
+                  <tbody>
+                    {bulkPreview.data.rows.map((r: any, k: number) => (
+                      <tr key={k} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '0.5rem 0.75rem' }}>{r.errors.length === 0 ? <span style={{ color: 'var(--success)' }}>✓ Ready</span> : <span style={{ color: 'var(--error)' }}>✗ {r.errors.length} error{r.errors.length !== 1 ? 's' : ''}</span>}</td>
+                        <td style={{ padding: '0.5rem 0.75rem' }}>{r.name || <em>(no name)</em>}</td>
+                        <td style={{ padding: '0.5rem 0.75rem' }}>{String(r.price)}</td>
+                        <td style={{ padding: '0.5rem 0.75rem' }}>{r.category ? `${r.category} (${r.categoryAction})` : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {bulkPreview.data.rows.some((r: any) => r.errors.length > 0) && (
+                <details style={{ marginTop: '0.5rem', fontSize: '0.8125rem' }}>
+                  <summary style={{ cursor: 'pointer', color: 'var(--error)' }}>Show error details</summary>
+                  {bulkPreview.data.rows.filter((r: any) => r.errors.length > 0).map((r: any, k: number) => (
+                    <div key={k} style={{ marginTop: '0.5rem' }}>
+                      <strong>{r.name || `Line ${r.startLine}`}</strong>
+                      {r.errors.map((e: any, j: number) => <div key={j} style={{ color: 'var(--error)' }}>Line {e.line}: {e.message}</div>)}
+                    </div>
+                  ))}
+                </details>
+              )}
+            </div>
+          )}
+
+          {bulkResult && (
+            <div className="card" style={{ marginTop: '1rem', padding: '1rem', background: 'var(--bg-secondary)' }}>
+              <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>Imported {bulkResult.data.createdCount} product{bulkResult.data.createdCount !== 1 ? 's' : ''} as draft{bulkResult.data.createdCount !== 1 ? 's' : ''}{bulkResult.data.skippedCount > 0 ? ` · skipped ${bulkResult.data.skippedCount}` : ''}</p>
+              {bulkResult.data.newCategories?.length > 0 && <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>New categories created: {bulkResult.data.newCategories.join(', ')}</p>}
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Open each product to review details and upload photos — they are not visible in your store until you publish them.</p>
+            </div>
+          )}
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
         <div style={{ position: 'relative', flex: 1 }}>

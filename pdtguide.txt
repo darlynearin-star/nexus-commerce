@@ -1,0 +1,220 @@
+========================================================================
+ LYN-NYX STORES - BULK PRODUCT FILE GUIDE (pdtguide.txt)
+ How to write a product file so your products fill themselves in
+========================================================================
+
+WHAT THIS IS
+------------
+Instead of typing every product by hand, you write ONE text file listing
+all your products, then upload it on the Products page ("Bulk upload").
+Every product becomes a DRAFT with all fields filled in. You then open
+each draft to review it and add your photos. Nothing goes live until
+YOU publish it.
+
+Use any plain-text editor: Notepad (Windows), or any notes app that can
+save a .txt file. Do NOT use Word (.docx) - it must be plain .txt.
+
+
+QUICK START - COPY THIS AND CHANGE THE VALUES
+---------------------------------------------
+---
+name: African Print Dress
+price: 45000
+category: Dresses
+stock: 12
+brand: Lyn-nyx Originals
+featured: yes
+description: |
+  Handmade African print dress.
+  Available in multiple sizes.
+---
+
+That single block creates one product. Add more blocks (each starting
+with ---) for more products.
+
+
+THE 3 SYNTAX RULES
+------------------
+1. Every product starts with a line containing only:
+   ---
+2. Every detail goes on its own line as:   field-name: value
+3. For long text (description, return policy, features, specs) put |
+   after the colon, then write freely on the following lines:
+
+     description: |
+       This is line one of my description.
+       This is line two. Blank lines are fine too.
+
+Lines starting with # are comments - ignored completely.
+Blank lines are ignored everywhere EXCEPT inside a | section.
+
+
+ALL FIELDS YOU CAN FILL
+=======================
+
+REQUIRED (every product must have these two)
+--------------------------------------------
+name      The product name. Max 200 characters.
+              name: Beaded Sandals
+price     Selling price in UGX. Must be a number above 0.
+          Commas allowed: 45,000 is read as 45000.
+              price: 45000
+
+TEXT FIELDS (optional)
+----------------------
+brand         Brand or maker name. Shown on the product page.
+                  brand: Lyn-nyx Originals
+sku           Stock keeping code. If you leave it out, one is
+              generated automatically starting with BULK-.
+                  sku: DRS-001
+description   Long product story. Use the | multiline style.
+tags          Comma-separated search words.
+                  tags: summer, dress, cotton, handmade
+seo_title     Browser-tab / Google title if you want one different
+              from the product name.
+seo_description  Short Google summary sentence.
+warranty      Warranty text, e.g. "6 months manufacturer warranty".
+return_policy Your return rules for this product. Use | for long text.
+
+NUMBERS (optional)
+------------------
+compare_at_price    The "was" price crossed out next to the real price
+                    (makes discounts visible). Number >= 0.
+                        compare_at_price: 60000
+cost_per_item       What YOU paid for it - private, never shown to
+                    buyers. Helps your profit reports.
+stock               How many you have. Whole number >= 0. Default 0.
+low_stock_threshold When stock drops to this number you get a low-stock
+                    alert. Default 10.
+
+CHECKBOXES (yes/no fields - optional)
+-------------------------------------
+Write them as yes/no (also accepted: true/false, 1/0).
+Defaults shown apply when you leave the field out.
+
+published        no    -> product saved as DRAFT (recommended). Say
+                        "yes" only if you want it live immediately -
+                        but remember photos can only be added after
+                        import, so drafts are usually better.
+featured         no    -> shows in your store's Featured section.
+new              no    -> shows in your store's New Arrivals section.
+track_inventory  yes   -> stock counts down with each order.
+allow_backorder  no    -> allow selling past zero stock.
+
+DROPDOWN (special)
+------------------
+category     Pick one of your store's categories by NAME. Matching is
+             not case-sensitive ("dresses" finds "Dresses"). If the
+             category does not exist yet it is created automatically
+             and noted after import.
+                 category: Women > Dresses
+             (Just write the category name - the ">" part is optional
+             decoration and ignored.)
+
+LISTS (multiline sections)
+--------------------------
+features   One selling point per line. Becomes the bullet list on the
+           product page.
+               features: |
+                 Hand carved wooden frame
+                 Holds up to 120kg
+specs      Specification pairs, one per line, written Label: Value.
+           Become the specification table buyers see.
+               specs: |
+                 Material: Cotton
+                 Origin: Kampala, Uganda
+
+
+FIELDS NOT AVAILABLE IN THE FILE (do these on each product afterwards)
+----------------------------------------------------------------------
+photos            Upload images on the product edit page after import.
+variants          Size/colour combinations with their own prices and
+                  stock - added on the edit page.
+attribute options Category-specific dropdowns/checkboxes (like Size or
+                  Colour pickers) - configured on the edit page.
+shipping details  Weight, shipping class, delivery estimate - sensible
+                  defaults are applied; adjust per product if needed.
+
+
+FULL WORKED EXAMPLE (3 products)
+--------------------------------
+# My June batch
+---
+name: African Print Dress
+price: 45000
+compare_at_price: 60000
+cost_per_item: 28000
+category: Dresses
+stock: 12
+low_stock_threshold: 3
+brand: Lyn-nyx Originals
+sku: DRS-001
+tags: summer, african print, dress
+featured: yes
+new: yes
+description: |
+  Handmade African print dress tailored in Kampala.
+  Light cotton fabric, perfect for warm days.
+features: |
+  100% cotton
+  Handmade in Uganda
+  Machine washable
+specs: |
+  Material: Cotton
+  Care: Machine wash cold
+---
+name: Beaded Sandals
+price: 30000
+category: Shoes
+stock: 8
+brand: Lyn-nyx Originals
+sku: SDL-014
+tags: sandals, beads, handmade
+description: |
+  Colourful beaded sandals with genuine leather sole.
+specs: |
+  Sole: Leather
+  Sizes: 36-42
+---
+name: Basket Bag
+price: 25000
+category: Bags
+stock: 15
+published: yes
+description: |
+  Woven basket bag with leather handles.
+
+
+WHAT THE ERROR MESSAGES MEAN
+----------------------------
+"name is required" ..................... A block has no name line.
+"price is required" .................... Add a price line.
+"'abc' is not a number" ................ Price/stock must be digits.
+"'maybe' is not yes/no" ................ Only yes/no/true/false/1/0.
+"Unknown field 'colour_blu'" ........... Spelling mistake - the line
+                                         was skipped, fix the spelling.
+"Not a valid line" ..................... Text outside any field - maybe
+                                         missing ": value" part.
+"No products found" .................... Remember the --- separators.
+"File contains X products - maximum
+ is 100" ............................... Split into two files.
+
+Products with errors do NOT block good ones: importing saves every
+valid product and lists the broken ones with their exact lines so you
+can fix and re-import just those.
+
+AFTER IMPORTING
+---------------
+1. Open Products - your imports are there marked Draft.
+2. Click each one, review the filled fields, change anything.
+3. Upload photos.
+4. Flip status to Published when ready.
+
+LIMITS
+------
+Maximum 100 products per file. Make a second file for more.
+
+========================================================================
+ Keep this file handy. Questions? This guide lives at /pdtguide.txt on
+ your dashboard and ships with every update.
+========================================================================
