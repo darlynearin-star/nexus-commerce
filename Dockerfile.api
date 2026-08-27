@@ -38,6 +38,11 @@ RUN npm ci
 
 COPY . .
 
+# Free-tier instances cap total RAM at 512Mi. Cap the V8 heap so `tsc`
+# workspace builds and the running API stay well under that (RSS ≈ heap +
+# ~120 Mi). Verified: all three workspaces compile at a 300 Mi heap.
+ENV NODE_OPTIONS=--max-old-space-size=300
+
 # Generate the client against the full schema, install the capture browser,
 # then build in dependency order (shared → database → api).
 RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
