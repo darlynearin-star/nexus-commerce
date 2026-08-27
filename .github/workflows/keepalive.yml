@@ -1,0 +1,21 @@
+name: keepalive
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wake-render-api:
+    name: Wake Render API
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health check
+        run: |
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            --max-time 90 https://nexus-api-69q5.onrender.com/api/health)
+          echo "HTTP $code"
+          test "$code" = "200"

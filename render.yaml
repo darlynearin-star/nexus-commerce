@@ -25,14 +25,14 @@ services:
       # --- Static config (safe to write into the file) ---
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: "4000"
       # Boot-time CREATE TABLE IF NOT EXISTS migrations (see packages/api/src/index.ts).
       - key: RUN_LEGACY_MIGRATIONS
         value: "true"
-      # Pin the primary DB (Supabase). Blank/'auto' would let db-mirror fail over.
+      # Pin the primary DB (Supabase) in manual mode: never auto-failover to the
+      # fallback URL. Auto-switching silently pointed data at Neon before (and
+      # doubles Prisma engine memory during boot, which OOMs the free tier).
       - key: DB_MANUAL_SWITCH
-        value: "false"
+        value: "true"
       - key: RETAILER_DASHBOARD_URL
         value: https://nexus-commerce-retailer-dashboard.vercel.app
       - key: STOREFRONT_URL

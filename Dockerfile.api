@@ -52,4 +52,6 @@ RUN npm run build -w packages/shared \
  && npm run build -w packages/api
 
 EXPOSE 4000
-CMD ["node", "packages/api/dist/index.js"]
+# Runtime heap is capped below the 512Mi limit (the NODE_OPTIONS=300 above
+# already covers the build steps; this CLI flag wins for the serving process).
+CMD ["node", "--max-old-space-size=256", "packages/api/dist/index.js"]
