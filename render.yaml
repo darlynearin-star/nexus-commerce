@@ -1,0 +1,91 @@
+# Render Blueprint — API web service.
+#
+# Use: connect this repo as a Blueprint (Dashboard → New+ → Blueprint → pick repo).
+# The api service is recreated from ./Dockerfile.api, which installs ffmpeg +
+# Playwright chromium so Ad Studio can actually render videos.
+#
+# Secrets use `sync: false` → Render keeps whatever is already set on the
+# service; blank ones appear in the dashboard for you to fill in.
+# If a duplicate service appears (old manual one + blueprint one), delete the
+# old one after the blueprint service is healthy.
+
+services:
+  - type: web
+    name: nexus-api
+    runtime: docker
+    dockerfilePath: Dockerfile.api
+    rootDir: .
+    region: oregon
+    plan: free
+    autoDeploy: true
+    pullRequestPreviewsEnabled: false
+    healthCheckPath: /api/health
+
+    envVars:
+      # --- Static config (safe to write into the file) ---
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4000"
+      # Boot-time CREATE TABLE IF NOT EXISTS migrations (see packages/api/src/index.ts).
+      - key: RUN_LEGACY_MIGRATIONS
+        value: "true"
+      # Pin the primary DB (Supabase). Blank/'auto' would let db-mirror fail over.
+      - key: DB_MANUAL_SWITCH
+        value: "false"
+      - key: RETAILER_DASHBOARD_URL
+        value: https://nexus-commerce-retailer-dashboard.vercel.app
+      - key: STOREFRONT_URL
+        value: https://nexus-storefront-dusky.vercel.app
+      - key: ENFORCER_INTERVAL_HOURS
+        value: "6"
+      - key: RETENTION_INTERVAL_HOURS
+        value: "24"
+      - key: BACKUP_RETENTION
+        value: "5"
+      - key: PESAPAL_BASE_URL
+        value: https://pay.pesapal.com
+      # Storage posture: 'db' = base64 in Postgres. Switch to s3 + the
+      # STORAGE_* keys below once Supabase Storage (or Cloudflare R2) is configured.
+      - key: STORAGE_PROVIDER
+        value: db
+      - key: STORAGE_REGION
+        value: auto
+
+      # --- Secrets / per-environment (preserve existing values) ---
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_FALLBACK
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: FLUTTERWAVE_SECRET_KEY
+        sync: false
+      - key: PESAPAL_IPN_URL
+        sync: false
+
+      # --- Ad Studio (ElevenLabs voiceover) ---
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_VOICE_ID
+        sync: false
+      - key: ELEVENLABS_MODEL
+        sync: false
+
+      # --- Object storage (Supabase Storage / R2), keep blank for now ---
+      - key: STORAGE_ENDPOINT
+        sync: false
+      - key: STORAGE_ACCESS_KEY_ID
+        sync: false
+      - key: STORAGE_SECRET_ACCESS_KEY
+        sync: false
+      - key: STORAGE_BUCKET
+        sync: false
+      - key: STORAGE_PUBLIC_BASE_URL
+        sync: false
+      - key: STORAGE_FORCE_PATH_STYLE
+        sync: false
