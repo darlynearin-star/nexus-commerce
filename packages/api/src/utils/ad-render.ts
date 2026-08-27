@@ -87,7 +87,7 @@ async function captureUrl(url: string, workdir: string): Promise<string | null> 
   // makes (redirects included) so a public URL cannot bounce to an internal
   // host.
   await assertPublicHttpUrl(url);
-  let pw: any = null;
+  let pw: any;
   try {
     // Lazy-require so the API still boots when Playwright isn't installed.
     // eslint-disable-next-line @typescript-eslint/no-require-imports

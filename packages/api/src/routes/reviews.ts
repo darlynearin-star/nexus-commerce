@@ -29,7 +29,7 @@ reviewsRouter.post('/', authenticate, requireFeatureEnabled('reviews'), async (r
     if (!productId) return res.status(400).json({ success: false, error: 'productId is required' });
     // L-verified: only mark as verified if the customer has a delivered order for this product
     const hasDeliveredOrder = await prisma.orderItem.findFirst({
-      where: { productId, order: { customerId: customer.id, status: 'DELIVERED' } },
+      where: { productId, order: { customerId: customer.id, status: 'COMPLETED' } },
       select: { id: true },
     });
     const review = await prisma.review.create({
