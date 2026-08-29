@@ -75,9 +75,12 @@ ordersRouter.post('/', optionalAuth, async (req: StoreRequest & AuthRequest, res
       }
     }
 
+    // Cart.customerId references the User id (see routes/cart.ts), NOT the
+    // Customer row id. Searching by customer.id here returned "Cart is empty",
+    // breaking authenticated checkout; guest carts stay keyed by session id.
     const cart = await prisma.cart.findFirst({
-      where: customerId
-        ? { customerId, storeId: req.storeId! }
+      where: req.user
+        ? { customerId: req.user.userId, storeId: req.storeId! }
         : { sessionId, storeId: req.storeId! },
       include: { items: { include: { product: true } } },
       orderBy: { updatedAt: 'desc' },

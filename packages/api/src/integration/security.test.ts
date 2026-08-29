@@ -35,6 +35,13 @@ vi.mock('@nexus/database', () => ({
   PrismaClient: class PrismaClientMock {},
 }));
 
+// Never hit the real email provider from tests: short-circuit the actual
+// network send while keeping isEmailConfigured/html builders intact.
+vi.mock('../utils/email', async () => {
+  const actual = await vi.importActual<typeof import('../utils/email')>('../utils/email');
+  return { ...actual, sendEmail: vi.fn().mockResolvedValue({ success: true, message: 'mocked send' }) };
+});
+
 import { clearUserCache } from '../middleware/auth';
 import { createApp } from '../index';
 
@@ -326,6 +333,64 @@ describe('guest checkout (TASK-044)', () => {
     expect(orderData.guestEmail).toBe('guest@example.com');
     expect(orderData.guestName).toBe('Jane Doe');
     expect(res.body.data.storePhone).toBe('0700000000');
+  });
+
+  describe('authenticated checkout keys the cart by User id (regression)', () => {
+    it('searches carts with req.user.userId but links the order to the Customer id', async () => {
+      const cart = {
+        id: 'cart_c1',
+        couponCode: null,
+        couponDiscount: 0,
+        items: [{
+          productId: 'p_1', variantId: null, quantity: 1,
+          product: { id: 'p_1', name: 'T-Shirt', sku: 'TS-1', price: 1000, storeId: 'store_1', status: 'PUBLISHED' },
+        }],
+      };
+      prismaMock.user.findUnique.mockResolvedValue({ id: 'u_cartkey', role: 'CUSTOMER', isActive: true });
+      prismaMock.customer.findUnique.mockResolvedValue({ id: 'cust_1', userId: 'u_cartkey' });
+      prismaMock.store.findUnique.mockResolvedValue(subStore);
+      prismaMock.cart.findFirst.mockResolvedValue(cart);
+      const txOrderCreate = vi.fn().mockResolvedValue({ id: 'order_c1' });
+      (prismaMock as any).$transaction = vi.fn((fn: any) =>
+        fn({
+          order: { create: txOrderCreate },
+          notification: { create: vi.fn().mockResolvedValue({}) },
+          cartItem: { deleteMany: vi.fn().mockResolvedValue({}) },
+        }),
+      );
+      (prismaMock as any).$queryRaw = vi.fn().mockResolvedValue([{ phone: '0700000000', whatsapp: '' }]);
+
+      const res = await request(app)
+        .post('/api/orders')
+        .set('x-store-slug', 'myshop')
+        .set('Authorization', `Bearer ${tokenFor({ userId: 'u_cartkey', email: 'buyer@example.com', role: 'CUSTOMER' })}`)
+        .send({});
+
+      expect(res.status).toBe(201);
+      // Cart.customerId references the User id (the id stored by /api/cart/add).
+      expect(prismaMock.cart.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ customerId: 'u_cartkey', storeId: 'store_1' }) }),
+      );
+      // The Order itself still links to the Customer row id (its FK target).
+      expect(txOrderCreate.mock.calls[0][0].data.customerId).toBe('cust_1');
+    });
+
+    it('fails closed instead of wiping an anonymous guest cart', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ id: 'u_guest2', role: 'CUSTOMER', isActive: true });
+      prismaMock.customer.findUnique.mockResolvedValue({ id: 'cust_2', userId: 'u_guest2' });
+      prismaMock.store.findUnique.mockResolvedValue(subStore);
+      prismaMock.cart.findFirst.mockResolvedValue(null);
+
+      const res = await request(app)
+        .post('/api/orders')
+        .set('x-store-slug', 'myshop')
+        .set('x-session-id', 'sess_guest')
+        .set('Authorization', `Bearer ${tokenFor({ userId: 'u_guest2', email: 'buyer2@example.com', role: 'CUSTOMER' })}`)
+        .send({});
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('Cart is empty');
+    });
   });
 
   it('guest can add to cart with only a session id', async () => {
