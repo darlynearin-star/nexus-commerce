@@ -131,8 +131,8 @@ async function runMigrations() {
     // webhook/subscription audit logs) so the 'system' userId never violates
     // the users FK. Passwordless + inactive → it can never authenticate.
     try {
-      await prisma.$executeRawUnsafe(`INSERT INTO users (id, email, "firstName", "lastName", role, "isActive", "emailVerified")
-        VALUES ('system', 'system@lynnyx.internal', 'System', 'Actor', 'CUSTOMER', false, true)
+      await prisma.$executeRawUnsafe(`INSERT INTO users (id, email, "firstName", "lastName", role, "isActive", "emailVerified", "updatedAt")
+        VALUES ('system', 'system@lynnyx.internal', 'System', 'Actor', 'CUSTOMER', false, true, now())
         ON CONFLICT (id) DO NOTHING`);
       logger.info('Migration: ensured system actor user');
     } catch (e: any) {
