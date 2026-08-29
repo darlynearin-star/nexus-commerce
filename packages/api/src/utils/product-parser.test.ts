@@ -89,6 +89,25 @@ specs: |
     expect(products[0].data.specs).toEqual(['Material: Cotton', 'Fit: Slim']);
   });
 
+  it('a | section closes when the next field is also multiline (pdtguide worked example)', () => {
+    const { products } = parseBulkProducts(`---
+name: African Print Dress
+price: 45000
+description: |
+  Handmade African print dress tailored in Kampala.
+features: |
+  100% cotton
+  Handmade in Uganda
+specs: |
+  Material: Cotton
+  Care: Machine wash cold
+`);
+    expect(products[0].errors).toHaveLength(0);
+    expect(products[0].data.description).toBe('Handmade African print dress tailored in Kampala.');
+    expect(products[0].data.features).toBe('100% cotton\nHandmade in Uganda');
+    expect(products[0].data.specs).toEqual(['Material: Cotton', 'Care: Machine wash cold']);
+  });
+
   it('categoryLeaf keeps only the segment after the last >', () => {
     expect(categoryLeaf('Dresses')).toBe('Dresses');
     expect(categoryLeaf('Women > Dresses')).toBe('Dresses');

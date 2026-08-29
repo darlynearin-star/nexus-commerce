@@ -165,4 +165,133 @@ describe('bulk product upload', () => {
       .send({ content: GOOD_FILE });
     expect(res.status).toBe(403);
   });
+
+  it('rejects unauthenticated preview and import', async () => {
+    const preview = await request(app).post('/api/products/bulk-preview').set('x-store-slug', 'adorn').send({ content: GOOD_FILE });
+    const importRes = await request(app).post('/api/products/bulk-import').set('x-store-slug', 'adorn').send({ content: GOOD_FILE });
+    expect(preview.status).toBe(401);
+    expect(importRes.status).toBe(401);
+  });
+
+  it('treats category paths like "Women > Dresses" as their leaf (existing)', async () => {
+    prismaMock.category.findMany.mockResolvedValue([{ id: 'cat_D', name: 'Dresses', slug: 'dresses' }]);
+    prismaMock.product.create.mockImplementation(async ({ data }: any) => ({ id: `p-${data.name}`, ...data }));
+
+    const path = '---\nname: Print Dress\nprice: 45000\ncategory: Women > Dresses\n';
+    const preview = await request(app)
+      .post('/api/products/bulk-preview')
+      .set('Authorization', `Bearer ${retailerToken()}`)
+      .set('x-store-slug', 'adorn')
+      .send({ content: path });
+    const row = preview.body.data.rows[0];
+    expect(row.category).toBe('Women > Dresses');
+    expect(row.categoryAction).toBe('existing');
+
+    const res = await request(app)
+      .post('/api/products/bulk-import')
+      .set('Authorization', `Bearer ${retailerToken()}`)
+      .set('x-store-slug', 'adorn')
+      .send({ content: path });
+    expect(res.status).toBe(200);
+    expect(prismaMock.category.create).not.toHaveBeenCalled();
+    expect(prismaMock.product.create.mock.calls[0][0].data.categoryId).toBe('cat_D');
+  });
+
+  it('auto-created categories use the leaf name, not the full path', async () => {
+    prismaMock.category.findMany.mockResolvedValue([]);
+    prismaMock.category.create.mockResolvedValue({ id: 'cat_NEW', name: 'Dresses', slug: 'dresses-ab12' });
+    prismaMock.product.create.mockImplementation(async ({ data }: any) => ({ id: `p-${data.name}`, ...data }));
+
+    const res = await request(app)
+      .post('/api/products/bulk-import')
+      .set('Authorization', `Bearer ${retailerToken()}`)
+      .set('x-store-slug', 'adorn')
+      .send({ content: '---\nname: Print Dress\nprice: 45000\ncategory: Women > Dresses\n' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.newCategories).toEqual(['Dresses']);
+    const catCreate = prismaMock.category.create.mock.calls[0][0].data;
+    expect(catCreate.name).toBe('Dresses');
+    expect(catCreate.storeId).toBe('store_1');
+    expect(prismaMock.product.create.mock.calls[0][0].data.categoryId).toBe('cat_NEW');
+  });
+
+  it('maps every supported field through to the product row', async () => {
+    prismaMock.category.findMany.mockResolvedValue([]);
+    prismaMock.category.create.mockResolvedValue({ id: 'c1', name: 'Trousers', slug: 'trousers-a1b2' });
+    prismaMock.product.create.mockImplementation(async ({ data }: any) => ({ id: `p-${data.name}`, ...data }));
+
+    const rich = `--- 
+name: Cotton Trousers
+price: 45,000
+compare_at_price: 60000
+cost_per_item: 28000
+stock: 12
+low_stock_threshold: 3
+brand: Adorn
+sku: TRS-001
+tags: cotton, trousers, casual
+track_inventory: no
+allow_backorder: yes
+warranty: 6 months
+seo_title: Best Trousers
+seo_description: Casual cotton trousers
+category: Men > Trousers
+description: |
+  Line one.
+
+  Line three.
+features: |
+  Cotton
+  Breathable
+specs: |
+  Material: Cotton
+  Fit: Slim
+`;
+    const res = await request(app)
+      .post('/api/products/bulk-import')
+      .set('Authorization', `Bearer ${retailerToken()}`)
+      .set('x-store-slug', 'adorn')
+      .send({ content: rich });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.createdCount).toBe(1);
+    const d = prismaMock.product.create.mock.calls[0][0].data;
+    expect(d.price).toBe(45000);             // comma stripped
+    expect(d.compareAtPrice).toBe(60000);
+    expect(d.costPerItem).toBe(28000);
+    expect(d.stock).toBe(12);
+    expect(d.lowStockThreshold).toBe(3);
+    expect(d.brand).toBe('Adorn');
+    expect(d.sku).toBe('TRS-001');
+    expect(d.tags).toEqual(['cotton', 'trousers', 'casual']);
+    expect(d.trackInventory).toBe(false);
+    expect(d.allowBackorder).toBe(true);
+    expect(d.warranty).toBe('6 months');
+    expect(d.seoTitle).toBe('Best Trousers');
+    expect(d.seoDescription).toBe('Casual cotton trousers');
+    expect(d.description).toBe('Line one.\n\nLine three.');
+    expect(d.features).toEqual(['Cotton', 'Breathable']);
+    expect(d.specifications).toEqual({ Material: 'Cotton', Fit: 'Slim' });
+    expect(d.categoryId).toBe('c1');
+  });
+
+  it('rejects files over the 100-product cap at the route', async () => {
+    const over = Array.from({ length: 101 }, (_, i) => `---\nname: P${i}\nprice: ${i + 1}`).join('\n');
+    const preview = await request(app)
+      .post('/api/products/bulk-preview')
+      .set('Authorization', `Bearer ${retailerToken()}`)
+      .set('x-store-slug', 'adorn')
+      .send({ content: over });
+    // Preview is non-fatal by design: it surfaces issues so the merchant can fix them.
+    expect(preview.status).toBe(200);
+    expect(preview.body.data.fileIssues.some((i: any) => /maximum is/.test(i.message))).toBe(true);
+
+    const importRes = await request(app)
+      .post('/api/products/bulk-import')
+      .set('Authorization', `Bearer ${retailerToken()}`)
+      .set('x-store-slug', 'adorn')
+      .send({ content: over });
+    expect(importRes.status).toBe(400);
+  });
 });

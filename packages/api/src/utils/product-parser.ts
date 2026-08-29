@@ -129,8 +129,10 @@ if (multilineField === 'specs') {
         endBlock();
         return;
       }
-      const keyMatch = trimmed.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.*)$/);
-if (keyMatch && SINGLE_FIELDS.has(keyMatch[1].toLowerCase())) {
+const keyMatch = trimmed.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.*)$/);
+      // Close on the next recognized field whether it is single-line or itself
+      // multiline (a "features:" after "description: |" must not be swallowed).
+      if (keyMatch && (SINGLE_FIELDS.has(keyMatch[1].toLowerCase()) || MULTILINE_FIELDS.has(keyMatch[1].toLowerCase()))) {
         closeMultiline();
         // fall through to normal key handling below via recursion-free path
       } else {
