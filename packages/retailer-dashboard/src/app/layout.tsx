@@ -6,7 +6,7 @@ import { AuthGuard } from '@/lib/auth-guard';
 import { SubscriptionGuard } from '@/lib/subscription-guard';
 import ErrorBoundary from '@/lib/error-boundary';
 import { useDismiss } from '@/lib/use-dismiss';
-import { LayoutDashboard, Package, ShoppingCart, Users, BarChart3, Settings, Image, Megaphone, LogOut, Menu, X, Store, CreditCard, Eye, ExternalLink, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Users, BarChart3, Settings, Image, Megaphone, LogOut, Menu, X, Store, CreditCard, Eye, ExternalLink, BookOpen, Star } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -25,6 +25,7 @@ function Sidebar({ children }: { children: React.ReactNode }) {
     { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
     { href: '/products', label: 'Product View', icon: <Package size={18} /> },
     { href: '/orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
+    { href: '/reviews', label: 'Reviews', icon: <Star size={18} /> },
     { href: '/customers', label: 'Customers', icon: <Users size={18} /> },
     { href: '/marketing', label: 'Marketing', icon: <Megaphone size={18} /> },
     { href: '/products/new', label: 'Product Creation', icon: <Package size={18} /> },
