@@ -9,7 +9,7 @@ import { StoreRequest, requireStore, requireStoreOwner } from '../middleware/res
 import { validate } from '../middleware/validate';
 import { createProductSchema, updateProductSchema, createVariantSchema, updateVariantSchema, bulkVariantsSchema } from '../validation/product';
 import { cacheGet, cacheSet, cacheInvalidateStore } from '../utils/cache';
-import { parseBulkProducts, type ParsedProduct } from '../utils/product-parser';
+import { parseBulkProducts, categoryLeaf, type ParsedProduct } from '../utils/product-parser';
 
 const BOOLEAN_TRUE = new Set(['yes', 'y', 'true', '1']);
 
@@ -381,7 +381,7 @@ function slugifyName(name: string): string {
 }
 
 async function resolveOrCreateCategory(storeId: string, raw: string, storeSlugForCache: string, created: Set<string>): Promise<string | null> {
-  const wanted = raw.trim();
+  const wanted = categoryLeaf(raw);
   if (!wanted) return null;
   const cats = await prisma.category.findMany({ where: { storeId }, select: { id: true, name: true, slug: true } });
   const hit = cats.find((c) => c.name.toLowerCase() === wanted.toLowerCase() || c.slug === slugifyName(wanted));
@@ -436,9 +436,10 @@ productsRouter.post('/bulk-preview', authenticate, requireStoreOwner, requirePer
     const cats = await prisma.category.findMany({ where: { storeId: req.storeId! }, select: { id: true, name: true, slug: true } });
     const rows = products.map((p) => {
       const catRaw = String(p.data.category ?? '').trim();
+      const catLeaf = categoryLeaf(catRaw);
       let categoryAction = 'uncategorised';
-      if (catRaw) {
-        categoryAction = cats.some((c) => c.name.toLowerCase() === catRaw.toLowerCase() || c.slug === slugifyName(catRaw))
+      if (catLeaf) {
+        categoryAction = cats.some((c) => c.name.toLowerCase() === catLeaf.toLowerCase() || c.slug === slugifyName(catLeaf))
           ? 'existing'
           : 'will create';
       }

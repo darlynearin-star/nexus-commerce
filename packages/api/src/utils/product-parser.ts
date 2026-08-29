@@ -25,6 +25,16 @@ export interface ParsedProduct {
 
 export const MAX_PRODUCTS_PER_FILE = 100;
 
+// Categories may be written as bare names or decorated paths ("Women > Dresses"
+// per pdtguide). Only the segment after the last ">" is the real category name;
+// the path is decoration and ignored.
+export function categoryLeaf(raw: string): string {
+  const trimmed = String(raw ?? '').trim();
+  if (!trimmed) return '';
+  const parts = trimmed.split('>');
+  return parts[parts.length - 1].trim();
+}
+
 const BOOLEAN_TRUE = new Set(['yes', 'y', 'true', '1']);
 const BOOLEAN_FALSE = new Set(['no', 'n', 'false', '0']);
 
@@ -88,8 +98,15 @@ export function parseBulkProducts(content: string): { products: ParsedProduct[];
       multilineBuffer = [];
       return;
     }
-    if (multilineField === 'specs') current.data.specs = multilineBuffer;
-    else current.data[multilineField] = multilineBuffer.join('\n');
+if (multilineField === 'specs') {
+      // specs become an array of raw lines; blank spacer lines are dropped so a
+      // stray blank cannot fail the "Label: Value" validation.
+      current.data.specs = multilineBuffer.filter((l) => l.trim() !== '');
+    } else {
+      // Description/features/return_policy keep interior blank lines but lose
+      // any that trail before the next field or block separator.
+      current.data[multilineField] = multilineBuffer.join('\n').replace(/\n+$/, '');
+    }
     multilineField = null;
     multilineBuffer = [];
   };
@@ -113,11 +130,13 @@ export function parseBulkProducts(content: string): { products: ParsedProduct[];
         return;
       }
       const keyMatch = trimmed.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.*)$/);
-      if (keyMatch && SINGLE_FIELDS.has(keyMatch[1].toLowerCase())) {
+if (keyMatch && SINGLE_FIELDS.has(keyMatch[1].toLowerCase())) {
         closeMultiline();
         // fall through to normal key handling below via recursion-free path
       } else {
-        if (trimmed) multilineBuffer.push(line.replace(/^\s+/, ''));
+        // Blank lines inside a | section are meaningful spacing (pdtguide):
+        // keep them. Only tabs are normalised to spaces.
+        multilineBuffer.push(trimmed ? line.replace(/^\s+/, '') : '');
         return;
       }
     }

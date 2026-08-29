@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseBulkProducts, MAX_PRODUCTS_PER_FILE } from './product-parser';
+import { parseBulkProducts, categoryLeaf, MAX_PRODUCTS_PER_FILE } from './product-parser';
 
 describe('bulk product file parser', () => {
   it('parses a basic block with all single-line fields', () => {
@@ -47,7 +47,54 @@ features: |
   Holds up to 120kg
 `);
     expect(products[0].errors).toHaveLength(0);
-    expect(products[0].data.features).toBe('Wooden frame\nHand carved\nHolds up to 120kg');
+    expect(products[0].data.features).toBe('Wooden frame\nHand carved\n\nHolds up to 120kg');
+  });
+
+  it('preserves interior blank lines inside a | section (pdtguide)', () => {
+    const { products } = parseBulkProducts(`---
+name: Dress
+price: 1000
+description: |
+  Line one.
+
+  Line three after a blank.
+
+  End after an empty spacer.
+`);
+    expect(products[0].errors).toHaveLength(0);
+    expect(products[0].data.description).toBe('Line one.\n\nLine three after a blank.\n\nEnd after an empty spacer.');
+  });
+
+  it('trailing blank lines are trimmed from a | section', () => {
+    const { products } = parseBulkProducts(`---
+name: Dress
+price: 1000
+description: |
+  Text.
+
+`);
+    expect(products[0].data.description).toBe('Text.');
+  });
+
+  it('blank spacer lines inside specs do not fail Label: Value validation', () => {
+    const { products } = parseBulkProducts(`---
+name: Shirt
+price: 9000
+specs: |
+  Material: Cotton
+
+  Fit: Slim
+`);
+    expect(products[0].errors).toHaveLength(0);
+    expect(products[0].data.specs).toEqual(['Material: Cotton', 'Fit: Slim']);
+  });
+
+  it('categoryLeaf keeps only the segment after the last >', () => {
+    expect(categoryLeaf('Dresses')).toBe('Dresses');
+    expect(categoryLeaf('Women > Dresses')).toBe('Dresses');
+    expect(categoryLeaf('  Men > Clothing > Trousers  ')).toBe('Trousers');
+    expect(categoryLeaf('Women >')).toBe('');
+    expect(categoryLeaf('')).toBe('');
   });
 
   it('validates specs lines need Label: Value format', () => {
