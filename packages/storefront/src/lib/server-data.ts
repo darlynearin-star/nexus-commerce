@@ -2,6 +2,23 @@ const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'https
 
 export const REVALIDATE_SECONDS = 60;
 
+// Render's free tier can be slow / occasionally hang on cold starts or during
+// upstream DB (Supabase pooler) flakiness. Without an abort timeout the SSR
+// page blocks on `load` until the upstream finally responds — which can stall
+// past a browser's timeout even though the client has a graceful fallback.
+// We cap each server-side call so a hung request fails fast and returns null,
+// letting the page render immediately and hydrate from the client instead.
+const SERVER_API_TIMEOUT_MS = 8000;
+
+const timeoutSignal = (ms: number) => {
+  if (typeof AbortSignal.timeout === 'function') {
+    return AbortSignal.timeout(ms);
+  }
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), ms);
+  return controller.signal;
+};
+
 async function serverApi<T = any>(endpoint: string, storeSlug?: string, init: RequestInit = {}): Promise<T | null> {
   try {
     const headers: Record<string, string> = {
@@ -11,6 +28,7 @@ async function serverApi<T = any>(endpoint: string, storeSlug?: string, init: Re
     const res = await fetch(`${API_URL}${endpoint}`, {
       ...init,
       headers,
+      signal: timeoutSignal(SERVER_API_TIMEOUT_MS),
       next: { revalidate: REVALIDATE_SECONDS },
     });
     if (!res.ok) return null;
