@@ -271,7 +271,7 @@ export default function EditProductPage() {
           <div className="card" style={{ padding: '1.25rem 1.5rem' }}>
             <h3 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Share Link</h3>
             <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-              Share this link anywhere — WhatsApp, SMS, social media — and it sends customers straight to this product.
+              Share this link anywhere (WhatsApp, SMS, social media) and it sends customers straight to this product.
             </p>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               <input
@@ -325,7 +325,7 @@ export default function EditProductPage() {
                 <input id="productBrand" className="input" value={form.brand} onChange={e => update('brand', e.target.value)} />
               </div>
               <div>
-                <label htmlFor="productSku" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>SKU *<FieldInfo text="Stock Keeping Unit — your unique code to track this product in inventory." /></label>
+                <label htmlFor="productSku" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>SKU *<FieldInfo text="Stock Keeping Unit. Your unique code to track this product in inventory." /></label>
                 <input id="productSku" className="input" value={form.sku} onChange={e => update('sku', e.target.value)} />
               </div>
             </div>

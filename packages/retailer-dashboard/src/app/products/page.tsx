@@ -89,7 +89,7 @@ export default function ProductsPage() {
             <a href="/pdtguide.txt" target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ fontSize: '0.8125rem' }}>View the file guide</a>
           </div>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
-            Paste your product file contents or choose a .txt file. Nothing is saved until you press Import — imported products land as drafts you can edit and add photos to.
+            Paste your product file contents or choose a .txt file. Nothing is saved until you press Import. Imported products land as drafts you can edit and add photos to.
           </p>
           <input type="file" accept=".txt,.pdt,text/plain" aria-label="Choose product file" style={{ fontSize: '0.8125rem', marginBottom: '0.75rem', display: 'block' }}
             onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const reader = new FileReader(); reader.onload = () => setBulkContent(String(reader.result || '')); reader.readAsText(f); }} />
@@ -153,7 +153,7 @@ export default function ProductsPage() {
             <div className="card" style={{ marginTop: '1rem', padding: '1rem', background: 'var(--bg-secondary)' }}>
               <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>Imported {bulkResult.data.createdCount} product{bulkResult.data.createdCount !== 1 ? 's' : ''} as draft{bulkResult.data.createdCount !== 1 ? 's' : ''}{bulkResult.data.skippedCount > 0 ? ` · skipped ${bulkResult.data.skippedCount}` : ''}</p>
               {bulkResult.data.newCategories?.length > 0 && <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>New categories created: {bulkResult.data.newCategories.join(', ')}</p>}
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Open each product to review details and upload photos — they are not visible in your store until you publish them.</p>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Open each product to review details and upload photos. They are not visible in your store until you publish them.</p>
             </div>
           )}
         </div>

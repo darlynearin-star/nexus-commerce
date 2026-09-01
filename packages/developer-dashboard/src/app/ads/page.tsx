@@ -47,7 +47,7 @@ export default function AdStudioPage() {
       else {
         for (const templateId of ids) await api.post('/ads', { sourceUrl: url, templateId, format });
       }
-      setMsg(`Queued ${ids.length} video(s) — they will render in the background.`);
+      setMsg(`Queued ${ids.length} video(s). They will render in the background.`);
       setSelected(new Set());
       load();
     } catch (e: any) { setMsg(e?.message || 'Failed to queue'); }
@@ -72,7 +72,7 @@ export default function AdStudioPage() {
   return (
     <div style={{ padding: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div><h1 style={{ fontSize: '1.5rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Film size={22} /> Ad Studio</h1><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Paste any store/product URL and it renders tutorial-style ad videos — one per template.</p></div>
+        <div><h1 style={{ fontSize: '1.5rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Film size={22} /> Ad Studio</h1><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Paste any store/product URL and it renders tutorial-style ad videos, one per template.</p></div>
         <div style={{ textAlign: 'right' }}>
           <p style={{ fontSize: '0.75rem', fontWeight: 600, color: caps ? (caps.ready ? '#4ade80' : '#f87171') : 'var(--text-secondary)', marginBottom: '0.375rem' }}>{caps ? (caps.ready ? 'Ready to render' : 'Incomplete setup') : 'Checking engine…'}</p>
           {caps && <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -106,7 +106,7 @@ export default function AdStudioPage() {
       </div>
 
       <div className="card" style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
-        <p style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.75rem' }}>Templates — each one becomes a separate video</p>
+        <p style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.75rem' }}>Templates, each one becomes a separate video</p>
         <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>Every template is a short storyboard (3–4 beats, 13–14s) with brass captions and your paste-URL screenshot in the middle. Voiceover is from your ElevenLabs key.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem' }}>
           {templates.map(t => (

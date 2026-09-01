@@ -70,7 +70,7 @@ export default function DatabasePage() {
           </div>
           {source === 'fallback' && (
             <p style={{ marginTop: '0.5rem', fontSize: '0.8125rem', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              <AlertTriangle size={14} /> Primary database unreachable — running on fallback
+              <AlertTriangle size={14} /> Primary database unreachable. Running on fallback
             </p>
           )}
         </div>

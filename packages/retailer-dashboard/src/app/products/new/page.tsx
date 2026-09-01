@@ -113,7 +113,7 @@ export default function NewProductPage() {
       const cats: any[] = catsRes.data || [];
       const catId = form.categoryId || (cats.find((c: any) => !c.parentId)?.id) || cats[0]?.id;
       if (!catId) {
-        setTestResult({ ok: false, message: `${expiryNote}Session OK, but no category exists yet — create a category first, then re-test.` });
+        setTestResult({ ok: false, message: `${expiryNote}Session OK, but no category exists yet. Create a category first, then re-test.` });
         return;
       }
 
@@ -139,7 +139,7 @@ export default function NewProductPage() {
       setTestResult({ ok: true, message: `${expiryNote}Product creation service is WORKING. Created and deleted a test product successfully. Store "${store?.name || store?.slug || 'your store'}" resolved. You can safely create a product (a draft is also auto-saved).` });
     } catch (e: any) {
       if (createdId) { try { await api.delete(`/products/${createdId}`); } catch {} }
-      setTestResult({ ok: false, message: `Product creation service FAILED: ${e?.message || 'Unknown error'}${e?.message?.toLowerCase().includes('token') ? ' — your session expired. Your draft is auto-saved; reload the page and restore it, or log out and log back in.' : ''}` });
+      setTestResult({ ok: false, message: `Product creation service FAILED: ${e?.message || 'Unknown error'}${e?.message?.toLowerCase().includes('token') ? '. Your session expired. Your draft is auto-saved; reload the page and restore it, or log out and log back in.' : ''}` });
     } finally {
       setTesting(false);
     }
@@ -430,7 +430,7 @@ export default function NewProductPage() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div>
-                <label htmlFor="productSku" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>SKU *<FieldInfo text="Stock Keeping Unit — your unique code to track this product in inventory." /></label>
+                <label htmlFor="productSku" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>SKU *<FieldInfo text="Stock Keeping Unit. Your unique code to track this product in inventory." /></label>
                 <input id="productSku" className="input" value={form.sku} onChange={e => update('sku', e.target.value)} placeholder="e.g., AD-JW-001" />
               </div>
               <div>
@@ -443,7 +443,7 @@ export default function NewProductPage() {
               </div>
             </div>
             <div>
-              <label htmlFor="productDescription" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Description<FieldInfo text="A detailed description of your product. Include materials, sizing, features — anything a customer should know before buying." /></label>
+              <label htmlFor="productDescription" style={{ fontSize: '0.8125rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem' }}>Description<FieldInfo text="A detailed description of your product. Include materials, sizing, features, and anything a customer should know before buying." /></label>
               <textarea id="productDescription" className="input" rows={4} value={form.description} onChange={e => update('description', e.target.value)} placeholder="Product description..." style={{ resize: 'vertical' }} />
             </div>
           </div>

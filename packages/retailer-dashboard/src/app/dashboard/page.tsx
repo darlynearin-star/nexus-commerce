@@ -70,7 +70,7 @@ function DashboardContent() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', borderRadius: '0.75rem', marginBottom: '1.5rem', background: store.isActive ? 'var(--bg-secondary)' : '#2e0505', border: `1px solid ${store.isActive ? 'var(--border)' : '#f87171'}` }}>
           {store.isActive ? <CheckCircle size={20} style={{ color: 'var(--success)' }} /> : <AlertTriangle size={20} style={{ color: '#f87171' }} />}
           <div style={{ flex: 1 }}>
-            <p style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{store.name} — <span style={{ color: store.isActive ? 'var(--success)' : '#f87171' }}>{store.isActive ? 'Active' : 'Paused'}</span></p>
+            <p style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{store.name} <span style={{ color: store.isActive ? 'var(--success)' : '#f87171' }}>({store.isActive ? 'Active' : 'Paused'})</span></p>
             <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{store.isActive ? 'Your store is live and accepting orders.' : 'Your store is paused. Customers cannot see it or place orders.'}</p>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>

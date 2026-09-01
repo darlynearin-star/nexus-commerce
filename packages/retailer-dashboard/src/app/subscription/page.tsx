@@ -156,7 +156,7 @@ export default function SubscriptionPage() {
               <label htmlFor="payerNote" style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>After paying, enter the transaction ID or the number you paid from</label>
               <input id="payerNote" className="input" value={payerNote} onChange={e => setPayerNote(e.target.value)} placeholder="e.g. 8XK2G1M4TQ or 25677XXXXXX" />
               <button className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%' }} onClick={reportPaid} disabled={reporting || !payerNote.trim()}>
-                {reporting ? 'Submitting...' : 'I have paid — notify the owner'}
+                {reporting ? 'Submitting...' : 'I have paid, notify the owner'}
               </button>
             </div>
           </div>

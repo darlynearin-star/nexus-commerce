@@ -16,13 +16,11 @@ export default function MarketingPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {coupons.map(c => <div key={c.id} style={{ padding: '0.75rem', background: 'var(--bg)', borderRadius: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div><p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{c.code}</p><p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{c.description}</p></div>
-                <div style={{ textAlign: 'right' }}><p style={{ fontWeight: 600, color: 'var(--primary)' }}>{c.discountType === 'PERCENTAGE' ? `${c.discountValue}%` : `UGX ${c.discountValue.toLocaleString()}`}</p><span className={`badge ${c.isActive ? 'badge-success' : 'badge-error'}`}>{c.isActive ? 'Active' : 'Inactive'}</span></div>
+                <div style={{ textAlign: 'right' }}><p style={{ fontWeight: 600, color: 'var(--primary)' }}>{c.discountType === 'PERCENTAGE' ? `${c.discountValue}%` : `UGX ${c.discountValue.toLocaleString()}`}</p>                <span className={`badge ${c.isActive ? 'badge-success' : 'badge-error'}`}>{c.isActive ? 'Active' : 'Inactive'}</span></div>
               </div>)}
             </div>
           )}
         </div>
-        <div className="card"><h3 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Email Campaigns</h3><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Send promotional emails to your customers. <em>Coming soon.</em></p></div>
-        <div className="card"><h3 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Abandoned Cart Recovery</h3><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Automatically follow up with customers who left items in their cart. <em>Coming soon.</em></p></div>
       </div>
     </div>
   );

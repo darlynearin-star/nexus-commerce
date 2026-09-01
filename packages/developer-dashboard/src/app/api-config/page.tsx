@@ -27,7 +27,7 @@ const INTEGRATIONS: IntegrationService[] = [
     category: 'Content & Voice', icon: <Megaphone size={18} />,
     services: [
       { name: 'ElevenLabs (Ad Studio voiceover)', keys: [{ key: 'ELEVENLABS_API_KEY', label: 'API Key', type: 'password' }, { key: 'ELEVENLABS_VOICE_ID', label: 'Voice ID (default Rachel)', type: 'text' }, { key: 'ELEVENLABS_MODEL', label: 'Model (default eleven_multilingual_v2)', type: 'text' }] },
-      { name: 'Storage (R2 / S3 — Ad Studio videos)', icon: <HardDrive size={14} />, keys: [{ key: 'STORAGE_PROVIDER', label: 'Provider (s3 or db)', type: 'text' }, { key: 'STORAGE_ENDPOINT', label: 'S3 Endpoint (e.g. R2)', type: 'text' }, { key: 'STORAGE_BUCKET', label: 'Bucket', type: 'text' }, { key: 'STORAGE_REGION', label: 'Region (auto for R2)', type: 'text' }, { key: 'STORAGE_ACCESS_KEY_ID', label: 'Access Key ID', type: 'password' }, { key: 'STORAGE_SECRET_ACCESS_KEY', label: 'Secret Access Key', type: 'password' }, { key: 'STORAGE_PUBLIC_BASE_URL', label: 'Public Base URL (serving)', type: 'text' }] },
+      { name: 'Storage (R2 / S3 for Ad Studio videos)', icon: <HardDrive size={14} />, keys: [{ key: 'STORAGE_PROVIDER', label: 'Provider (s3 or db)', type: 'text' }, { key: 'STORAGE_ENDPOINT', label: 'S3 Endpoint (e.g. R2)', type: 'text' }, { key: 'STORAGE_BUCKET', label: 'Bucket', type: 'text' }, { key: 'STORAGE_REGION', label: 'Region (auto for R2)', type: 'text' }, { key: 'STORAGE_ACCESS_KEY_ID', label: 'Access Key ID', type: 'password' }, { key: 'STORAGE_SECRET_ACCESS_KEY', label: 'Secret Access Key', type: 'password' }, { key: 'STORAGE_PUBLIC_BASE_URL', label: 'Public Base URL (serving)', type: 'text' }] },
     ],
   },
   {

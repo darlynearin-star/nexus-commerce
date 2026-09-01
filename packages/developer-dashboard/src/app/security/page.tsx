@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { Shield, Key, Eye, Ban } from 'lucide-react';
+import { Shield, Key, Eye } from 'lucide-react';
 
 export default function SecurityPage() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -26,10 +26,6 @@ export default function SecurityPage() {
         <div className="card"><div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}><Eye size={20} color="var(--primary)" /><h3 style={{ fontWeight: 600 }}>Audit Logging</h3></div>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>All important actions logged</p>
           <span className="badge badge-success">Active</span>
-        </div>
-        <div className="card"><div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}><Ban size={20} color="var(--primary)" /><h3 style={{ fontWeight: 600 }}>IP Whitelist</h3></div>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Coming soon</p>
-          <span className="badge badge-warning">Planned</span>
         </div>
       </div>
       <div className="card" style={{ marginTop: '1.5rem' }}>

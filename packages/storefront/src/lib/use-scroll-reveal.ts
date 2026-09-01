@@ -16,7 +16,8 @@ export function useScrollReveal() {
         for (const entry of entries) {
           if (entry.isIntersecting) {
             entry.target.classList.add('revealed');
-            observer.unobserve(entry.target);
+          } else {
+            entry.target.classList.remove('revealed');
           }
         }
       },

@@ -47,7 +47,7 @@ export default function ProductsPage() {
           <h1 style={{ fontSize: '1.5rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Package size={22} /> Products
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{products.length} products — stats include all time</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{products.length} products. Stats include all time</p>
         </div>
       </div>
 
@@ -81,7 +81,7 @@ export default function ProductsPage() {
                   <td>
                     <div>
                       <p style={{ fontWeight: 500, fontSize: '0.875rem' }}>{p.name}</p>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{p.sku} {p.brand ? `— ${p.brand}` : ''} {p.category ? `— ${p.category}` : ''}</p>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{p.sku} {p.brand ? `· ${p.brand}` : ''} {p.category ? `· ${p.category}` : ''}</p>
                     </div>
                   </td>
                   <td style={{ fontWeight: 600 }}>UGX {p.price.toLocaleString()}</td>

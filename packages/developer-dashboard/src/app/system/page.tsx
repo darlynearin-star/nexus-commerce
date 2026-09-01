@@ -32,7 +32,7 @@ export default function SystemHealthPage() {
           <RefreshCw size={14} style={loading ? { animation: 'spin 0.8s linear infinite' } : {}} /> {loading ? 'Refreshing...' : 'Refresh'}
         </button>
       </div>
-      <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>Platform monitoring — click Refresh to check status</p>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>Platform monitoring. Click Refresh to check status</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
         {metrics.map((m, i) => (
           <div key={i} className="card">
@@ -57,7 +57,7 @@ export default function SystemHealthPage() {
         </div>
         {health?.database?.source === 'fallback' && (
           <p style={{ marginTop: '0.75rem', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', background: '#2e0505', color: '#f87171', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <AlertTriangle size={14} /> PRIMARY DATABASE UNREACHABLE — running on the fallback database
+            <AlertTriangle size={14} /> PRIMARY DATABASE UNREACHABLE. Running on the fallback database
           </p>
         )}
       </div>

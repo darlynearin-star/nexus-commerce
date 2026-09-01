@@ -10,7 +10,7 @@ const guides = [
     steps: [
       'Sign in and land on your Dashboard for an overview of sales, orders, and stock.',
       'Use the "View Store" button in the sidebar to open your live storefront.',
-      'Keep an eye on the Subscription page — your store must be active to be visible.',
+      'Keep an eye on the Subscription page. Your store must be active to be visible.',
     ],
     tip: 'Your dashboard is your control room. Explore each section in the left sidebar.',
   },
@@ -19,10 +19,10 @@ const guides = [
     title: 'Adding & managing products',
     steps: [
       'Go to Product View to see everything you sell.',
-      'Click Product Creation to add a new item — upload a photo, set a UGX price, pick a category, and set stock.',
+      'Click Product Creation to add a new item. Upload a photo, set a UGX price, pick a category, and set stock.',
       'Edit any product later from Product View using the edit button.',
     ],
-    tip: 'Add clear photos and descriptive names — they sell better and are easier for customers to find.',
+    tip: 'Add clear photos and descriptive names. They sell better and are easier for customers to find.',
   },
   {
     icon: <ShoppingCart size={20} />,
@@ -42,7 +42,7 @@ const guides = [
       'Use customer details to reach out about restocks, offers, or order updates.',
       'Build repeat business by following up after delivery.',
     ],
-    tip: 'Happy customers come back — and they bring friends.',
+    tip: 'Happy customers come back, and they bring friends.',
   },
   {
     icon: <Megaphone size={20} />,
@@ -52,7 +52,7 @@ const guides = [
       'Share your store link on WhatsApp, Facebook, and other channels.',
       'Point customers to your Categories and specific product pages.',
     ],
-    tip: 'Your store link is in the sidebar — "View Store". Share it everywhere.',
+    tip: 'Your store link is in the sidebar, labelled "View Store". Share it everywhere.',
   },
   {
     icon: <CreditCard size={20} />,
@@ -60,9 +60,9 @@ const guides = [
     steps: [
       'Go to the Subscription page to see your trial status and plan.',
       'After your trial, pay the weekly fee (3,000 UGX) using MTN MoMo or Airtel Money.',
-      'The payment opens a secure checkout — confirm it on your phone to keep your store live.',
+      'The payment opens a secure checkout. Confirm it on your phone to keep your store live.',
     ],
-    tip: 'Set a reminder to renew — your store goes hidden when the subscription lapses.',
+    tip: 'Set a reminder to renew, since your store goes hidden when the subscription lapses.',
   },
   {
     icon: <Settings size={20} />,
@@ -82,7 +82,7 @@ const guides = [
       'Email support with details at lyn.nyx.store@gmail.com.',
       'Keep your store link handy so we can help faster.',
     ],
-    tip: 'Mention what you were doing when the problem happened — it speeds up the fix.',
+    tip: 'Mention what you were doing when the problem happened. It speeds up the fix.',
   },
 ];
 

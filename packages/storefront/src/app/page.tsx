@@ -257,7 +257,7 @@ function MarketingGuest() {
   useEffect(() => {
     const pills = document.querySelectorAll('.trust-pill');
     const obs = new IntersectionObserver(
-      (entries) => { for (const e of entries) if (e.isIntersecting) e.target.classList.add('revealed'); },
+      (entries) => { for (const e of entries) { if (e.isIntersecting) e.target.classList.add('revealed'); else e.target.classList.remove('revealed'); } },
       { threshold: 0.3 }
     );
     pills.forEach((p) => obs.observe(p));
@@ -372,7 +372,7 @@ function MarketingGuest() {
           <div data-reveal>
             <p className="section-label">Everything included</p>
             <h2 className="section-title">Everything you need to sell</h2>
-            <p className="section-subtitle">A complete kit for selling online — no plugins, no extra tools, no technical know-how required.</p>
+            <p className="section-subtitle">A complete kit for selling online, with no plugins, no extra tools and no technical know-how required.</p>
           </div>
           <div className="bento-grid" style={{ marginTop: '2.5rem' }}>
             {features.map((f, i) => (

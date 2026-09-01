@@ -159,7 +159,7 @@ function OverviewTab({ user, orders, isStoreOwner, retailer, subscription, tierN
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
         <div className="card"><p style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem', marginBottom: '0.25rem' }}>Total Orders</p><p style={{ fontSize: '2rem', fontWeight: 700 }}>{orders.length}</p></div>
         <div className="card"><p style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem', marginBottom: '0.25rem' }}>Role</p><p style={{ fontSize: '1rem', fontWeight: 600, textTransform: 'capitalize' }}>{(user.role || '').toLowerCase().replace('_', ' ')}</p></div>
-        <div className="card"><p style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem', marginBottom: '0.25rem' }}>Member Since</p><p style={{ fontSize: '1rem', fontWeight: 600 }}>{user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}</p></div>
+        <div className="card"><p style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem', marginBottom: '0.25rem' }}>Member Since</p><p style={{ fontSize: '1rem', fontWeight: 600 }}>{user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}</p></div>
       </div>
 
       {isStoreOwner && (
