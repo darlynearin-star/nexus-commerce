@@ -12,7 +12,32 @@ each draft to review it and add your photos. Nothing goes live until
 YOU publish it.
 
 Use any plain-text editor: Notepad (Windows), or any notes app that can
-save a .txt file. Do NOT use Word (.docx) - it must be plain .txt.
+save a .txt file. Do NOT use Word (.docx) - it must be plain text.
+
+
+FILE FORMAT (read this first)
+-----------------------------
+The upload button accepts ONLY plain text files. That means:
+
+  - File type   .txt or .pdt  (the "pdt" is short for product file).
+                No Word, Excel, PDF, images, or rich text.
+  - Encoding    Save as UTF-8 (Notepad's default "Save As" sometimes
+                offers "ANSI" - always pick UTF-8 if you use letters
+                with accents like "é" or em-dashes "—", otherwise
+                they may arrive garbled).
+  - Content     Just letters, numbers and the --- separators below.
+                No bold, no colours, no fonts - it is raw text.
+
+The whole file uses ONE structure made of "blocks". A block is one
+product. Blocks are separated from each other by a line containing
+only three dashes:
+
+  ---
+
+You can either type the blocks straight into the text box on the
+Products page, or save them in a .txt/.pdt file and pick that file.
+Both ways feed the same parser. Nothing is saved until you press
+Import.
 
 
 QUICK START - COPY THIS AND CHANGE THE VALUES
@@ -64,8 +89,10 @@ TEXT FIELDS (optional)
 ----------------------
 brand         Brand or maker name. Shown on the product page.
                   brand: Lyn-nyx Originals
-sku           Stock keeping code. If you leave it out, one is
-              generated automatically starting with BULK-.
+sku           Stock keeping code. Must be unique within your store -
+              never repeat an SKU or the whole import will fail.
+              If you leave it out, one is generated automatically
+              starting with BULK-.
                   sku: DRS-001
 description   Long product story. Use the | multiline style.
 tags          Comma-separated search words.
@@ -89,8 +116,9 @@ low_stock_threshold When stock drops to this number you get a low-stock
 
 CHECKBOXES (yes/no fields - optional)
 -------------------------------------
-Write them as yes/no (also accepted: true/false, 1/0).
-Defaults shown apply when you leave the field out.
+Write them as yes/no (also accepted in any case: true/false, 1/0,
+and the single letters y/n). Defaults shown apply when you leave the
+field out.
 
 published        no    -> product saved as DRAFT (recommended). Say
                         "yes" only if you want it live immediately -
@@ -132,8 +160,11 @@ variants          Size/colour combinations with their own prices and
                   stock - added on the edit page.
 attribute options Category-specific dropdowns/checkboxes (like Size or
                   Colour pickers) - configured on the edit page.
-shipping details  Weight, shipping class, delivery estimate - sensible
-                  defaults are applied; adjust per product if needed.
+shipping details  Weight, shipping class, delivery estimate - not
+                  settable in the file. Imports get defaults you can
+                  change per product: weight 0 kg, shipping class
+                  "standard", delivery estimate "5-7 business days",
+                  free shipping off.
 
 
 FULL WORKED EXAMPLE (3 products)
@@ -155,6 +186,8 @@ new: yes
 description: |
   Handmade African print dress tailored in Kampala.
   Light cotton fabric, perfect for warm days.
+return_policy: |
+  Exchange within 14 days if unworn.
 features: |
   100% cotton
   Handmade in Uganda
@@ -190,7 +223,7 @@ WHAT THE ERROR MESSAGES MEAN
 "name is required" ..................... A block has no name line.
 "price is required" .................... Add a price line.
 "'abc' is not a number" ................ Price/stock must be digits.
-"'maybe' is not yes/no" ................ Only yes/no/true/false/1/0.
+"'maybe' is not yes/no" ................ Only yes/no/y/n/true/false/1/0.
 "Unknown field 'colour_blu'" ........... Spelling mistake - the line
                                          was skipped, fix the spelling.
 "Not a valid line" ..................... Text outside any field - maybe
@@ -205,16 +238,20 @@ can fix and re-import just those.
 
 AFTER IMPORTING
 ---------------
-1. Open Products - your imports are there marked Draft.
-2. Click each one, review the filled fields, change anything.
-3. Upload photos.
-4. Flip status to Published when ready.
+1. Press "1. Parse & Preview" first - it checks every block, shows
+   each product's status (Ready or the errors to fix) WITHOUT saving.
+2. When every row you want shows "Ready", press "2. Import". Only then
+   is anything saved.
+3. Open Products - your imports are there marked Draft.
+4. Click each one, review the filled fields, change anything.
+5. Upload photos.
+6. Flip status to Published when ready.
 
 LIMITS
 ------
 Maximum 100 products per file. Make a second file for more.
 
-========================================================================
+=======================================================================
  Keep this file handy. Questions? This guide lives at /pdtguide.txt on
  your dashboard and ships with every update.
-========================================================================
+=======================================================================

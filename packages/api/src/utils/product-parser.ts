@@ -54,7 +54,7 @@ function parseBoolean(token: string, line: number, field: string, errors: ParseI
   const t = token.trim().toLowerCase();
   if (BOOLEAN_TRUE.has(t)) return true;
   if (BOOLEAN_FALSE.has(t)) return false;
-  errors.push({ line, field, message: `'${token.trim()}' is not yes/no (accepted: yes, no, true, false, 1, 0)` });
+  errors.push({ line, field, message: `'${token.trim()}' is not yes/no (accepted: yes, no, true, false, 1, 0, y, n)` });
   return null;
 }
 

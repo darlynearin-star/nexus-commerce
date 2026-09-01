@@ -424,6 +424,7 @@ function buildProductData(p: ParsedProduct, storeId: string): Record<string, any
     seoTitle: String(d.seo_title ?? ''),
     seoDescription: String(d.seo_description ?? ''),
     warranty: String(d.warranty ?? ''),
+    returnPolicy: String(d.return_policy ?? ''),
     isFeatured: boolVal('featured', false),
     isNew: boolVal('new', false),
   };

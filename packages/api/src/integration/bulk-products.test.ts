@@ -234,6 +234,8 @@ tags: cotton, trousers, casual
 track_inventory: no
 allow_backorder: yes
 warranty: 6 months
+return_policy: |
+  Return within 14 days if unworn.
 seo_title: Best Trousers
 seo_description: Casual cotton trousers
 category: Men > Trousers
@@ -268,6 +270,7 @@ specs: |
     expect(d.trackInventory).toBe(false);
     expect(d.allowBackorder).toBe(true);
     expect(d.warranty).toBe('6 months');
+    expect(d.returnPolicy).toBe('Return within 14 days if unworn.');
     expect(d.seoTitle).toBe('Best Trousers');
     expect(d.seoDescription).toBe('Casual cotton trousers');
     expect(d.description).toBe('Line one.\n\nLine three.');
