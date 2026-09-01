@@ -151,8 +151,8 @@ export default function AnnouncementsPage() {
                   {a.recipients?.length > 0 && <p style={{ fontSize: '0.75rem', color: 'var(--primary)', marginTop: '0.25rem' }}><Mail size={12} style={{ verticalAlign: 'middle' }} /> Emailed to: {a.recipients.join(', ')}</p>}
                   <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>By {a.createdBy?.slice(0, 8)} | {new Date(a.createdAt).toLocaleDateString()}</p></div>
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-                <button className="btn btn-ghost btn-sm" onClick={() => toggleActive(a)} aria-label={a.active ? 'Deactivate announcement' : 'Activate announcement'}>{a.active ? <Check size={16} /> : <X size={16} />}</button>
+              <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0, alignItems: 'center' }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => toggleActive(a)} aria-label={a.active ? 'Deactivate announcement' : 'Activate announcement'} style={{ color: a.active ? 'var(--success)' : 'var(--error)' }}>{a.active ? <Check size={16} /> : <X size={16} />} {a.active ? 'Active' : 'Inactive'}</button>
                 <button className="btn btn-ghost btn-sm" onClick={() => edit(a)}>Edit</button>
                 <button className="btn btn-ghost btn-sm" style={{ color: 'var(--error)' }} onClick={() => remove(a.id)}>Delete</button>
               </div>

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { apiClient } from '@/lib/api';
+import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { X } from 'lucide-react';
 
@@ -17,8 +17,8 @@ export default function AnnouncementBanner() {
   const [dismissed, setDismissed] = useState<string[]>([]);
 
   useEffect(() => {
-    const email = user?.email ? encodeURIComponent(user.email) : '';
-    apiClient<{ success: boolean; data: Announcement[] }>(`/announcements${email ? `?email=${email}` : ''}`)
+    const email = user?.email ? { email: user.email } : undefined;
+    api.get<{ success: boolean; data: Announcement[] }>('/announcements', email)
       .then(r => setAnnouncements(r.data || []))
       .catch(() => {});
   }, [user?.email]);
@@ -27,7 +27,7 @@ export default function AnnouncementBanner() {
   if (visible.length === 0) return null;
 
   return (
-    <div style={{ position: 'relative', zIndex: 50 }}>
+    <div style={{ position: 'relative', zIndex: 5, marginBottom: '1rem' }}>
       {visible.map(a => (
         <div
           key={a.id}
@@ -38,6 +38,8 @@ export default function AnnouncementBanner() {
             fontSize: '0.875rem',
             textAlign: 'center',
             position: 'relative',
+            borderRadius: '0.5rem',
+            marginBottom: '0.5rem',
           }}
         >
           <strong style={{ marginRight: '0.5rem' }}>{a.title}</strong>

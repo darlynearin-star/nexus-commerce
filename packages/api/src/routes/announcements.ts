@@ -28,7 +28,11 @@ async function emailRecipients(recipients: string[], title: string, message: str
 
 announcementsRouter.get('/', async (_req, res, next) => {
   try {
-    const cached = cacheGet('public:announcements');
+    // A banner is visible when it is active, within its schedule, AND it is
+    // either global (no recipients) or targeted at the requesting user's email.
+    const viewerEmail = typeof _req.query.email === 'string' ? _req.query.email.trim().toLowerCase() : '';
+    const cacheKey = viewerEmail ? `public:announcements:${viewerEmail}` : 'public:announcements';
+    const cached = cacheGet(cacheKey);
     if (cached) return res.json({ success: true, data: cached });
 
     const setting = await prisma.setting.findUnique({ where: { key: 'platform_announcements' } });
@@ -38,10 +42,12 @@ announcementsRouter.get('/', async (_req, res, next) => {
       if (!a.active) return false;
       if (a.startsAt && new Date(a.startsAt) > now) return false;
       if (a.endsAt && new Date(a.endsAt) < now) return false;
-      return true;
+      const recipients: string[] = Array.isArray(a.recipients) ? a.recipients.map((r: any) => String(r).trim().toLowerCase()) : [];
+      if (recipients.length === 0) return true; // global
+      return !!viewerEmail && recipients.includes(viewerEmail); // targeted
     });
 
-    cacheSet('public:announcements', active, 30000);
+    cacheSet(cacheKey, active, 30000);
     res.json({ success: true, data: active });
   } catch (error) { next(error); }
 });
