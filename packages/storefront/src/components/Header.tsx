@@ -43,6 +43,8 @@ export default function Header() {
 
   const close = () => setMobileMenu(false);
 
+  const logoSrc = isDark ? '/lynnyx-logo-long.png' : '/lynnyx-logo-long-light.png';
+
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/categories', label: 'Categories' },
@@ -56,7 +58,7 @@ export default function Header() {
       <header className="glass" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
         <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64, gap: '1.25rem' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', fontSize: '1.125rem', fontWeight: 600, color: 'var(--text)', textDecoration: 'none', flexShrink: 0, letterSpacing: '-0.01em' }}>
-            <Image src="/lynnyx-logo-long.png" alt="Lyn-nyx Stores" width={84} height={36} priority sizes="96px" style={{ height: 38, width: 'auto', objectFit: 'contain', display: 'block' }} />
+            <Image src={logoSrc} alt="Lyn-nyx Stores" width={84} height={36} priority sizes="96px" style={{ height: 38, width: 'auto', objectFit: 'contain', display: 'block' }} />
           </Link>
 
           <nav style={{ display: 'flex', gap: '0.125rem', alignItems: 'center' }} className="desktop-nav">
@@ -110,7 +112,7 @@ export default function Header() {
       <div className={`mobile-sidebar ${mobileMenu ? 'open' : ''}`} ref={mobileMenuRef} tabIndex={-1}>
         <div style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
           <Link href="/" onClick={close} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', fontWeight: 600, color: 'var(--text)', textDecoration: 'none' }}>
-            <Image src="/lynnyx-logo-long.png" alt="Lyn-nyx Stores" width={70} height={30} sizes="80px" style={{ height: 30, width: 'auto', objectFit: 'contain', display: 'block' }} />
+            <Image src={logoSrc} alt="Lyn-nyx Stores" width={70} height={30} sizes="80px" style={{ height: 30, width: 'auto', objectFit: 'contain', display: 'block' }} />
           </Link>
           <button className="btn btn-ghost btn-icon" style={{ borderRadius: 8 }} onClick={close} aria-label="Close"><X size={20} /></button>
         </div>

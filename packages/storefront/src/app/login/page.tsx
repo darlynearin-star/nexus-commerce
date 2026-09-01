@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
+import { useTheme } from '@/lib/theme';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Mail, Loader2, CheckCircle } from 'lucide-react';
@@ -8,6 +9,7 @@ import GoogleIcon from '@/components/GoogleIcon';
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const { isDark } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -57,7 +59,7 @@ export default function LoginPage() {
   return (
     <div className="container" style={{ padding: 'clamp(2rem, 6vw, 4rem) 1rem', display: 'flex', justifyContent: 'center' }}>
       <div className="card auth-card">
-        <img src="/lynnyx-logo-portrait.png" alt="Lyn-nyx Stores" style={{ display: 'block', margin: '0 auto 1.25rem', maxWidth: 150, maxHeight: 130, objectFit: 'contain' }} />
+        <img src={isDark ? '/lynnyx-logo-portrait.png' : '/lynnyx-logo-portrait-light.png'} alt="Lyn-nyx Stores" style={{ display: 'block', margin: '0 auto 1.25rem', maxWidth: 150, maxHeight: 130, objectFit: 'contain' }} />
         <p className="eyebrow" style={{ textAlign: 'center' }}>Account</p>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.01em', marginBottom: '0.375rem' }}>Welcome Back</h1>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.9375rem' }}>Sign in to your account</p>

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
+import { useTheme } from '@/lib/theme';
 import { api } from '@/lib/api';
 import { useScrollReveal } from '@/lib/use-scroll-reveal';
 import { Store, Palette, Globe, Smartphone, Gift, CreditCard, ArrowRight, CheckCircle, Layout, Users, DollarSign, ExternalLink, ShoppingBag, BookOpen, HelpCircle, EyeOff, Terminal, TrendingUp, ShieldCheck, Zap } from 'lucide-react';
@@ -192,6 +193,7 @@ function formatUGX(n: number) {
 
 function MarketingGuest() {
   const rootRef = useScrollReveal();
+  const { isDark } = useTheme();
   const [products, setProducts] = useState<any[]>([]);
   const [bgIndex, setBgIndex] = useState(0);
   const [showcaseStart, setShowcaseStart] = useState(0);
@@ -207,10 +209,9 @@ function MarketingGuest() {
     { icon: <TrendingUp size={20} />, title: 'Fast Setup', desc: 'From signup to live store in under 10 minutes. No code needed.' },
   ];
 
-  const heroImages = [
-    '/feature-editorial-1.jpg',
-    '/feature-editorial-2.jpg',
-  ];
+  const heroImages = isDark
+    ? ['/feature-editorial-1.jpg', '/feature-editorial-2.jpg']
+    : ['/feature-editorial-light-1.jpg', '/feature-editorial-light-2.jpg'];
 
   const marqueeTags = [
     '4 designer templates',
@@ -243,9 +244,10 @@ function MarketingGuest() {
   // Rotate hero background image with a gentle crossfade.
   useEffect(() => {
     if (heroImages.length < 2) return;
+    setBgIndex(0);
     const id = setInterval(() => setBgIndex((i) => (i + 1) % heroImages.length), 7000);
     return () => clearInterval(id);
-  }, []);
+  }, [heroImages.length, isDark]);
 
   // Rotate which products appear in the hero showcase.
   useEffect(() => {
