@@ -145,7 +145,7 @@ export default function LandingPage() {
           <p className="eyebrow">Get started</p>
           <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', marginBottom: '0.75rem' }}>You don&apos;t have a store yet</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.0625rem', lineHeight: 1.6, maxWidth: 520 }}>
-            Create your personalized online fashion store in minutes. Pick a template, set your colors, add your products, and start selling across Uganda. No coding needed.
+            Create your personalized online store in minutes. Pick a template, set your colors, add your products, and start selling across Uganda. No coding needed.
           </p>
         </div>
 
@@ -298,7 +298,7 @@ function MarketingGuest() {
             <div>
               <p className="eyebrow">For independent merchants across Uganda</p>
               <h1 style={{ fontSize: 'clamp(2.6rem, 6vw, 4.4rem)', letterSpacing: '-0.03em', marginBottom: '1.25rem', fontWeight: 800, lineHeight: 1.05 }}>
-                Launch your fashion store{' '}
+                Launch your online store{' '}
                 <span style={{ fontStyle: 'italic', color: 'var(--primary)' }}>in minutes.</span>
               </h1>
               <p style={{ fontSize: '1.1875rem', color: 'var(--text-secondary)', maxWidth: 500, lineHeight: 1.65, marginBottom: '1.75rem' }}>

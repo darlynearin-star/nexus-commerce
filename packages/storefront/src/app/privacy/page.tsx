@@ -9,7 +9,7 @@ export const metadata = {
 const sections = [
   {
     title: 'Who we are',
-    body: 'Lyn-nyx Stores is an online marketplace where retailers in Uganda create their own storefronts and customers buy fashion, accessories, and body ornaments. The platform is operated by Mr. Dev (lyn.nyx.store@gmail.com).',
+    body: 'Lyn-nyx Stores is an online marketplace where retailers in Uganda create their own storefronts and customers buy from them. The platform is operated by Mr. Dev (lyn.nyx.store@gmail.com).',
   },
   {
     title: 'What we collect',

@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     template: '%s | Lyn-nyx Stores',
   },
   description:
-    'Create a personalized online fashion store in minutes. Pick a template, set your colors, add your products, and start selling across Uganda. No coding needed.',
+    'Create a personalized online store in minutes. Pick a template, set your colors, add your products, and start selling across Uganda. No coding needed.',
   alternates: {
     canonical: '/',
   },
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     siteName: 'Lyn-nyx Stores',
     title: 'Lyn-nyx Stores: Shop, Sell, Scale',
     description:
-      'Create a personalized online fashion store in minutes. Pick a template, set your colors, add your products, and start selling across Uganda. No coding needed.',
+      'Create a personalized online store in minutes. Pick a template, set your colors, add your products, and start selling across Uganda. No coding needed.',
     url: SITE_URL,
     locale: 'en_US',
     images: [{ url: '/lynnyx-hero.png', width: 1280, height: 720, alt: 'Lyn-nyx Stores' }],
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Lyn-nyx Stores: Shop, Sell, Scale',
     description:
-      'Create a personalized online fashion store in minutes. Pick a template, set your colors, add your products, and start selling across Uganda. No coding needed.',
+      'Create a personalized online store in minutes. Pick a template, set your colors, add your products, and start selling across Uganda. No coding needed.',
     images: ['/lynnyx-hero.png'],
   },
   icons: {

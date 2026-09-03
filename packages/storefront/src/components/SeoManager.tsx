@@ -11,7 +11,7 @@ interface RouteMeta {
 }
 
 const routeMeta: RouteMeta[] = [
-  { match: s => s.length === 0, title: `${BRAND}: Shop, Sell, Scale`, description: 'Create a personalized online fashion store in minutes. Pick a template, set your colors, add your products, and start selling across Uganda. No coding needed.' },
+  { match: s => s.length === 0, title: `${BRAND}: Shop, Sell, Scale`, description: 'Create a personalized online store in minutes. Pick a template, set your colors, add your products, and start selling across Uganda. No coding needed.' },
   { match: s => s[0] === 'shop', title: `Shop | ${BRAND}`, description: 'Browse products and collections across Lyn-nyx Stores.' },
   { match: s => s[0] === 'categories', title: `Categories | ${BRAND}`, description: 'Explore product categories and find what you are looking for.' },
   { match: s => s[0] === 'deals', title: `Deals | ${BRAND}`, description: 'Shop the latest deals and offers.' },
@@ -25,7 +25,7 @@ const routeMeta: RouteMeta[] = [
   { match: s => s[0] === 'guides', title: `Guides & Tutorials | ${BRAND}`, description: 'Step-by-step guides for shopping and running your own store on Lyn-nyx Stores.' },
   { match: s => s[0] === 'privacy', title: `Privacy Policy | ${BRAND}`, description: 'How Lyn-nyx Stores collects, uses, and protects your personal data.' },
   { match: s => s[0] === 'product' && s.length === 2, title: `Product | ${BRAND}`, description: 'View product details, pricing, and delivery options.' },
-  { match: s => s[0] === 'store' && s.length === 2, title: `Store | ${BRAND}`, description: 'Browse a store catalog of fashion, accessories, and body ornaments.' },
+  { match: s => s[0] === 'store' && s.length === 2, title: `Store | ${BRAND}`, description: 'Browse a store catalog of curated products.' },
   { match: s => s[0] === 'store' && s.length === 3 && s[2] === 'shop', title: `Shop | ${BRAND}`, description: 'Browse products, filter by category and price, and sort your results.' },
   { match: s => s[0] === 'store' && s.length === 4 && s[2] === 'product', title: `Product | ${BRAND}`, description: 'View product details, pricing, and place an order.' },
 ];

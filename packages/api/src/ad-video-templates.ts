@@ -19,7 +19,7 @@ export const AD_VIDEO_TEMPLATES: AdVideoTemplate[] = [
     summary: 'Hook on the brand promise (launch a store in minutes). Good for ads + social reels.',
     formats: ['9:16', '16:9'],
     beats: [
-      { caption: 'Lyn-nyx Stores', voice: 'Lyn Nyx Stores. Launch a fashion store in minutes.', seconds: 3, shot: 'hero' },
+      { caption: 'Lyn-nyx Stores', voice: 'Lyn Nyx Stores. Launch an online store in minutes.', seconds: 3, shot: 'hero' },
       { caption: 'Pick a template. Add products. Start selling.', voice: 'Pick a template, add your products, and start selling across Uganda.', seconds: 4, shot: 'grid' },
       { caption: 'MTN MoMo & Airtel Pay built in', voice: 'MTN Mobile Money and Airtel Pay are built in.', seconds: 3, shot: 'checkout' },
       { caption: 'Start at {url}', voice: 'Start today at {url}.', seconds: 3, shot: 'cta' },

@@ -43,7 +43,7 @@ export default function StoreHomeClient({ initialFeatured, initialNewArrivals, i
               Welcome to {storeName}
             </h1>
             <p style={{ fontSize: '1.125rem', color: 'var(--text-secondary)', maxWidth: 480, lineHeight: 1.65, marginBottom: '2rem' }}>
-              Discover curated fashion, accessories, and body ornaments crafted for every occasion.
+              Discover carefully selected products crafted for every occasion.
             </p>
             <Link href={`/store/${store?.slug}/shop`} className="btn btn-primary" style={{ fontSize: '1rem', padding: '0.75rem 2rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
               Shop Now <ArrowRight size={18} />
