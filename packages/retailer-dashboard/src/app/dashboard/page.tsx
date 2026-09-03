@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
-import { DollarSign, ShoppingCart, Users, Package, AlertTriangle, CheckCircle, Power, ExternalLink } from 'lucide-react';
+import { DollarSign, ShoppingCart, Users, Package, AlertTriangle, CheckCircle, Power, ExternalLink, Link2, Check } from 'lucide-react';
 import ErrorBoundary from '@/lib/error-boundary';
 import Link from 'next/link';
 
@@ -15,6 +15,28 @@ function DashboardContent() {
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [lowStock, setLowStock] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const copyStoreLink = (slug: string) => {
+    const link = `${process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app'}/store/${slug}`;
+    const done = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); };
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = link;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (err) { console.error('Copy failed:', err); }
+      document.body.removeChild(ta);
+      done();
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(link).then(done).catch(() => fallback());
+    } else {
+      fallback();
+    }
+  };
 
   useEffect(() => {
     if (loading) return;
@@ -76,9 +98,14 @@ function DashboardContent() {
           <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
             <Link href="/settings" className="btn btn-ghost btn-sm">Settings</Link>
             {storeSlug && (
-              <a href={`${storefrontUrl}/store/${storeSlug}`} target="_blank" className="btn btn-ghost btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                View Store <ExternalLink size={12} />
-              </a>
+              <>
+                <button className="btn btn-ghost btn-sm" onClick={() => copyStoreLink(storeSlug)} title="Copy store link" aria-label="Copy store link" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  {copied ? <Check size={14} style={{ color: 'var(--success)' }} /> : <Link2 size={14} />} {copied ? 'Copied' : 'Copy Link'}
+                </button>
+                <a href={`${storefrontUrl}/store/${storeSlug}`} target="_blank" className="btn btn-ghost btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  View Store <ExternalLink size={12} />
+                </a>
+              </>
             )}
           </div>
         </div>
