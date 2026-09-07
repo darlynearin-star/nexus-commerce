@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { storeApi } from '@/lib/store-api';
 import { useAuth } from '@/lib/auth';
 import Link from 'next/link';
-import { ShoppingCart, Heart, ChevronRight, Info } from 'lucide-react';
+import { ShoppingCart, Heart, ChevronRight, Info, Check } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 import ReviewsSection from '@/components/ReviewsSection';
 import ProductSeo from '@/components/ProductSeo';
@@ -132,7 +132,7 @@ export default function StoreProductClient({ initialProduct, slug, storeSlug }: 
                   setTimeout(() => setAddedToCart(false), 2000);
                 } catch (e: any) { setCartError(e.message || 'Cart error'); }
               }}>
-                {addedToCart ? '✓ Added!' : <><ShoppingCart size={16} /> Add to Cart</>}
+                {addedToCart ? <><Check size={16} /> Added!</> : <><ShoppingCart size={16} /> Add to Cart</>}
               </button>
             ) : (
               <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', minWidth: 160 }} onClick={async () => {
@@ -143,7 +143,7 @@ export default function StoreProductClient({ initialProduct, slug, storeSlug }: 
                   setTimeout(() => setAddedToCart(false), 2000);
                 } catch (e: any) { setCartError(e.message || 'Cart error'); }
               }}>
-                {addedToCart ? '✓ Added!' : <><ShoppingCart size={16} /> Add to Cart</>}
+                {addedToCart ? <><Check size={16} /> Added!</> : <><ShoppingCart size={16} /> Add to Cart</>}
               </button>
             )}
             <button className="btn btn-secondary btn-icon" onClick={toggleWishlist} aria-label="Save to wishlist"><Heart size={16} fill={saved ? 'currentColor' : 'none'} /></button>

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { Video, Play, Copy, Trash2, Check, AlertTriangle, Loader2, Film, Zap, Download } from 'lucide-react';
+import { Video, Play, Copy, Trash2, Check, X, AlertTriangle, Loader2, Film, Zap, Download } from 'lucide-react';
 
 export default function AdStudioPage() {
   const [templates, setTemplates] = useState<any[]>([]);
@@ -82,7 +82,7 @@ export default function AdStudioPage() {
               { ok: caps.playwright, label: 'screenshot' },
               { ok: caps.elevenlabs, label: 'voiceover' },
             ].map(c => (
-              <span key={c.label} style={{ fontSize: '0.625rem', padding: '0.125rem 0.5rem', borderRadius: 999, background: c.ok ? '#052e16' : '#2e0505', color: c.ok ? '#4ade80' : '#f87171' }}>{c.ok ? '✓' : '✗'} {c.label}</span>
+              <span key={c.label} style={{ fontSize: '0.625rem', padding: '0.125rem 0.5rem', borderRadius: 999, background: c.ok ? '#052e16' : '#2e0505', color: c.ok ? '#4ade80' : '#f87171', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>{c.ok ? <Check size={9} /> : <X size={9} />} {c.label}</span>
             ))}
           </div>}
           {caps?.hint && <p style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', marginTop: '0.375rem', maxWidth: 300, marginLeft: 'auto' }}>{caps.hint}</p>}

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { setStoreSlug } from '@/lib/store-api';
-import { ArrowRight, Check, Store, Palette, CreditCard, Shield, Gem, Smartphone, ChevronRight } from 'lucide-react';
+import { ArrowRight, Check, X, Store, Palette, CreditCard, Shield, Gem, Smartphone, ChevronRight, Phone, MessageCircle, Mail } from 'lucide-react';
 
 const TEMPLATES = [
   { id: 'elegance', name: 'Elegance', desc: 'Gold accents on dark, timeless luxury', colors: { primary: '#D4A843', secondary: '#A8822E', bg: '#0A0A0A', surface: '#141414', text: '#FAFAFA', accent: '#F0D48A' } },
@@ -200,7 +200,7 @@ export default function CreateStorePage() {
             </div>
             {slug.length >= 3 && (
               <span style={{ fontSize: '0.8125rem', color: slugAvailable ? 'var(--success)' : 'var(--error)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.375rem' }}>
-                {slugAvailable ? '✓ Available' : '✗ Already taken'}
+                {slugAvailable ? <><Check size={13} /> Available</> : <><X size={13} /> Already taken</>}
               </span>
             )}
           </div>
@@ -237,12 +237,12 @@ export default function CreateStorePage() {
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {error.includes('store reservation') ? (
                   <>
-                    <a href="tel:+256740157510" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>📞 Call</a>
-                    <a href="https://wa.me/256740157510" target="_blank" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>💬 WhatsApp</a>
-                    <a href="mailto:lyn.nyx.store@gmail.com" className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>✉️ Email</a>
+                    <a href="tel:+256740157510" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}><Phone size={14} /> Call</a>
+                    <a href="https://wa.me/256740157510" target="_blank" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}><MessageCircle size={14} /> WhatsApp</a>
+                    <a href="mailto:lyn.nyx.store@gmail.com" className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}><Mail size={14} /> Email</a>
                   </>
                 ) : (
-                  <a href="mailto:lyn.nyx.store@gmail.com" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>✉️ Email Mr.Dev</a>
+                  <a href="mailto:lyn.nyx.store@gmail.com" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}><Mail size={14} /> Email Mr.Dev</a>
                 )}
               </div>
             </div>

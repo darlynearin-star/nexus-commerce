@@ -5,7 +5,7 @@ import { storeApi } from '@/lib/store-api';
 import { useStore } from '@/lib/store-context';
 import ProductCard from '@/components/ProductCard';
 import { ArrowRight } from 'lucide-react';
-import { categoryIcon } from '@/lib/category-icons';
+import { CategoryIcon } from '@/lib/category-icons';
 
 export default function StoreHomeClient({ initialFeatured, initialNewArrivals, initialCategories }: {
   initialFeatured: any[];
@@ -98,7 +98,7 @@ export default function StoreHomeClient({ initialFeatured, initialNewArrivals, i
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '1.25rem' }}>
               {categories.filter((c: any) => !c.parentId).map((cat: any) => (
                 <Link key={cat.id} href={`/store/${store?.slug}/shop?parent=${cat.slug}`} className="card" style={{ textDecoration: 'none', color: 'inherit', textAlign: 'center', padding: '1.75rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ fontSize: '2rem', lineHeight: 1 }}>{categoryIcon(cat.slug, cat.name)}</div>
+                  <div style={{ lineHeight: 1 }}><CategoryIcon slug={cat.slug} name={cat.name} size={32} /></div>
                   <div style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{cat.name}</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{cat.productCount || 0} items</div>
                 </Link>

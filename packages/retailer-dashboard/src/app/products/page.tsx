@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { Plus, Edit2, Trash2, Copy, Search, ExternalLink, Package, Link2, Check, Upload } from 'lucide-react';
+import { Plus, Edit2, Trash2, Copy, Search, ExternalLink, Package, Link2, Check, Upload, X } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProductsPage() {
@@ -126,7 +126,7 @@ export default function ProductsPage() {
                   <tbody>
                     {bulkPreview.data.rows.map((r: any, k: number) => (
                       <tr key={k} style={{ borderBottom: '1px solid var(--border)' }}>
-                        <td style={{ padding: '0.5rem 0.75rem' }}>{r.errors.length === 0 ? <span style={{ color: 'var(--success)' }}>✓ Ready</span> : <span style={{ color: 'var(--error)' }}>✗ {r.errors.length} error{r.errors.length !== 1 ? 's' : ''}</span>}</td>
+                        <td style={{ padding: '0.5rem 0.75rem' }}>{r.errors.length === 0 ? <span style={{ color: 'var(--success)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Check size={13} /> Ready</span> : <span style={{ color: 'var(--error)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><X size={13} /> {r.errors.length} error{r.errors.length !== 1 ? 's' : ''}</span>}</td>
                         <td style={{ padding: '0.5rem 0.75rem' }}>{r.name || <em>(no name)</em>}</td>
                         <td style={{ padding: '0.5rem 0.75rem' }}>{String(r.price)}</td>
                         <td style={{ padding: '0.5rem 0.75rem' }}>{r.category ? `${r.category} (${r.categoryAction})` : '—'}</td>
@@ -205,7 +205,7 @@ export default function ProductsPage() {
                     <td>
                       <Link href={`/products/${p.id}/edit`} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', color: 'inherit' }}>
                         <div style={{ width: 40, height: 40, borderRadius: '0.375rem', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', flexShrink: 0 }}>
-                          {p.images?.[0] ? <img src={p.images[0]} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: '0.375rem' }} /> : '📦'}
+                          {p.images?.[0] ? <img src={p.images[0]} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: '0.375rem' }} /> : <Package size={18} style={{ color: 'var(--text-secondary)' }} />}
                         </div>
                         <div style={{ minWidth: 0 }}>
                           <p style={{ fontWeight: 500, fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</p>

@@ -104,7 +104,7 @@ export default function ReviewsPage() {
                   </td>
                   <td style={{ textAlign: 'center' }}>
                     <span style={{ color: 'var(--warning)', display: 'inline-flex', gap: '0.125rem', alignItems: 'center', fontSize: '0.75rem' }}>
-                      {'★'.repeat(r.rating)}<span style={{ color: 'var(--text-secondary)' }}>{r.rating}/5</span>
+                      {Array.from({ length: r.rating }).map((_, i) => <Star key={i} size={12} fill="currentColor" />)}<span style={{ color: 'var(--text-secondary)' }}>{r.rating}/5</span>
                     </span>
                   </td>
                   <td style={{ maxWidth: 320 }}>

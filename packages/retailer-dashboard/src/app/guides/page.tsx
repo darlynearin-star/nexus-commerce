@@ -1,7 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { Package, ShoppingCart, CreditCard, Megaphone, Users, Settings, Store, Search, HelpCircle, ChevronRight } from 'lucide-react';
+import { Package, ShoppingCart, CreditCard, Megaphone, Users, Settings, Store, Search, HelpCircle, ChevronRight, Lightbulb } from 'lucide-react';
 
 const guides = [
   {
@@ -120,7 +120,7 @@ function GuidesContent() {
               ))}
             </ol>
             <p style={{ marginTop: '0.875rem', padding: '0.625rem 0.875rem', borderRadius: '0.5rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              💡 <strong style={{ color: 'var(--text)' }}>Tip:</strong> {g.tip}
+              <Lightbulb size={13} style={{ verticalAlign: '-2px' }} /> <strong style={{ color: 'var(--text)' }}>Tip:</strong> {g.tip}
             </p>
           </div>
         ))}

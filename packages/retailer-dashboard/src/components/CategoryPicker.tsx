@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { ChevronDown, ChevronRight, Search, X, ArrowLeft } from 'lucide-react';
-import { categoryIcon } from '@/lib/category-icons';
+import { CategoryIcon } from '@/lib/category-icons';
 import { useDismiss } from '@/lib/use-dismiss';
 
 interface Cat { id: string; name: string; slug: string; parentId: string | null; }
@@ -103,7 +103,7 @@ export default function CategoryPicker({ categories, selectedId, onChange }: { c
 
   const iconFor = (name: string) => {
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    return categoryIcon(slug);
+    return slug;
   };
 
   return (
@@ -158,7 +158,7 @@ export default function CategoryPicker({ categories, selectedId, onChange }: { c
                   return (
                     <button key={c.id} type="button" onClick={() => handleSelect(c)}
                       style={{ display: 'flex', width: '100%', textAlign: 'left', padding: '0.625rem 1rem', alignItems: 'center', gap: '0.5rem', border: 'none', background: c.id === selectedId ? 'var(--primary)' : 'transparent', color: c.id === selectedId ? 'white' : 'inherit', cursor: 'pointer', fontSize: '0.8125rem', borderBottom: '1px solid var(--border)' }}>
-                      <span style={{ fontSize: '1rem', flexShrink: 0 }}>{iconFor(c.name)}</span>
+                      <CategoryIcon slug={iconFor(c.name)} size={16} style={{ flexShrink: 0 }} />
                       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {path.map(p => p.name).join(' > ')}
                       </span>
@@ -174,7 +174,7 @@ export default function CategoryPicker({ categories, selectedId, onChange }: { c
                   return (
                     <button key={c.id} type="button" onClick={() => handleSelect(c)}
                       style={{ display: 'flex', width: '100%', textAlign: 'left', padding: '0.75rem 1rem', alignItems: 'center', gap: '0.625rem', border: 'none', background: isSelected ? 'var(--primary)' : 'transparent', color: isSelected ? 'white' : 'inherit', cursor: 'pointer', fontSize: '0.875rem', borderBottom: '1px solid var(--border)', transition: 'background 0.15s' }}>
-                      <span style={{ fontSize: '1.25rem', flexShrink: 0 }}>{iconFor(c.name)}</span>
+                      <CategoryIcon slug={iconFor(c.name)} size={20} style={{ flexShrink: 0 }} />
                       <span style={{ flex: 1 }}>{c.name}</span>
                       {hasChild && <ChevronRight size={16} style={{ flexShrink: 0, opacity: 0.4 }} />}
                       {!hasChild && <span style={{ fontSize: '0.6875rem', color: isSelected ? 'rgba(255,255,255,0.6)' : 'var(--text-secondary)', flexShrink: 0 }}>Select</span>}

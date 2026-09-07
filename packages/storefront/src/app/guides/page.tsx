@@ -1,8 +1,9 @@
 import Link from 'next/link';
+import { User, ShoppingBag, ShoppingCart, CreditCard, Store, BookOpen, Lightbulb } from 'lucide-react';
 
 const guides = [
   {
-    icon: '👤',
+    icon: <User size={22} />,
     title: 'Creating an account',
     steps: [
       'Click "Sign In" in the top-right corner, then "Create Account".',
@@ -12,7 +13,7 @@ const guides = [
     tip: 'Your account works across the whole platform: storefront, retailer, and developer apps.',
   },
   {
-    icon: '🛍️',
+    icon: <ShoppingBag size={22} />,
     title: 'Browsing & finding products',
     steps: [
       'Use the search bar in the header to find anything by name.',
@@ -22,7 +23,7 @@ const guides = [
     tip: 'Use the heart icon to save products to your wishlist for later.',
   },
   {
-    icon: '🛒',
+    icon: <ShoppingCart size={22} />,
     title: 'Placing your first order',
     steps: [
       'Add items to your cart with the "Add to Cart" button.',
@@ -32,7 +33,7 @@ const guides = [
     tip: 'You can track order status from your account page after ordering.',
   },
   {
-    icon: '💳',
+    icon: <CreditCard size={22} />,
     title: 'Paying with MTN MoMo or Airtel Money',
     steps: [
       'At checkout, pick MTN Mobile Money or Airtel Money.',
@@ -42,7 +43,7 @@ const guides = [
     tip: 'Double-check the phone number you enter. It must be the one registered on the wallet.',
   },
   {
-    icon: '🏪',
+    icon: <Store size={22} />,
     title: 'Creating your own store',
     steps: [
       'Sign in, then click "Create Store" from the menu.',
@@ -52,7 +53,7 @@ const guides = [
     tip: 'You get a free trial to start. After that, a small weekly subscription keeps it live.',
   },
   {
-    icon: '📚',
+    icon: <BookOpen size={22} />,
     title: 'Understanding subscriptions',
     steps: [
       'Stores are free during the trial period.',
@@ -78,7 +79,7 @@ export default function GuidesPage() {
         {guides.map((g, i) => (
           <div key={i} className="card" style={{ padding: 'clamp(1.25rem, 3vw, 1.75rem)' }}>
             <h2 style={{ fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.25rem', fontWeight: 600, marginBottom: '1rem' }}>
-              <span style={{ fontSize: '1.5rem' }}>{g.icon}</span> {g.title}
+              <span style={{ color: 'var(--primary)', display: 'inline-flex' }}>{g.icon}</span> {g.title}
             </h2>
             <ol style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', paddingLeft: '1.25rem', color: 'var(--text)', lineHeight: 1.5 }}>
               {g.steps.map((s, j) => (
@@ -86,7 +87,7 @@ export default function GuidesPage() {
               ))}
             </ol>
             <p style={{ marginTop: '1rem', padding: '0.75rem 1rem', borderRadius: '0.5rem', background: 'var(--glow)', border: '1px solid var(--border)', fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              💡 <strong style={{ color: 'var(--text)' }}>Tip:</strong> {g.tip}
+              <Lightbulb size={14} style={{ verticalAlign: '-2px' }} /> <strong style={{ color: 'var(--text)' }}>Tip:</strong> {g.tip}
             </p>
           </div>
         ))}

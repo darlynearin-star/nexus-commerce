@@ -4,7 +4,6 @@ import { useSearchParams, useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { storeApi } from '@/lib/store-api';
 import ProductCard from '@/components/ProductCard';
-import { categoryIcon } from '@/lib/category-icons';
 import { useDismiss } from '@/lib/use-dismiss';
 import { Search, SlidersHorizontal, X, ChevronRight, Filter, RotateCcw, } from 'lucide-react';
 
@@ -316,7 +315,7 @@ export default function StoreShopPage({ initialProducts, initialTotalPages, init
           >
             <option value="">All Categories</option>
             {topCategories.map((cat: any) => (
-              <option key={cat.id} value={cat.slug}>{categoryIcon(cat.slug, cat.name)} {cat.name}</option>
+              <option key={cat.id} value={cat.slug}>{cat.name}</option>
             ))}
           </select>
         </div>
