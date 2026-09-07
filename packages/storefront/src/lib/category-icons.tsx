@@ -123,6 +123,38 @@ const FALLBACK_BY_KEYWORD: [RegExp, LucideIcon][] = [
   [/part|repair/i, Wrench], [/other/i, ClipboardList],
 ];
 
+const CATEGORY_COLORS: [RegExp, string][] = [
+  [/car|vehicle|auto|motorcycle|scooter|bus|truck|trailer|boat|watercraft/i, '#3B82F6'],
+  [/house|apartment|property|land-plot|parking|short-let|rent|build|office-furniture|commercial-property/i, '#0D9488'],
+  [/smart-watch|phone|tablet/i, '#7C3AED'],
+  [/computer|laptop|tv|video|gamepad|console|audio|camera|printer|networking|modem|monitor|cpu|speaker|electronics|surveillance|smart-home|usb|pc/i, '#4F46E5'],
+  [/furniture|lighting|storage|kitchen|bedding|appliance|garden|decor|dining/i, '#D97706'],
+  [/fashion|cloth|clothing|shoe|footwear|bag|jewelry|watch|scissor|wedding|wear/i, '#DB2777'],
+  [/beauty|hair|skin|makeup|cosmetic|fragrance|nail|grooming|oral-care|bath|spa|wellness/i, '#E11D48'],
+  [/health|medicine|pharmacy|vitamin|supplement|herbal|first-aid|medical|fitness|eye-care|hearing|orthopedic|mobility|maternity/i, '#059669'],
+  [/electrical|generator|solar|inverter|battery|switch|socket|stabilizer|welding|industrial|cable|building-material|plumbing|hand-tools|construction-heavy|paint|doors|flooring|roofing|fencing|bathroom|alarm|siren|repair|weld/i, '#EA580C'],
+  [/commercial-equipment|manufacturing|restaurant|retail-shop|agriculture-farm|printing-packaging|laboratory|office/i, '#475569'],
+  [/leisure|sport|bicycle|cycling|musical|massager|camping|hiking|book|art|collectible|fitness-exercise/i, '#65A30D'],
+  [/baby|kids|children|toy|stroller|diaper|feeding|nursery|toddler/i, '#C026D3'],
+  [/food|agric|farm|grocer|produce|livestock|seed|fertilizer/i, '#16A34A'],
+  [/pet|animal|dog|cat|fish|aquarium|bird|rabbit/i, '#A16207'],
+  [/service|cleaning|photography|event|catering|tutor|legal|financial|accounting|marketing|advertising|web|writing|translation|logistics|moving|travel|tour|printing|stationery|design|security|consulting/i, '#0891B2'],
+  [/job|cv|seeking-work|career|employment|recruitment|internship/i, '#0284C7'],
+];
+const DEFAULT_CATEGORY_COLOR = '#D4A843';
+
+export function categoryColor(slug: string, name?: string): string {
+  for (const [pattern, color] of CATEGORY_COLORS) {
+    if (pattern.test(slug)) return color;
+  }
+  if (name) {
+    for (const [pattern, color] of CATEGORY_COLORS) {
+      if (pattern.test(name)) return color;
+    }
+  }
+  return DEFAULT_CATEGORY_COLOR;
+}
+
 export function categoryIcon(slug: string, name?: string): LucideIcon {
   if (ICONS[slug]) return ICONS[slug];
   if (name) {
@@ -133,7 +165,7 @@ export function categoryIcon(slug: string, name?: string): LucideIcon {
   return ShoppingBag;
 }
 
-export function CategoryIcon({ slug, name, size = 24, ...rest }: { slug: string; name?: string; size?: number } & ComponentProps<LucideIcon>) {
+export function CategoryIcon({ slug, name, size = 24, color, ...rest }: { slug: string; name?: string; size?: number; color?: string } & ComponentProps<LucideIcon>) {
   const Icon = categoryIcon(slug, name);
-  return <Icon size={size} {...rest} />;
+  return <Icon size={size} color={color ?? categoryColor(slug, name)} {...rest} />;
 }
