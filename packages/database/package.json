@@ -12,7 +12,8 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx src/seed.ts",
-    "db:promote-admin": "tsx scripts/promote-admin.ts"
+    "db:promote-admin": "tsx scripts/promote-admin.ts",
+    "db:reset-data": "tsx scripts/reset-data.ts"
   },
   "dependencies": {
     "@nexus/shared": "*",
