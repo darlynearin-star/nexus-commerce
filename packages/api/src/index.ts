@@ -138,6 +138,11 @@ async function runMigrations() {
     } catch (e: any) {
       logger.warn(`System actor upsert skipped: ${e?.message || e}`);
     }
+    // Store owners must hold RETAILER role so the retailer dashboard admits
+    // them. Idempotent: only promotes accounts registered before store creation
+    // started bumping roles (see POST /stores).
+    await prisma.$executeRawUnsafe(`UPDATE users SET role = 'RETAILER' WHERE role = 'CUSTOMER' AND id IN (SELECT "ownerId" FROM stores WHERE "ownerId" IS NOT NULL)`);
+    logger.info('Migration: ensured store owners have RETAILER role');
     // Search: pg_trgm trigram index on product searchable columns
     await prisma.$executeRawUnsafe('CREATE EXTENSION IF NOT EXISTS pg_trgm');
     await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS products_name_trgm_idx ON products USING gin (name gin_trgm_ops)');

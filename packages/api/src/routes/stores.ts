@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import prisma from '@nexus/database';
-import { authenticate, requirePermission, AuthRequest } from '../middleware/auth';
+import { authenticate, requirePermission, invalidateUserCache, AuthRequest } from '../middleware/auth';
 import { Permission } from '@nexus/shared';
 import { requireFeatureEnabled } from '../middleware/feature-flags';
 import { logActivity } from '../utils/activity-log';
@@ -106,6 +106,13 @@ storesRouter.post('/', authenticate, requireFeatureEnabled('storeCreation'), asy
       create: { userId: req.user!.userId, storeName: name, storeSlug: slug },
       update: { storeName: name, storeSlug: slug },
     });
+
+    // Promote the owner to RETAILER so the retailer dashboard admits them.
+    const ownerId = req.user!.userId;
+    if (req.user!.role === 'CUSTOMER') {
+      await prisma.user.update({ where: { id: ownerId }, data: { role: 'RETAILER' } });
+      invalidateUserCache(ownerId);
+    }
 
     // Set extra fields via raw SQL (columns exist in DB but not in Prisma schema)
     await prisma.$executeRaw`UPDATE store_settings SET phone = ${phone || ''}, whatsapp = ${whatsapp || ''} WHERE "storeId" = ${store.id}`;

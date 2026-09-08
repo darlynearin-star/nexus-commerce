@@ -10,6 +10,7 @@ const STATIC_ROUTES: MetadataRoute.Sitemap = [
   { url: `${SITE_URL}/deals`, changeFrequency: 'daily', priority: 0.7 },
   { url: `${SITE_URL}/guides`, changeFrequency: 'monthly', priority: 0.5 },
   { url: `${SITE_URL}/privacy`, changeFrequency: 'yearly', priority: 0.3 },
+  { url: `${SITE_URL}/terms`, changeFrequency: 'yearly', priority: 0.3 },
   { url: `${SITE_URL}/login`, changeFrequency: 'yearly', priority: 0.3 },
   { url: `${SITE_URL}/register`, changeFrequency: 'yearly', priority: 0.3 },
   { url: `${SITE_URL}/create-store`, changeFrequency: 'monthly', priority: 0.6 },

@@ -36,6 +36,7 @@ export default function StoreFooter() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
               <a href="mailto:lyn.nyx.store@gmail.com" style={{ color: 'inherit', textDecoration: 'none' }}>Contact Us</a>
               <Link href="/guides" style={{ color: 'inherit', textDecoration: 'none' }}>Guides &amp; Tutorials</Link>
+              <Link href="/terms" style={{ color: 'inherit', textDecoration: 'none' }}>Terms of Service</Link>
               <Link href="/privacy" style={{ color: 'inherit', textDecoration: 'none' }}>Privacy Policy</Link>
             </div>
           </div>

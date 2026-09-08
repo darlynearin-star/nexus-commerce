@@ -247,17 +247,16 @@ function MarketingGuest() {
           ))}
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 2 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 0.85fr', gap: '3rem', alignItems: 'center' }} className="hero-grid">
-            <div>
-              <p className="eyebrow">For independent merchants across Uganda</p>
+          <div style={{ maxWidth: 780, margin: '0 auto', textAlign: 'center' }}>
+              <p className="eyebrow" style={{ textAlign: 'center' }}>For independent merchants across Uganda</p>
               <h1 style={{ fontSize: 'clamp(2.6rem, 6vw, 4.4rem)', letterSpacing: '-0.03em', marginBottom: '1.25rem', fontWeight: 800, lineHeight: 1.05 }}>
                 Launch your online store{' '}
                 <span style={{ fontStyle: 'italic', color: 'var(--primary)' }}>in minutes.</span>
               </h1>
-              <p style={{ fontSize: '1.1875rem', color: 'var(--text-secondary)', maxWidth: 500, lineHeight: 1.65, marginBottom: '1.75rem' }}>
+              <p style={{ fontSize: '1.1875rem', color: 'var(--text-secondary)', maxWidth: 560, margin: '0 auto', lineHeight: 1.65, marginBottom: '1.75rem' }}>
                 Pick a template, set your colors, add your products, and start selling. No coding, no hassle. MTN MoMo &amp; Airtel Money built in.
               </p>
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '2rem', justifyContent: 'center' }}>
                 <Link href="/register" className="btn btn-primary" style={{ fontSize: '1rem', padding: '0.8125rem 1.65rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                   Start Free Trial <ArrowRight size={16} />
                 </Link>
@@ -265,7 +264,7 @@ function MarketingGuest() {
                   View Demo Store
                 </Link>
               </div>
-              <div className="trust-strip" style={{ marginBottom: '0.25rem' }}>
+              <div className="trust-strip" style={{ marginBottom: '0.25rem', justifyContent: 'center' }}>
                 {[
                   { icon: <CheckCircle size={15} style={{ color: 'var(--success)' }} />, label: '14 days free' },
                   { icon: <CheckCircle size={15} style={{ color: 'var(--success)' }} />, label: '3,000 UGX/week after' },
@@ -277,41 +276,6 @@ function MarketingGuest() {
                 ))}
               </div>
             </div>
-
-            {/* Static storefront preview */}
-            <div data-reveal="1">
-              <div className="card" style={{ padding: '1.25rem', borderRadius: 16, overflow: 'hidden' }}>
-                {/* Browser chrome */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '1rem' }}>
-                  {['#FF5F57', '#FEBC2E', '#28C840'].map((c) => (
-                    <span key={c} style={{ width: 10, height: 10, borderRadius: '50%', background: c, display: 'inline-block' }} />
-                  ))}
-                  <span style={{ marginLeft: '0.5rem', fontSize: '0.8125rem', color: 'var(--text-secondary)', letterSpacing: '0.02em' }}>yourstore.lynnyx.store</span>
-                </div>
-                {/* Banner */}
-                <div style={{ borderRadius: 12, padding: '1.5rem 1.25rem', marginBottom: '0.875rem', background: 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 28%, transparent), transparent)', border: '1px solid color-mix(in srgb, var(--primary) 35%, transparent)' }}>
-                  <p style={{ fontSize: '0.6875rem', color: 'var(--primary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: '0.375rem' }}>Now open for orders</p>
-                  <p style={{ fontWeight: 700, fontSize: '1.0625rem', color: 'var(--text)', marginBottom: '0.25rem' }}>Your brand, your storefront.</p>
-                  <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>Elegance · Minimal · Bold · Nature</p>
-                </div>
-                {/* Product tiles */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                  {[
-                    { grad: 'linear-gradient(135deg, #3a3120, #141414)', name: 'Signature Piece', price: 'UGX 350,000' },
-                    { grad: 'linear-gradient(135deg, #2c3a2b, #141414)', name: 'Everyday Essential', price: 'UGX 250,000' },
-                    { grad: 'linear-gradient(135deg, #3b2b2b, #141414)', name: 'Limited Edition', price: 'UGX 1,200,000' },
-                    { grad: 'linear-gradient(135deg, #1f3038, #141414)', name: 'New Arrival', price: 'UGX 550,000' },
-                  ].map((t) => (
-                    <div key={t.name} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '0.625rem', background: 'var(--bg)' }}>
-                      <div style={{ height: 72, borderRadius: 6, background: t.grad, marginBottom: '0.5rem' }} />
-                      <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.125rem' }}>{t.name}</p>
-                      <p style={{ fontSize: '0.6875rem', color: 'var(--primary)', fontWeight: 600 }}>{t.price}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 

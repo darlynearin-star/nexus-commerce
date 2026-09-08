@@ -24,6 +24,7 @@ const routeMeta: RouteMeta[] = [
   { match: s => s[0] === 'create-store', title: `Create Your Store | ${BRAND}`, description: 'Launch your own online store in minutes. Free 14-day trial, then 3,000 UGX per week.' },
   { match: s => s[0] === 'guides', title: `Guides & Tutorials | ${BRAND}`, description: 'Step-by-step guides for shopping and running your own store on Lyn-nyx Stores.' },
   { match: s => s[0] === 'privacy', title: `Privacy Policy | ${BRAND}`, description: 'How Lyn-nyx Stores collects, uses, and protects your personal data.' },
+  { match: s => s[0] === 'terms', title: `Terms of Service | ${BRAND}`, description: 'The terms that govern your use of Lyn-nyx Stores.' },
   { match: s => s[0] === 'product' && s.length === 2, title: `Product | ${BRAND}`, description: 'View product details, pricing, and delivery options.' },
   { match: s => s[0] === 'store' && s.length === 2, title: `Store | ${BRAND}`, description: 'Browse a store catalog of curated products.' },
   { match: s => s[0] === 'store' && s.length === 3 && s[2] === 'shop', title: `Shop | ${BRAND}`, description: 'Browse products, filter by category and price, and sort your results.' },

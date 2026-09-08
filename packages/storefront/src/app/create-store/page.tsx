@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { setStoreSlug } from '@/lib/store-api';
@@ -16,7 +17,7 @@ const TEMPLATES = [
 const slides = [
   {
     icon: <Store size={48} />,
-    title: 'Sell Your Fashion Online',
+    title: 'Sell Online in Minutes',
     desc: 'Create a personalized storefront for your brand in minutes. No coding, no hassle. Just pick a design, add your products, and start selling across Uganda.',
     feat: ['4 professional templates', 'Custom branding & colors', 'Your own store URL'],
   },
@@ -118,7 +119,7 @@ export default function CreateStorePage() {
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '1.5rem', textAlign: 'left', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '0.75rem' }}>
               <input type="checkbox" id="terms" checked={acceptedTerms} onChange={e => setAcceptedTerms(e.target.checked)} style={{ marginTop: '0.125rem' }} />
               <label htmlFor="terms" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                I agree to the <strong style={{ color: 'var(--text)' }}>Terms of Service</strong> and <strong style={{ color: 'var(--text)' }}>Privacy Policy</strong>. I understand that after a 14-day free trial, the subscription costs 3,000 UGX per week and can be cancelled anytime.
+                I agree to the <Link href="/terms" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'underline' }}>Terms of Service</Link> and <Link href="/privacy" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'underline' }}>Privacy Policy</Link>. I understand that after a 14-day free trial, the subscription costs 3,000 UGX per week and can be cancelled anytime.
               </label>
             </div>
             <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '0.875rem', fontSize: '1rem' }} disabled={!acceptedTerms} onClick={() => { setStep(1); setSlideIdx(0); }}>
