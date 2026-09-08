@@ -383,7 +383,7 @@ export default function EditProductPage() {
                 {brokenImages.includes(url) ? (
                   <div style={{ width: '100%', height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--error)', fontSize: '0.75rem' }}>Broken</div>
                 ) : (
-                  <img src={url} alt="" style={{ width: '100%', height: 100, objectFit: 'cover' }} onError={() => markBroken(url)} />
+                  <img src={url} alt="" loading="lazy" decoding="async" style={{ width: '100%', height: 100, objectFit: 'cover' }} onError={() => markBroken(url)} />
                 )}
                 <div style={{ fontSize: '0.625rem', textAlign: 'center', padding: '0.125rem 0', color: 'var(--text-secondary)' }}>{i === 0 ? 'Main' : `Image ${i + 1}`}</div>
                 <button aria-label="Remove image" style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white' }} onClick={() => removeImage(url)}><X size={12} /></button>

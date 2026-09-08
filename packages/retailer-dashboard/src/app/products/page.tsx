@@ -205,7 +205,7 @@ export default function ProductsPage() {
                     <td>
                       <Link href={`/products/${p.id}/edit`} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', color: 'inherit' }}>
                         <div style={{ width: 40, height: 40, borderRadius: '0.375rem', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', flexShrink: 0 }}>
-                          {p.images?.[0] ? <img src={p.images[0]} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: '0.375rem' }} /> : <Package size={18} style={{ color: 'var(--text-secondary)' }} />}
+                          {p.images?.[0] ? <img src={p.images[0]} alt="" loading="lazy" decoding="async" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: '0.375rem' }} /> : <Package size={18} style={{ color: 'var(--text-secondary)' }} />}
                         </div>
                         <div style={{ minWidth: 0 }}>
                           <p style={{ fontWeight: 500, fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</p>

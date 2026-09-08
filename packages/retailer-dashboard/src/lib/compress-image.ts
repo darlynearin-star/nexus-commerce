@@ -1,4 +1,8 @@
-export function compressImage(file: File, maxW = 3840, quality = 0.95): Promise<Blob> {
+// Cap at 1600px / 0.82 JPEG: product photos display at ~800px on the
+// storefront, so 3840px @ 0.95 translated to multi-MB base64 blobs in the DB
+// that slowed uploads, the dashboard lists, and the storefront image
+// optimizer. Only affects new uploads; existing data is untouched.
+export function compressImage(file: File, maxW = 1600, quality = 0.82): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
