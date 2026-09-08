@@ -101,13 +101,13 @@ export default function ProductsPage() {
             <button className="btn btn-secondary btn-sm" disabled={!bulkContent.trim() || bulkParsing}
               onClick={async () => {
                 setBulkParsing(true); setBulkError(null); setBulkResult(null);
-                try { const r = await api.post('/products/bulk-preview', { content: bulkContent }); setBulkPreview(r.data); }
+                try { const r = await api.post('/products/bulk-preview', { content: bulkContent }); setBulkPreview(r); }
                 catch (e: any) { setBulkError(e.message || 'Parse failed'); } finally { setBulkParsing(false); }
               }}>{bulkParsing ? 'Checking…' : '1. Parse & Preview'}</button>
             <button className="btn btn-primary btn-sm" disabled={!bulkPreview || bulkImporting || !bulkPreview?.data?.rows?.some((r: any) => r.errors.length === 0)}
               onClick={async () => {
                 setBulkImporting(true); setBulkError(null);
-                try { const r = await api.post('/products/bulk-import', { content: bulkContent }); setBulkResult(r.data); await loadProducts(); }
+                try { const r = await api.post('/products/bulk-import', { content: bulkContent }); setBulkResult(r); await loadProducts(); }
                 catch (e: any) { setBulkError(e.message || 'Import failed'); } finally { setBulkImporting(false); }
               }}>{bulkImporting ? 'Importing…' : '2. Import'}</button>
           </div>
