@@ -187,16 +187,10 @@ export default function LandingPage() {
   return <MarketingGuest />;
 }
 
-function formatUGX(n: number) {
-  return 'UGX ' + Number(n || 0).toLocaleString('en-UG');
-}
-
 function MarketingGuest() {
   const rootRef = useScrollReveal();
   const { isDark } = useTheme();
-  const [products, setProducts] = useState<any[]>([]);
   const [bgIndex, setBgIndex] = useState(0);
-  const [showcaseStart, setShowcaseStart] = useState(0);
 
   const features = [
     { icon: <Layout size={20} />, title: '4 Templates', desc: 'Elegance, Minimal, Bold, Nature: pick the look that fits your brand.' },
@@ -224,23 +218,6 @@ function MarketingGuest() {
     'Own your customers',
   ];
 
-  useEffect(() => {
-    // Pull real product images from the demo store for the hero showcase.
-    let cancelled = false;
-    fetch('/api/products?limit=8', {
-      headers: { 'x-store-slug': 'adorn', 'x-store-id': '72679ccc-bbc9-4850-a610-70c391a1da9b' },
-    })
-      .then((r) => r.json())
-      .then((res) => {
-        if (!cancelled && res?.success && Array.isArray(res.data)) {
-          const withImages = res.data.filter((p: any) => Array.isArray(p.images) && p.images.length > 0);
-          if (withImages.length) setProducts(withImages);
-        }
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, []);
-
   // Rotate hero background image with a gentle crossfade.
   useEffect(() => {
     if (heroImages.length < 2) return;
@@ -248,13 +225,6 @@ function MarketingGuest() {
     const id = setInterval(() => setBgIndex((i) => (i + 1) % heroImages.length), 7000);
     return () => clearInterval(id);
   }, [heroImages.length, isDark]);
-
-  // Rotate which products appear in the hero showcase.
-  useEffect(() => {
-    if (products.length < 4) return;
-    const id = setInterval(() => setShowcaseStart((s) => (s + 1) % products.length), 5000);
-    return () => clearInterval(id);
-  }, [products.length]);
 
   useEffect(() => {
     const pills = document.querySelectorAll('.trust-pill');
@@ -265,23 +235,6 @@ function MarketingGuest() {
     pills.forEach((p) => obs.observe(p));
     return () => obs.disconnect();
   }, []);
-
-  // Build up to 4 DISTINCT products for the showcase so we never render the same
-  // product twice (which would produce duplicate React keys + a duplicate-looking
-  // card). Falls back to showing fewer cards when the store has few products.
-  const featured = (() => {
-    if (!products.length) return [];
-    const seen = new Set<string>();
-    const out: any[] = [];
-    for (let step = 0; step < products.length && out.length < 4; step++) {
-      const p = products[(showcaseStart + step) % products.length];
-      const key = p?.id ?? p?.slug ?? String(step);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push(p);
-    }
-    return out;
-  })();
 
   return (
     <div ref={rootRef} style={{ position: 'relative', zIndex: 1 }}>
@@ -325,33 +278,38 @@ function MarketingGuest() {
               </div>
             </div>
 
-            {/* Dynamic product showcase */}
-            <div>
-              {featured.length ? (
-                <div className="hero-showcase" data-reveal="1">
-                  {featured.slice(0, 4).map((p, i) => (
-                    <Link key={p.id || i} href={`/store/adorn/product/${p.slug}`} className="card" style={{ padding: '0.75rem', textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                      {p.images?.[0] ? (
-                        <img src={p.images[0]} alt={p.name} style={{ width: '100%', height: 110, objectFit: 'cover', borderRadius: 8 }} />
-                      ) : (
-                        <div className="skeleton" style={{ height: 110, borderRadius: 8 }} />
-                      )}
-                      <p style={{ fontWeight: 600, fontSize: '0.8125rem', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</p>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 600 }}>{formatUGX(p.price)}</p>
-                    </Link>
+            {/* Static storefront preview */}
+            <div data-reveal="1">
+              <div className="card" style={{ padding: '1.25rem', borderRadius: 16, overflow: 'hidden' }}>
+                {/* Browser chrome */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '1rem' }}>
+                  {['#FF5F57', '#FEBC2E', '#28C840'].map((c) => (
+                    <span key={c} style={{ width: 10, height: 10, borderRadius: '50%', background: c, display: 'inline-block' }} />
                   ))}
+                  <span style={{ marginLeft: '0.5rem', fontSize: '0.8125rem', color: 'var(--text-secondary)', letterSpacing: '0.02em' }}>yourstore.lynnyx.store</span>
                 </div>
-              ) : (
-                <div className="hero-showcase">
-                  {[0, 1, 2, 3].map((i) => (
-                    <div key={i} className="card" style={{ padding: '0.75rem' }}>
-                      <div className="skeleton" style={{ height: 110, borderRadius: 8, marginBottom: '0.5rem' }} />
-                      <div className="skeleton" style={{ height: 12, width: '70%', marginBottom: '0.375rem' }} />
-                      <div className="skeleton" style={{ height: 12, width: '40%' }} />
+                {/* Banner */}
+                <div style={{ borderRadius: 12, padding: '1.5rem 1.25rem', marginBottom: '0.875rem', background: 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 28%, transparent), transparent)', border: '1px solid color-mix(in srgb, var(--primary) 35%, transparent)' }}>
+                  <p style={{ fontSize: '0.6875rem', color: 'var(--primary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: '0.375rem' }}>Now open for orders</p>
+                  <p style={{ fontWeight: 700, fontSize: '1.0625rem', color: 'var(--text)', marginBottom: '0.25rem' }}>Your brand, your storefront.</p>
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>Elegance · Minimal · Bold · Nature</p>
+                </div>
+                {/* Product tiles */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  {[
+                    { grad: 'linear-gradient(135deg, #3a3120, #141414)', name: 'Signature Piece', price: 'UGX 350,000' },
+                    { grad: 'linear-gradient(135deg, #2c3a2b, #141414)', name: 'Everyday Essential', price: 'UGX 250,000' },
+                    { grad: 'linear-gradient(135deg, #3b2b2b, #141414)', name: 'Limited Edition', price: 'UGX 1,200,000' },
+                    { grad: 'linear-gradient(135deg, #1f3038, #141414)', name: 'New Arrival', price: 'UGX 550,000' },
+                  ].map((t) => (
+                    <div key={t.name} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '0.625rem', background: 'var(--bg)' }}>
+                      <div style={{ height: 72, borderRadius: 6, background: t.grad, marginBottom: '0.5rem' }} />
+                      <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.125rem' }}>{t.name}</p>
+                      <p style={{ fontSize: '0.6875rem', color: 'var(--primary)', fontWeight: 600 }}>{t.price}</p>
                     </div>
                   ))}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
