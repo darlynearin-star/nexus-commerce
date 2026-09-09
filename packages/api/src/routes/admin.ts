@@ -5,7 +5,7 @@ import { authenticate, requirePermission, AuthRequest, invalidateUserCache } fro
 import { Permission, UserRole } from '@nexus/shared';
 import { logActivity } from '../utils/activity-log';
 import { validatePassword } from '../utils/password-policy';
-import { backfillStorage } from '../utils/backfill';
+import { backfillStorage, rewriteUploadReferences } from '../utils/backfill';
 import { getStorageConfig, isS3Configured } from '../utils/storage';
 
 export const adminRouter = Router();
@@ -18,7 +18,7 @@ adminRouter.get('/storage/backfill', authenticate, requirePermission(Permission.
     if (!isS3Configured(cfg)) {
       return res.json({ success: true, configured: false, message: 'R2/S3 not configured — set STORAGE_* env vars first.' });
     }
-    return res.json({ success: true, configured: true, report: await backfillStorage(cfg, true) });
+    return res.json({ success: true, configured: true, report: await backfillStorage(cfg, true), references: await rewriteUploadReferences(cfg, { dryRun: true }) });
   } catch (error) { next(error); }
 });
 
@@ -26,11 +26,15 @@ adminRouter.post('/storage/backfill', authenticate, requirePermission(Permission
   try {
     const cfg = getStorageConfig();
     if (!isS3Configured(cfg)) return res.status(400).json({ success: false, error: 'R2/S3 not configured — set STORAGE_* env vars first.' });
-    const report = await backfillStorage(cfg, false);
-    logActivity({ userId: req.user!.userId, action: 'storage:backfill', resource: 'system', details: { moved: report.moved, failed: report.failed }, req: req as any });
+    const [report, references] = [
+      await backfillStorage(cfg, false),
+      await rewriteUploadReferences(cfg, { dryRun: false }),
+    ];
+    logActivity({ userId: req.user!.userId, action: 'storage:backfill', resource: 'system', details: { moved: report.moved, failed: report.failed, refs: references.updated }, req: req as any });
     return res.json({
       success: true,
       report,
+      references,
       done: report.mediaRemaining === 0 && report.adsRemaining === 0,
       message: report.mediaRemaining + report.adsRemaining > 0 ? 'Items remain — re-run until the report shows zero.' : 'All blobs migrated.',
     });
@@ -68,6 +72,98 @@ adminRouter.put('/users/:id', authenticate, requirePermission(Permission.MANAGE_
     }
     logActivity({ userId: req.user!.userId, action: 'user:updated', resource: 'user', resourceId: user.id, details: { changes: Object.keys(data) }, req: req as any });
     res.json({ success: true, data: { ...user, passwordHash: undefined } });
+  } catch (error) { next(error); }
+});
+
+// Per-account tracking drill-in: role, sessions, activity history, store & order
+// stats, and analytics (traffic/pageview) events for a given user.
+adminRouter.get('/users/:id/tracking', authenticate, requirePermission(Permission.MANAGE_USERS), async (req: AuthRequest, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true, email: true, firstName: true, lastName: true, role: true,
+        isActive: true, twoFactorEnabled: true, createdAt: true, googleId: true,
+        customer: { select: { id: true } },
+      },
+    });
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+    const [
+      activeSessions,
+      totalSessions,
+      lastSession,
+      activityTotal,
+      recentActivity,
+      activityGrouped,
+      analyticsEvents,
+      ownedStore,
+    ] = await Promise.all([
+      prisma.session.count({ where: { userId: id, isActive: true } }),
+      prisma.session.count({ where: { userId: id } }),
+      prisma.session.findFirst({ where: { userId: id }, orderBy: { lastActivity: 'desc' }, select: { id: true, lastActivity: true, ipAddress: true, userAgent: true, createdAt: true } }),
+      prisma.activityLog.count({ where: { userId: id } }),
+      prisma.activityLog.findMany({
+        where: { userId: id }, orderBy: { createdAt: 'desc' }, take: 25,
+        select: { id: true, action: true, resource: true, resourceId: true, details: true, ipAddress: true, createdAt: true },
+      }),
+      prisma.activityLog.groupBy({ by: ['action'], where: { userId: id }, _count: true, orderBy: { _count: { action: 'desc' } }, take: 30 }),
+      prisma.analyticsEvent.findMany({
+        where: { userId: id }, orderBy: { createdAt: 'desc' }, take: 25,
+        select: { id: true, eventType: true, pageUrl: true, sessionId: true, createdAt: true },
+      }),
+      prisma.store.findFirst({ where: { ownerId: id }, include: { _count: { select: { products: true } } } }),
+    ]);
+
+    const analyticsTotal = await prisma.analyticsEvent.count({ where: { userId: id } });
+
+    // Retailer view: this user's store + its sales.
+    let store: Record<string, any> | null = null;
+    let storeOrders: { count: number; revenue: number; recent: any[] } | null = null;
+    if (ownedStore) {
+      const orderAgg = await prisma.order.aggregate({
+        where: { storeId: ownedStore.id, status: { notIn: ['CANCELLED', 'REFUNDED', 'RETURNED'] } },
+        _sum: { total: true }, _count: true,
+      });
+      const recentOrders = await prisma.order.findMany({
+        where: { storeId: ownedStore.id }, orderBy: { createdAt: 'desc' }, take: 10,
+        select: { id: true, orderNumber: true, total: true, status: true, paymentStatus: true, guestEmail: true, createdAt: true },
+      });
+      store = { id: ownedStore.id, name: ownedStore.name, slug: ownedStore.slug, isActive: ownedStore.isActive, products: ownedStore._count.products, createdAt: ownedStore.createdAt };
+      storeOrders = { count: orderAgg._count, revenue: orderAgg._sum.total || 0, recent: recentOrders };
+    }
+
+    // Customer view: purchases this user placed.
+    let customerOrders: { count: number; spent: number; recent: any[] } | null = null;
+    if (user.customer) {
+      const custAgg = await prisma.order.aggregate({
+        where: { customerId: user.customer.id, status: { notIn: ['CANCELLED', 'REFUNDED', 'RETURNED'] } },
+        _sum: { total: true }, _count: true,
+      });
+      const recentOrders = await prisma.order.findMany({
+        where: { customerId: user.customer.id }, orderBy: { createdAt: 'desc' }, take: 10,
+        select: { id: true, orderNumber: true, total: true, status: true, paymentStatus: true, store: { select: { name: true, slug: true } }, createdAt: true },
+      });
+      customerOrders = { count: custAgg._count, spent: custAgg._sum.total || 0, recent: recentOrders };
+    }
+
+    res.json({
+      success: true,
+      data: {
+        user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role, isActive: user.isActive, twoFactorEnabled: user.twoFactorEnabled, createdAt: user.createdAt, googleLinked: !!user.googleId },
+        sessions: { active: activeSessions, total: totalSessions, last: lastSession },
+        activity: {
+          total: activityTotal,
+          byAction: activityGrouped.map(g => ({ action: g.action, count: g._count })),
+          recent: recentActivity,
+        },
+        analytics: { total: analyticsTotal, recent: analyticsEvents },
+        store,
+        storeOrders,
+        customerOrders,
+      },
+    });
   } catch (error) { next(error); }
 });
 

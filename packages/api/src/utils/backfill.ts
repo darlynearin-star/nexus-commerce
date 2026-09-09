@@ -1,6 +1,6 @@
 import path from 'path';
 import prisma from '@nexus/database';
-import { putS3Object, type StorageConfig, isS3Configured } from './storage';
+import { putS3Object, getApiBase, type StorageConfig, isS3Configured } from './storage';
 
 /**
  * One-time backfill: move existing base64 blobs (Media.data, AdVideo.data)
@@ -99,5 +99,99 @@ export async function backfillStorage(cfg: StorageConfig, dryRun: boolean): Prom
   report.mediaRemaining = await prisma.media.count({ where: { data: { not: null } } });
   report.adsRemaining = await prisma.adVideo.count({ where: { data: { not: null } } });
 
+  return report;
+}
+
+export interface ReferenceReport {
+  scanned: { products: number; categories: number; brands: number; variants: number; stores: number; downloads: number };
+  updated: { products: number; categories: number; brands: number; variants: number; stores: number; downloads: number };
+  // Old upload-host URLs that pointed at a media row (so they SHOULD have a
+  // migration target) but no map entry was found — e.g. media row already gone.
+  remaining: number;
+}
+
+function emptyReferenceReport(): ReferenceReport {
+  const zero = () => ({ products: 0, categories: 0, brands: 0, variants: 0, stores: 0, downloads: 0 });
+  return { scanned: zero(), updated: zero(), remaining: 0 };
+}
+
+// Deterministic old→new mapping for the DB-backed upload URLs. The old URLs
+// were always `${API_BASE}/uploads/<storeId>/<mediaId>` and the new ones
+// `${publicBaseUrl}/<storeId>/<mediaId><ext>` — the same key scheme the
+// backfill writes, so this stays correct even for already-migrated rows.
+export function buildUploadUrlMap(
+  mediaRows: { id: string; storeId: string; alt: string }[],
+  cfg: StorageConfig,
+): Record<string, string> {
+  const api = getApiBase();
+  const map: Record<string, string> = {};
+  for (const m of mediaRows) {
+    const old = `${api}/uploads/${m.storeId}/${m.id}`;
+    const key = `${m.storeId}/${m.id}${path.extname(m.alt || '')}`;
+    map[old] = `${cfg.publicBaseUrl}/${key}`;
+  }
+  return map;
+}
+
+/**
+ * After blobs move to object storage the Media.url flips to the CDN origin,
+ * but everything that still holds the OLD upload-host URL breaks (the
+ * /uploads route returns null once `data` is cleared). Rewrites every
+ * reference so images keep working: product.images, category.image,
+ * brand.logo, variant.image, store.logoUrl and product_downloads.fileUrl.
+ * Idempotent + safe to re-run; dryRun only reports.
+ */
+export async function rewriteUploadReferences(cfg: StorageConfig, opts?: { dryRun?: boolean }): Promise<ReferenceReport> {
+  const dryRun = opts?.dryRun ?? true;
+  const report = emptyReferenceReport();
+  const orphans = new Set<string>();
+
+  const mediaRows = await prisma.media.findMany({ select: { id: true, storeId: true, alt: true } });
+  const map = buildUploadUrlMap(mediaRows, cfg);
+
+  const products = await prisma.product.findMany({ select: { id: true, images: true } });
+  report.scanned.products = products.length;
+  let productsChanged = 0;
+  for (const p of products) {
+    const next: string[] = [];
+    let hit = false;
+    for (const url of p.images) {
+      if (map[url]) { hit = true; next.push(map[url]); }
+      else {
+        if (url.startsWith(`${getApiBase()}/uploads/`)) orphans.add(url);
+        next.push(url);
+      }
+    }
+    if (hit) {
+      productsChanged++;
+      if (!dryRun) await prisma.product.update({ where: { id: p.id }, data: { images: next } });
+    }
+  }
+  report.updated.products = productsChanged;
+
+  async function rewriteSingle(delegate: { findMany: (a: any) => Promise<{ id: string; [k: string]: any }[]>; update: (a: any) => Promise<any> }, field: string, counter: 'categories' | 'brands' | 'variants' | 'stores' | 'downloads') {
+    const rows = await delegate.findMany({ select: { id: true, [field]: true } });
+    report.scanned[counter] = rows.length;
+    let changed = 0;
+    for (const row of rows) {
+      const value: string = row[field];
+      if (value && !map[value]) {
+        if (value.startsWith(`${getApiBase()}/uploads/`)) orphans.add(value);
+        continue;
+      }
+      if (!map[value]) continue;
+      changed++;
+      if (!dryRun) await delegate.update({ where: { id: row.id }, data: { [field]: map[value] } });
+    }
+    report.updated[counter] = changed;
+  }
+
+  await rewriteSingle(prisma.category, 'image', 'categories');
+  await rewriteSingle(prisma.brand, 'logo', 'brands');
+  await rewriteSingle(prisma.productVariant, 'image', 'variants');
+  await rewriteSingle(prisma.store, 'logoUrl', 'stores');
+  await rewriteSingle(prisma.productDownload, 'fileUrl', 'downloads');
+
+  report.remaining = orphans.size;
   return report;
 }

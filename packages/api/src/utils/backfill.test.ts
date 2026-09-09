@@ -8,21 +8,40 @@ const h = vi.hoisted(() => ({
   updateMedia: vi.fn(),
   updateAd: vi.fn(),
   putS3Object: vi.fn().mockResolvedValue(undefined),
+  findManyProducts: vi.fn(),
+  updateProduct: vi.fn(),
+  findManyCategories: vi.fn(),
+  updateCategory: vi.fn(),
+  findManyBrands: vi.fn(),
+  updateBrand: vi.fn(),
+  findManyVariants: vi.fn(),
+  updateVariant: vi.fn(),
+  findManyStores: vi.fn(),
+  updateStore: vi.fn(),
+  findManyDownloads: vi.fn(),
+  updateDownload: vi.fn(),
 }));
 
 vi.mock('@nexus/database', () => ({
   default: {
     media: { findMany: h.findManyMedia, update: h.updateMedia, count: h.countMedia },
     adVideo: { findMany: h.findManyAds, update: h.updateAd, count: h.countAdVids },
+    product: { findMany: h.findManyProducts, update: h.updateProduct },
+    category: { findMany: h.findManyCategories, update: h.updateCategory },
+    brand: { findMany: h.findManyBrands, update: h.updateBrand },
+    productVariant: { findMany: h.findManyVariants, update: h.updateVariant },
+    store: { findMany: h.findManyStores, update: h.updateStore },
+    productDownload: { findMany: h.findManyDownloads, update: h.updateDownload },
   },
 }));
 
 vi.mock('./storage', () => ({
   putS3Object: h.putS3Object,
+  getApiBase: () => 'https://nexus-api-69q5.onrender.com',
   isS3Configured: (cfg: any) => cfg.provider === 's3' && !!cfg.endpoint && !!cfg.bucket && !!cfg.accessKeyId,
 }));
 
-import { backfillStorage, adObjectKey } from './backfill';
+import { backfillStorage, adObjectKey, buildUploadUrlMap, rewriteUploadReferences } from './backfill';
 
 const s3Cfg = {
   provider: 's3' as const,
@@ -103,7 +122,7 @@ describe('R2 blob backfill (M-mirror)', () => {
     expect(h.updateMedia).toHaveBeenCalledTimes(1); // only the good one was cleared
   });
 
-  it('returns early without uploading when R2 is not configured', async () => {
+it('returns early without uploading when R2 is not configured', async () => {
     h.findManyMedia.mockResolvedValue([{ id: 'm1', storeId: 's1', alt: 'a.png', mimeType: 'image/png', data: 'AAAA' }]);
     h.findManyAds.mockResolvedValue([]);
 
@@ -111,6 +130,82 @@ describe('R2 blob backfill (M-mirror)', () => {
 
     expect(r.moved).toEqual({ media: 0, ads: 0 });
     expect(h.putS3Object).not.toHaveBeenCalled();
+  });
+});
+
+describe('upload URL mapping', () => {
+  it('maps old /uploads URLs to the CDN origin with the same key scheme', () => {
+    const map = buildUploadUrlMap([{ id: 'm1', storeId: 's1', alt: 'photo.jpg' }], s3Cfg);
+    expect(map).toEqual({
+      'https://nexus-api-69q5.onrender.com/uploads/s1/m1': 'https://cdn.example.com/s1/m1.jpg',
+    });
+  });
+});
+
+describe('reference rewrite', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    h.findManyProducts.mockResolvedValue([]);
+    h.findManyCategories.mockResolvedValue([]);
+    h.findManyBrands.mockResolvedValue([]);
+    h.findManyVariants.mockResolvedValue([]);
+    h.findManyStores.mockResolvedValue([]);
+    h.findManyDownloads.mockResolvedValue([]);
+  });
+
+  const OLD = 'https://nexus-api-69q5.onrender.com/uploads/s1/m1';
+
+  it('dry-run reports planned updates without writing', async () => {
+    h.findManyMedia.mockResolvedValue([{ id: 'm1', storeId: 's1', alt: 'photo.jpg' }]);
+    h.findManyProducts.mockResolvedValue([{ id: 'p1', images: [OLD] }]);
+    h.findManyStores.mockResolvedValue([{ id: 'st1', logoUrl: OLD }]);
+
+    const r = await rewriteUploadReferences(s3Cfg, { dryRun: true });
+
+    expect(r.scanned.products).toBe(1);
+    expect(r.updated.products).toBe(1);
+    expect(r.scanned.stores).toBe(1);
+    expect(r.updated.stores).toBe(1);
+    expect(r.remaining).toBe(0);
+    expect(h.updateProduct).not.toHaveBeenCalled();
+    expect(h.updateStore).not.toHaveBeenCalled();
+  });
+
+  it('commits rewrites across product images and scalar columns', async () => {
+    h.findManyMedia.mockResolvedValue([{ id: 'm1', storeId: 's1', alt: 'photo.jpg' }]);
+    h.findManyProducts.mockResolvedValue([{ id: 'p1', images: [OLD, 'https://cdn.example.com/s1/m1.jpg'] }]);
+    h.findManyCategories.mockResolvedValue([{ id: 'c1', image: OLD }]);
+    h.findManyBrands.mockResolvedValue([{ id: 'b1', logo: '' }]);
+    h.findManyVariants.mockResolvedValue([{ id: 'v1', image: 'https://external.example/other.png' }]);
+    h.findManyStores.mockResolvedValue([{ id: 'st1', logoUrl: OLD }]);
+    h.findManyDownloads.mockResolvedValue([{ id: 'd1', fileUrl: OLD }]);
+
+    const r = await rewriteUploadReferences(s3Cfg, { dryRun: false });
+
+    expect(r.updated).toEqual({ products: 1, categories: 1, brands: 0, variants: 0, stores: 1, downloads: 1 });
+    expect(r.remaining).toBe(0);
+    const NEW = 'https://cdn.example.com/s1/m1.jpg';
+    expect(h.updateProduct).toHaveBeenCalledWith({ where: { id: 'p1' }, data: { images: [NEW, NEW] } });
+    expect(h.updateCategory).toHaveBeenCalledWith({ where: { id: 'c1' }, data: { image: NEW } });
+    expect(h.updateBrand).not.toHaveBeenCalled();
+    expect(h.updateVariant).not.toHaveBeenCalled();
+    expect(h.updateStore).toHaveBeenCalledWith({ where: { id: 'st1' }, data: { logoUrl: NEW } });
+    expect(h.updateDownload).toHaveBeenCalledWith({ where: { id: 'd1' }, data: { fileUrl: NEW } });
+  });
+
+  it('flags orphaned references that point at uploads with no media row', async () => {
+    h.findManyMedia.mockResolvedValue([]);
+    h.findManyProducts.mockResolvedValue([{ id: 'p1', images: ['https://nexus-api-69q5.onrender.com/uploads/s1/ghost'] }]);
+    h.findManyCategories.mockResolvedValue([]);
+    h.findManyBrands.mockResolvedValue([]);
+    h.findManyVariants.mockResolvedValue([]);
+    h.findManyStores.mockResolvedValue([{ id: 'st1', logoUrl: 'https://nexus-api-69q5.onrender.com/uploads/s1/ghost2' }]);
+    h.findManyDownloads.mockResolvedValue([]);
+
+    const r = await rewriteUploadReferences(s3Cfg, { dryRun: true });
+
+    expect(r.updated).toEqual({ products: 0, categories: 0, brands: 0, variants: 0, stores: 0, downloads: 0 });
+    expect(r.remaining).toBe(2);
   });
 });
 
