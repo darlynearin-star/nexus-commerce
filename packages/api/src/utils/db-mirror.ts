@@ -101,11 +101,32 @@ export async function buildInsertSql(prisma: PrismaClient, table: string, rows: 
   return `INSERT INTO "${table}" (${colList}) VALUES ${values};`;
 }
 
+// Inline blob payloads (base64 image/file data) must never be hauled through
+// the boot-time mirror snapshot: media alone is ~322MB today and SELECTing +
+// stringifying it on the small free-tier instance pushed it into OOM right
+// after "service is live" on every deploy. The fallback only needs continuity
+// of schema + core rows, not the binary payloads.
+const BLOB_COLUMN = 'data';
+
+async function snapshotColumnList(prisma: PrismaClient, table: string): Promise<string | null> {
+  const cols: any[] = await prisma.$queryRawUnsafe(
+    `SELECT column_name FROM information_schema.columns WHERE table_name = $1`,
+    table,
+  );
+  const names = cols.map((c) => c.column_name);
+  if (!names.includes(BLOB_COLUMN)) return null;
+  const rest = names.filter((n) => n !== BLOB_COLUMN);
+  return rest.length ? rest.map((n) => `"${n}"`).join(',') : `"id"`;
+}
+
 export async function buildTableSql(prisma: PrismaClient): Promise<Record<string, string>> {
   const out: Record<string, string> = {};
   for (const table of BACKUP_TABLES) {
     try {
-      const rows: any[] = await prisma.$queryRawUnsafe(`SELECT * FROM "${table}"`);
+      const cols = await snapshotColumnList(prisma, table);
+      const rows: any[] = cols
+        ? await prisma.$queryRawUnsafe(`SELECT ${cols} FROM "${table}"`)
+        : await prisma.$queryRawUnsafe(`SELECT * FROM "${table}"`);
       const sql = await buildInsertSql(prisma, table, rows);
       if (sql) out[table] = sql;
     } catch {
