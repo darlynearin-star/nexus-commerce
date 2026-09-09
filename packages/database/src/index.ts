@@ -20,9 +20,48 @@ function isConnectionError(err: any): boolean {
   if (!err) return false;
   const code = String(err?.code || '');
   const message = `${String(err?.message || '')} ${String(err?.meta?.database_error || '')}`;
-  const codes = new Set(['P1001', 'P1002', 'P1003', 'P1009', 'P1017', 'P2024']);
+  const codes = new Set(['P1001', 'P1002', 'P1003', 'P1008', 'P1009', 'P1017', 'P2024']);
   if (codes.has(code)) return true;
   return /(can'?t reach database server|connection refused|econnrefused|econnreset|etimedout|host not reachable|connect timeout|terminat.*connection|does not exist|too many clients)/i.test(message);
+}
+
+const MAX_TRANSIENT_RETRIES = 2;
+const RETRY_DELAY_MS = [150, 500];
+// Errors that guarantee the operation never reached the server. Safe to retry
+// for BOTH reads and writes. Everything else (mid-query drops) may have
+// committed on the DB, so only reads get retried on it.
+const SAFE_RETRY_CODES = new Set(['P1001', 'P1002', 'P1009', 'P1017', 'P2024']);
+const SAFE_RETRY_MESSAGE = /(can'?t reach database server|connection refused|too many clients|connection pool|pool timeout|timed out fetching a new connection)/i;
+const RETRYABLE_READ_METHODS = new Set([
+  'findMany', 'findFirst', 'findUnique', 'findFirstOrThrow', 'findUniqueOrThrow',
+  'count', 'aggregate', 'groupBy', 'findRaw', 'aggregateRaw',
+  '$queryRaw', '$queryRawUnsafe', '$queryRawTyped',
+]);
+
+function isSafeRetryError(e: any): boolean {
+  const code = String(e?.code || '');
+  const message = `${String(e?.message || '')} ${String(e?.meta?.database_error || '')}`;
+  return SAFE_RETRY_CODES.has(code) || SAFE_RETRY_MESSAGE.test(message);
+}
+
+// Transient DB blips (pool timeouts, "can't reach database server") are the
+// norm on hosted Postgres — retry them briefly instead of failing the request.
+// Writes are retried only when the op provably never reached the database.
+async function withTransientRetry<T>(method: string, fn: () => Promise<T>): Promise<T> {
+  const isRead = RETRYABLE_READ_METHODS.has(method);
+  let lastErr: any;
+  for (let attempt = 0; attempt <= MAX_TRANSIENT_RETRIES; attempt++) {
+    try {
+      return await fn();
+    } catch (e: any) {
+      lastErr = e;
+      if (!isConnectionError(e)) throw e;
+      if (!isRead && !isSafeRetryError(e)) throw e;
+      if (attempt === MAX_TRANSIENT_RETRIES) throw e;
+      await new Promise((r) => setTimeout(r, RETRY_DELAY_MS[attempt] ?? 500));
+    }
+  }
+  throw lastErr;
 }
 
 async function switchToFallback(): Promise<boolean> {
@@ -112,7 +151,7 @@ function makeDelegate(prop: string): any {
       if (!delegate || typeof delegate !== 'object') return delegate;
       const value = delegate[methodName];
       if (typeof value === 'function') {
-        return async (...args: any[]) => {
+        return (...args: any[]) => withTransientRetry(String(methodName), async () => {
           const attempt = () => (client as any)[prop][methodName](...args);
           try {
             return await attempt();
@@ -122,7 +161,7 @@ function makeDelegate(prop: string): any {
             }
             throw e;
           }
-        };
+        });
       }
       return value;
     },
@@ -137,7 +176,7 @@ const prisma: PrismaClient = new Proxy({} as PrismaClient, {
 
     const value = (client as any)[prop];
     if (typeof value === 'function') {
-      return async (...args: any[]) => {
+      return (...args: any[]) => withTransientRetry(String(prop), async () => {
         const attempt = () => (client as any)[prop].apply(client, args);
         try {
           return await attempt();
@@ -147,7 +186,7 @@ const prisma: PrismaClient = new Proxy({} as PrismaClient, {
           }
           throw e;
         }
-      };
+      });
     }
     if (value && typeof value === 'object') return makeDelegate(String(prop));
     return value;

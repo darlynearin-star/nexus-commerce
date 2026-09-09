@@ -349,6 +349,14 @@ const app = createApp();
 export default app;
 
 if (require.main === module) {
+// A stray async error or transient DB blip must never take the whole process
+// (and the deploy) down. Log loudly, keep serving.
+process.on('unhandledRejection', (reason) => {
+  logger.error(`Unhandled rejection: ${reason instanceof Error ? reason.stack || reason.message : String(reason)}`);
+});
+process.on('uncaughtException', (err) => {
+  logger.error(`Uncaught exception: ${err?.stack || err?.message || err}`);
+});
 const server = app.listen(PORT, async () => {
   logger.info(`Lyn-nyx Stores API running on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
