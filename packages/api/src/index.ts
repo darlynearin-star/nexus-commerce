@@ -267,16 +267,39 @@ app.use('/uploads', express.static('uploads'));
 
 // DB-backed uploads survive ephemeral host disks (Render wipes files on deploy).
 // S3/R2-backed uploads are streamed from object storage when STORAGE_* is set.
+// Blobs currently live as base64 in Postgres; loading several multi-MB blobs in
+// parallel pushes the small free-tier instances into OOM (SIGKILL) crash-loops.
+// Cap concurrent blob loads so floods serialize instead of piling up memory.
+const MAX_CONCURRENT_BLOB_LOADS = 3;
+let activeBlobLoads = 0;
+const blobWaiters: Array<() => void> = [];
+async function withBlobSlot<T>(fn: () => Promise<T>): Promise<T> {
+  if (activeBlobLoads < MAX_CONCURRENT_BLOB_LOADS) {
+    activeBlobLoads++;
+    try {
+      return await fn();
+    } finally {
+      activeBlobLoads--;
+      const next = blobWaiters.shift();
+      if (next) next();
+    }
+  }
+  await new Promise<void>((resolve) => blobWaiters.push(resolve));
+  return withBlobSlot(fn);
+}
+
 app.get('/uploads/:storeId/:mediaId', async (req, res) => {
   try {
-    const file = await storage.retrieve(req.params.storeId, req.params.mediaId);
-    if (!file) return res.status(404).send('Not found');
-    // Derive content type from the stored filename, not the client-supplied
-    // mimetype, and force nosniff so a spoofed file can never execute inline.
-    serveRangeBuffer(req, res, file.buffer, {
-      'Content-Type': file.mimeType,
-      'Content-Disposition': file.type === 'document' ? 'inline; filename="' + encodeURIComponent(file.filename) + '"' : 'inline',
-      'Cache-Control': 'public, max-age=31536000, immutable',
+    await withBlobSlot(async () => {
+      const file = await storage.retrieve(req.params.storeId, req.params.mediaId);
+      if (!file) return res.status(404).send('Not found');
+      // Derive content type from the stored filename, not the client-supplied
+      // mimetype, and force nosniff so a spoofed file can never execute inline.
+      serveRangeBuffer(req, res, file.buffer, {
+        'Content-Type': file.mimeType,
+        'Content-Disposition': file.type === 'document' ? 'inline; filename="' + encodeURIComponent(file.filename) + '"' : 'inline',
+        'Cache-Control': 'public, max-age=31536000, immutable',
+      });
     });
   } catch {
     res.status(500).send('Server error');
@@ -404,7 +427,10 @@ const server = app.listen(PORT, async () => {
         enforcerRunning = false;
       }
     };
-    void runEnforcer();
+    // Boot spike safety: run the one-shot enforcement/retention passes a short
+    // while after first serve, so they don't stack on top of migrations and the
+    // first burst of traffic on a small free-tier instance.
+    setTimeout(() => void runEnforcer(), 15_000).unref();
     // CU-crunch knob: stretch the interval instead of disabling entirely —
     // subscriptions still get enforced, just less often.
     const enforcerHours = Math.max(1, Number(process.env.ENFORCER_INTERVAL_HOURS) || 6);
@@ -426,7 +452,7 @@ const server = app.listen(PORT, async () => {
         retentionRunning = false;
       }
     };
-    void runRetention();
+    setTimeout(() => void runRetention(), 25_000).unref();
     const retentionHours = Math.max(6, Number(process.env.RETENTION_INTERVAL_HOURS) || 24);
     setInterval(runRetention, retentionHours * 60 * 60 * 1000).unref();
   }
