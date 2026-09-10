@@ -17,12 +17,16 @@ export default function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [storeSlug, setStoreSlug] = useState<string | null>(null);
   const [hasStore, setHasStore] = useState(false);
-  const [isStorePage, setIsStorePage] = useState(false);
 
   const mobileMenuRef = useDismiss(mobileMenu, () => setMobileMenu(false));
 
+  // Derived from the route, not window state, so store pages never render the
+  // global header — not even during SSR/first paint (previously both headers
+  // stacked until a post-mount effect hid this one).
+  const isStorePage = pathname.startsWith('/store/');
+
   useEffect(() => {
-    setIsStorePage(window.location.pathname.startsWith('/store/'));
+    if (isStorePage) return;
     if (user?.role === 'RETAILER') {
       api.get('/stores/mine').then((res: any) => {
         const s = res.data;
@@ -33,7 +37,7 @@ export default function Header() {
       setStoreSlug(null);
       setHasStore(false);
     }
-  }, [user]);
+  }, [user, isStorePage]);
 
   if (isStorePage) return null;
 
