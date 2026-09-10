@@ -6,6 +6,7 @@ import { authenticate, requirePermission } from '../middleware/auth';
 import { Permission } from '@nexus/shared';
 import { StoreRequest, requireStore, requireStoreOwner } from '../middleware/resolve-store';
 import { storage, mimeFromFilename } from '../utils/storage';
+import { optimizeImage } from '../utils/image-optimize';
 
 export { mimeFromFilename };
 
@@ -28,9 +29,13 @@ uploadRouter.post(['/', ''], authenticate, requireStoreOwner, requirePermission(
   try {
     if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
     const { originalname, buffer } = req.file;
+    // Shrink raster images before they reach storage — bounded size + quality,
+    // honors EXIF rotation, keeps the format so the stored type stays truthful.
+    const optimized = await optimizeImage(buffer, originalname);
+    const finalBuffer = optimized ? optimized.data : buffer;
     const { media } = await storage.store({
       storeId: req.storeId!,
-      buffer,
+      buffer: finalBuffer,
       filename: originalname,
       folder: req.body.folder,
       productId: req.body.productId,
