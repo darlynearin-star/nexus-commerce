@@ -26,6 +26,37 @@ export interface BackfillReport {
 }
 
 const MAX_ITEMS_PER_RUN = 200;
+// Keep each SELECT far below the ~2min statement timeout on hosted Postgres:
+// small chunks also bound memory and dodge pooler streaming stalls (a full
+// haul is ~322MB of base64, so we drain it a few rows at a time).
+const BATCH_SIZE = 2;
+const WATCHDOG_MS = 120_000;
+
+export function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  const guard = new Promise<never>((_, rej) => {
+    timer = setTimeout(() => rej(new Error(`timed out after ${ms}ms: ${label}`)), ms);
+  });
+  return Promise.race([p, guard]).finally(() => clearTimeout(timer));
+}
+
+interface BlobCounts {
+  n: number;
+  bytes: number;
+}
+
+async function countBlobs(table: 'media' | 'ad_videos'): Promise<BlobCounts> {
+  const rows = await withTimeout(
+    prisma.$queryRawUnsafe<{ n: number; bytes: number }[]>(
+      `SELECT COUNT(*)::int AS n, COALESCE(SUM(LENGTH(data)), 0)::int AS bytes
+     FROM ${table} WHERE data IS NOT NULL`,
+    ),
+    WATCHDOG_MS,
+    `count ${table}`,
+  );
+  const row = rows[0] ?? { n: 0, bytes: 0 };
+  return { n: row.n, bytes: Math.ceil(row.bytes * 0.75) };
+}
 
 export function adObjectKey(id: string, format: string): string {
   return `ad-studio/${id}-${format.replace(':', 'x')}.mp4`;
@@ -35,7 +66,22 @@ function mediaObjectKey(storeId: string, mediaId: string, filename: string | nul
   return `${storeId}/${mediaId}${path.extname(filename || '')}`;
 }
 
-export async function backfillStorage(cfg: StorageConfig, dryRun: boolean): Promise<BackfillReport> {
+interface MediaChunkRow {
+  id: string;
+  storeId: string;
+  alt: string;
+  mimeType: string;
+  data?: string | null;
+}
+
+export interface BackfillOptions {
+  // When provided, blobs are pulled from this fetcher (e.g. the live API's
+  // public /uploads route) instead of hauling base64 through the pooler —
+  // which reliably stalls on multi-MB result sets.
+  fetchBlob?: (row: MediaChunkRow) => Promise<Buffer>;
+}
+
+export async function backfillStorage(cfg: StorageConfig, dryRun: boolean, opts?: BackfillOptions): Promise<BackfillReport> {
   const report: BackfillReport = {
     mediaRemaining: 0,
     mediaBytes: 0,
@@ -46,53 +92,93 @@ export async function backfillStorage(cfg: StorageConfig, dryRun: boolean): Prom
     errors: [],
   };
 
-  const mediaBlobs = await prisma.media.findMany({
-    where: { data: { not: null } },
-    select: { id: true, storeId: true, alt: true, mimeType: true, data: true },
-  });
-  report.mediaRemaining = mediaBlobs.length;
-  report.mediaBytes = mediaBlobs.reduce((sum, m) => sum + Math.ceil((m.data?.length || 0) * 0.75), 0);
+  const mediaCounts = await countBlobs('media');
+  report.mediaRemaining = mediaCounts.n;
+  report.mediaBytes = mediaCounts.bytes;
 
-  const adBlobs = await prisma.adVideo.findMany({
-    where: { data: { not: null } },
-    select: { id: true, format: true, data: true },
-  });
-  report.adsRemaining = adBlobs.length;
-  report.adsBytes = adBlobs.reduce((sum, a) => sum + Math.ceil((a.data?.length || 0) * 0.75), 0);
+  const adCounts = await countBlobs('ad_videos');
+  report.adsRemaining = adCounts.n;
+  report.adsBytes = adCounts.bytes;
 
   if (dryRun || !isS3Configured(cfg)) return report;
 
-  // ---- Media ----
+  // ---- Media (batched) ----
   let mediaBudget = MAX_ITEMS_PER_RUN;
-  for (const m of mediaBlobs) {
-    if (mediaBudget-- <= 0) break;
+  while (mediaBudget > 0) {
+    let chunk: MediaChunkRow[];
     try {
-      const buffer = Buffer.from(m.data!, 'base64');
-      const key = mediaObjectKey(m.storeId, m.id, m.alt);
-      await putS3Object(cfg, key, buffer, m.mimeType || 'application/octet-stream');
-      const url = `${cfg.publicBaseUrl}/${key}`;
-      await prisma.media.update({ where: { id: m.id }, data: { url, thumbnailUrl: url, data: null } });
-      report.moved.media++;
+      chunk = await withTimeout(
+        prisma.media.findMany({
+          where: { data: { not: null } },
+          select: opts?.fetchBlob
+            ? { id: true, storeId: true, alt: true, mimeType: true }
+            : { id: true, storeId: true, alt: true, mimeType: true, data: true },
+          orderBy: { id: 'asc' },
+          take: Math.min(BATCH_SIZE, mediaBudget),
+        }),
+        WATCHDOG_MS,
+        'media chunk',
+      );
     } catch (err: any) {
-      report.failed.media++;
-      if (report.errors.length < 10) report.errors.push(`media ${m.id}: ${String(err?.message || err).slice(0, 200)}`);
+      console.error(`[backfill] chunk query failed: ${String(err?.message || err).slice(0, 160)}`);
+      break; // resumable: cleared rows stay cleared; retry the run to continue
     }
+    if (chunk.length === 0) break;
+    for (const m of chunk) {
+      mediaBudget--;
+      try {
+        const buffer = opts?.fetchBlob ? await withTimeout(opts.fetchBlob(m), WATCHDOG_MS, `fetch ${m.id}`) : Buffer.from(m.data!, 'base64');
+        const key = mediaObjectKey(m.storeId, m.id, m.alt);
+        await withTimeout(putS3Object(cfg, key, buffer, m.mimeType || 'application/octet-stream'), WATCHDOG_MS, `s3 put ${m.id}`);
+        const url = `${cfg.publicBaseUrl}/${key}`;
+        await withTimeout(prisma.media.update({ where: { id: m.id }, data: { url, thumbnailUrl: url, data: null } }), WATCHDOG_MS, `media update ${m.id}`);
+        report.moved.media++;
+      } catch (err: any) {
+        report.failed.media++;
+        const msg = `media ${m.id}: ${String(err?.message || err).slice(0, 200)}`;
+        console.error(`[backfill] FAIL ${msg}`);
+        if (report.errors.length < 10) report.errors.push(msg);
+      }
+    }
+    console.log(`[backfill] media: +${chunk.length} processed (moved ${report.moved.media}, failed ${report.failed.media})`);
   }
 
-  // ---- Ad videos ----
+  // ---- Ad videos (batched) ----
   let adBudget = MAX_ITEMS_PER_RUN;
-  for (const ad of adBlobs) {
-    if (adBudget-- <= 0) break;
+  while (adBudget > 0) {
+    let chunk: { id: string; format: string; data: string | null }[];
     try {
-      const buffer = Buffer.from(ad.data!, 'base64');
-      const key = adObjectKey(ad.id, ad.format);
-      await putS3Object(cfg, key, buffer, 'video/mp4');
-      await prisma.adVideo.update({ where: { id: ad.id }, data: { videoUrl: `${cfg.publicBaseUrl}/${key}`, data: null } });
-      report.moved.ads++;
+      chunk = await withTimeout(
+        prisma.adVideo.findMany({
+          where: { data: { not: null } },
+          select: { id: true, format: true, data: true },
+          orderBy: { id: 'asc' },
+          take: Math.min(BATCH_SIZE, adBudget),
+        }),
+        WATCHDOG_MS,
+        'ad chunk',
+      );
     } catch (err: any) {
-      report.failed.ads++;
-      if (report.errors.length < 10) report.errors.push(`ad ${ad.id}: ${String(err?.message || err).slice(0, 200)}`);
+      console.error(`[backfill] chunk query failed: ${String(err?.message || err).slice(0, 160)}`);
+      break;
     }
+    if (chunk.length === 0) break;
+    for (const ad of chunk) {
+      adBudget--;
+      try {
+        const buffer = Buffer.from(ad.data!, 'base64');
+        const key = adObjectKey(ad.id, ad.format);
+        await withTimeout(putS3Object(cfg, key, buffer, 'video/mp4'), WATCHDOG_MS, `s3 put ${ad.id}`);
+        await withTimeout(prisma.adVideo.update({ where: { id: ad.id }, data: { videoUrl: `${cfg.publicBaseUrl}/${key}`, data: null } }), WATCHDOG_MS, `ad update ${ad.id}`);
+        report.moved.ads++;
+      } catch (err: any) {
+        report.failed.ads++;
+        const msg = `ad ${ad.id}: ${String(err?.message || err).slice(0, 200)}`;
+        console.error(`[backfill] FAIL ${msg}`);
+        if (report.errors.length < 10) report.errors.push(msg);
+      }
+    }
+    console.log(`[backfill] ads: +${chunk.length} processed (moved ${report.moved.ads}, failed ${report.failed.ads})`);
   }
 
   // Re-count what actually remains after this run.

@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import path from 'path';
+import { crc32 } from 'zlib';
 import prisma from '@nexus/database';
 
 const API_BASE = process.env.RENDER_EXTERNAL_URL || 'https://nexus-api-69q5.onrender.com';
@@ -78,6 +79,10 @@ function sha256Hex(data: string): string {
   return crypto.createHash('sha256').update(data, 'utf8').digest('hex');
 }
 
+function sha256Buffer(data: Buffer): string {
+  return crypto.createHash('sha256').update(data).digest('hex');
+}
+
 const EMPTY_SHA256 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
 
 function signingKey(secret: string, dateStamp: string, region: string, service: string): Buffer {
@@ -110,20 +115,29 @@ export function signS3Request(req: S3Request): { host: string; path: string; hea
   const endpoint = new URL(cfg.endpoint!);
   const bucket = cfg.bucket!;
   const host = cfg.forcePathStyle ? endpoint.host : `${bucket}.${endpoint.host}`;
-  // Path-style addressing needs the slash between bucket and key:
-  // https://endpoint/<bucket>/<key>. (Virtual-host style keeps the bucket in
-  // the hostname and signs only /<key>.)
-  const path = cfg.forcePathStyle ? `/${bucket}/${uriEncode(key)}` : `/${uriEncode(key)}`;
-  const payloadHash = req.body.length === 0 ? EMPTY_SHA256 : sha256Hex(req.body.toString('utf8'));
+  // S3 gateways mount bucket/key under their own path prefix (e.g.
+  // /storage/v1/s3). Path-style addressing: <prefix>/<bucket>/<key>;
+  // virtual-host style keeps the bucket in the hostname and signs only /<key>.
+  const prefix = cfg.forcePathStyle ? endpoint.pathname.replace(/\/+$/, '') : '';
+  const path = cfg.forcePathStyle ? `${prefix}/${bucket}/${uriEncode(key)}` : `/${uriEncode(key)}`;
+  const payloadHash = req.body.length === 0 ? EMPTY_SHA256 : sha256Buffer(req.body);
   const { amzDate, dateStamp } = amzDateParts();
   const region = cfg.region;
 
   const headers: Record<string, string> = {
     host,
+    accept: '*/*',
+    'content-length': String(req.body.length),
     'x-amz-content-sha256': payloadHash,
     'x-amz-date': amzDate,
   };
   if (req.contentType) headers['content-type'] = req.contentType;
+  if (req.body.length > 0) {
+    const crcBuf = Buffer.alloc(4);
+    crcBuf.writeUInt32BE(crc32(req.body) >>> 0, 0);
+    headers['x-amz-checksum-crc32'] = crcBuf.toString('base64');
+    headers['x-amz-sdk-checksum-algorithm'] = 'CRC32';
+  }
 
   const canonicalHeaders = Object.keys(headers)
     .sort()
@@ -165,6 +179,7 @@ async function s3Request(req: S3Request): Promise<Buffer> {
     method,
     headers: { ...signed.headers, authorization: signed.headers.authorization },
     body: method === 'PUT' || method === 'POST' ? body : undefined,
+    signal: AbortSignal.timeout(120_000),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');

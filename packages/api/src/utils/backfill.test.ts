@@ -14,6 +14,7 @@ const h = vi.hoisted(() => ({
   updateCategory: vi.fn(),
   findManyBrands: vi.fn(),
   updateBrand: vi.fn(),
+  queryRawUnsafe: vi.fn(),
   findManyVariants: vi.fn(),
   updateVariant: vi.fn(),
   findManyStores: vi.fn(),
@@ -32,6 +33,7 @@ vi.mock('@nexus/database', () => ({
     productVariant: { findMany: h.findManyVariants, update: h.updateVariant },
     store: { findMany: h.findManyStores, update: h.updateStore },
     productDownload: { findMany: h.findManyDownloads, update: h.updateDownload },
+    $queryRawUnsafe: h.queryRawUnsafe,
   },
 }));
 
@@ -57,30 +59,35 @@ const s3Cfg = {
 describe('R2 blob backfill (M-mirror)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    h.putS3Object.mockResolvedValue(undefined);
+h.putS3Object.mockResolvedValue(undefined);
     h.countMedia.mockResolvedValue(0);
     h.countAdVids.mockResolvedValue(0);
+    h.queryRawUnsafe.mockResolvedValue([{ n: 0, bytes: 0 }]);
   });
 
-  it('dry-run reports counts + bytes and writes nothing', async () => {
-    h.findManyMedia.mockResolvedValue([{ id: 'm1', storeId: 's1', alt: 'a.png', mimeType: 'image/png', data: Buffer.alloc(400).toString('base64') }]);
-    h.findManyAds.mockResolvedValue([{ id: 'ad1', format: '9:16', data: Buffer.alloc(800).toString('base64') }]);
+it('dry-run reports counts + bytes and writes nothing', async () => {
+    const b64len = Buffer.alloc(400).toString('base64').length;
+    const adlen = Buffer.alloc(800).toString('base64').length;
+    h.queryRawUnsafe.mockImplementation((q: string) =>
+      Promise.resolve([{ n: 1, bytes: q.includes('FROM media') ? b64len : adlen }]),
+    );
 
     const r = await backfillStorage(s3Cfg, true);
 
     expect(r.mediaRemaining).toBe(1);
     expect(r.adsRemaining).toBe(1);
-    const b64len = Buffer.alloc(400).toString('base64').length;
     expect(r.mediaBytes).toBe(Math.ceil(b64len * 0.75));
-    expect(r.adsBytes).toBe(Math.ceil(Buffer.alloc(800).toString('base64').length * 0.75));
+    expect(r.adsBytes).toBe(Math.ceil(adlen * 0.75));
     expect(r.moved).toEqual({ media: 0, ads: 0 });
     expect(h.putS3Object).not.toHaveBeenCalled();
     expect(h.updateMedia).not.toHaveBeenCalled();
     expect(h.updateAd).not.toHaveBeenCalled();
   });
 
-  it('migrates media blobs: uploads under store key, points url at CDN, clears data', async () => {
-    h.findManyMedia.mockResolvedValue([{ id: 'm1', storeId: 's1', alt: 'photo.jpg', mimeType: 'image/jpeg', data: Buffer.from('x').toString('base64') }]);
+it('migrates media blobs: uploads under store key, points url at CDN, clears data', async () => {
+    h.findManyMedia
+      .mockResolvedValueOnce([{ id: 'm1', storeId: 's1', alt: 'photo.jpg', mimeType: 'image/jpeg', data: Buffer.from('x').toString('base64') }])
+      .mockResolvedValue([]);
     h.findManyAds.mockResolvedValue([]);
 
     await backfillStorage(s3Cfg, false);
@@ -92,9 +99,11 @@ describe('R2 blob backfill (M-mirror)', () => {
     });
   });
 
-  it('migrates ad blobs under the ad-studio namespace with format-safe keys', async () => {
+it('migrates ad blobs under the ad-studio namespace with format-safe keys', async () => {
     h.findManyMedia.mockResolvedValue([]);
-    h.findManyAds.mockResolvedValue([{ id: 'ad1', format: '9:16', data: Buffer.from('y').toString('base64') }]);
+    h.findManyAds
+      .mockResolvedValueOnce([{ id: 'ad1', format: '9:16', data: Buffer.from('y').toString('base64') }])
+      .mockResolvedValue([]);
 
     await backfillStorage(s3Cfg, false);
 
@@ -106,11 +115,13 @@ describe('R2 blob backfill (M-mirror)', () => {
     });
   });
 
-  it('one failing upload never aborts the batch and keeps its blob intact', async () => {
-    h.findManyMedia.mockResolvedValue([
-      { id: 'bad', storeId: 's1', alt: 'a.png', mimeType: 'image/png', data: Buffer.from('a').toString('base64') },
-      { id: 'good', storeId: 's1', alt: 'b.png', mimeType: 'image/png', data: Buffer.from('b').toString('base64') },
-    ]);
+it('one failing upload never aborts the batch and keeps its blob intact', async () => {
+    h.findManyMedia
+      .mockResolvedValueOnce([
+        { id: 'bad', storeId: 's1', alt: 'a.png', mimeType: 'image/png', data: Buffer.from('a').toString('base64') },
+        { id: 'good', storeId: 's1', alt: 'b.png', mimeType: 'image/png', data: Buffer.from('b').toString('base64') },
+      ])
+      .mockResolvedValue([]);
     h.findManyAds.mockResolvedValue([]);
     h.putS3Object.mockImplementation((_cfg: any, key: string) => (key.includes('bad') ? Promise.reject(new Error('r2 boom')) : Promise.resolve()));
 
