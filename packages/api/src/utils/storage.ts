@@ -109,9 +109,19 @@ interface S3Request {
   contentType?: string;
 }
 
+// AWS SDK convention ids for the ?x-id= query param (part of the SDK's
+// signed request shape; Supabase's S3 gateway validates against it).
+const X_ID: Record<string, string> = {
+  GET: 'GetObject',
+  PUT: 'PutObject',
+  POST: 'PutObject',
+  DELETE: 'DeleteObject',
+  HEAD: 'HeadObject',
+};
+
 // Builds the SigV4 Authorization header for an S3-compatible request.
 export function signS3Request(req: S3Request): { host: string; path: string; headers: Record<string, string> } {
-  const { cfg, method, key } = req;
+  const { cfg, method, key, body } = req;
   const endpoint = new URL(cfg.endpoint!);
   const bucket = cfg.bucket!;
   const host = cfg.forcePathStyle ? endpoint.host : `${bucket}.${endpoint.host}`;
@@ -119,24 +129,32 @@ export function signS3Request(req: S3Request): { host: string; path: string; hea
   // /storage/v1/s3). Path-style addressing: <prefix>/<bucket>/<key>;
   // virtual-host style keeps the bucket in the hostname and signs only /<key>.
   const prefix = cfg.forcePathStyle ? endpoint.pathname.replace(/\/+$/, '') : '';
-  const path = cfg.forcePathStyle ? `${prefix}/${bucket}/${uriEncode(key)}` : `/${uriEncode(key)}`;
-  const payloadHash = req.body.length === 0 ? EMPTY_SHA256 : sha256Buffer(req.body);
+  const query = `x-id=${X_ID[method] || method}`;
+  const path = cfg.forcePathStyle
+    ? `${prefix}/${bucket}/${uriEncode(key)}?${query}`
+    : `/${uriEncode(key)}?${query}`;
+  const payloadHash = body.length === 0 ? EMPTY_SHA256 : sha256Buffer(body);
   const { amzDate, dateStamp } = amzDateParts();
   const region = cfg.region;
 
+  // The AWS SDK requests response checksums on GET/DELETE (x-amz-checksum-mode)
+  // and does NOT sign content-length when there is no body. Supabase's S3
+  // gateway validates signatures against that exact shape.
   const headers: Record<string, string> = {
     host,
     accept: '*/*',
-    'content-length': String(req.body.length),
     'x-amz-content-sha256': payloadHash,
     'x-amz-date': amzDate,
   };
   if (req.contentType) headers['content-type'] = req.contentType;
-  if (req.body.length > 0) {
+  if (body.length > 0) {
+    headers['content-length'] = String(body.length);
     const crcBuf = Buffer.alloc(4);
-    crcBuf.writeUInt32BE(crc32(req.body) >>> 0, 0);
+    crcBuf.writeUInt32BE(crc32(body) >>> 0, 0);
     headers['x-amz-checksum-crc32'] = crcBuf.toString('base64');
     headers['x-amz-sdk-checksum-algorithm'] = 'CRC32';
+  } else if (method === 'GET' || method === 'DELETE' || method === 'HEAD') {
+    headers['x-amz-checksum-mode'] = 'ENABLED';
   }
 
   const canonicalHeaders = Object.keys(headers)
@@ -147,8 +165,8 @@ export function signS3Request(req: S3Request): { host: string; path: string; hea
 
   const canonicalRequest = [
     method,
-    path,
-    '',
+    path.split('?')[0],
+    query,
     canonicalHeaders,
     '',
     signedHeaders,

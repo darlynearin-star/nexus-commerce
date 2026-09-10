@@ -99,9 +99,28 @@ describe('sigv4 signing', () => {
     expect(auth.startsWith('AWS4-HMAC-SHA256 ')).toBe(true);
     expect(auth).toContain('Credential=TESTAKID/');
     expect(auth).toContain('/auto/s3/aws4_request');
-    expect(auth).toContain('SignedHeaders=host;x-amz-content-sha256;x-amz-date');
+    const signed = (auth.match(/SignedHeaders=([^,]+)/i) || [])[1] || '';
+    for (const h of ['host', 'x-amz-content-sha256', 'x-amz-date', 'content-length']) {
+      expect(signed).toContain(h);
+    }
     const sig = auth.match(/Signature=([0-9a-f]{64})/);
     expect(sig).not.toBeNull();
+  });
+
+  it('mirrors the AWS SDK GET shape (x-amz-checksum-mode, no content-length, ?x-id=)', () => {
+    const { headers, path } = signS3Request({
+      cfg: s3Cfg(0),
+      method: 'GET',
+      key: 'store_1/abc123.png',
+      body: Buffer.alloc(0),
+    });
+    expect(headers['x-amz-checksum-mode']).toBe('ENABLED');
+    expect(headers['content-length']).toBeUndefined();
+    expect(path).toContain('?x-id=GetObject');
+    const auth = headers.authorization;
+    const signed = (auth.match(/SignedHeaders=([^,]+)/i) || [])[1] || '';
+    expect(signed).toContain('x-amz-checksum-mode');
+    expect(signed).not.toContain('content-length');
   });
 
   it('round-trips a signed PUT and GET to a live (mock) endpoint', async () => {
