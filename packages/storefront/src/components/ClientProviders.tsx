@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
 import SeoManager from '@/components/SeoManager';
+import SupportFab from '@/components/SupportFab';
 
 // H12: no global activeStoreSlug seeding. Visitors are bound to a store only
 // by explicitly visiting one (StoreShell persists it) or picking one in the
@@ -19,6 +20,7 @@ export default function ClientProviders({ children }: { children: React.ReactNod
           <Header />
           <main style={{ minHeight: 'calc(100vh - 64px)', position: 'relative', zIndex: 1 }}>{children}</main>
           <Footer />
+          <SupportFab />
         </AuthProvider>
       </ThemeProvider>
     </>
