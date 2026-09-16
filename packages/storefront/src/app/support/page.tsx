@@ -117,11 +117,17 @@ function ThreadCard({ ticket, me, onReply }: { ticket: any; me: string; onReply:
       <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.6rem', maxHeight: 360, overflowY: 'auto' }}>
         {ticket.messages.map((m: any) => {
           const mine = m.userId === me;
+          const sender = mine ? 'You' : (m.sender || 'Lyn-nyx');
+          const initial = (sender[0] || '?').toUpperCase();
           return (
-            <div key={m.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
+            <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.18rem', maxWidth: '100%' }}>
+                {!mine && <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--silver)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bg)', fontWeight: 600, fontSize: '0.625rem', flexShrink: 0 }}>{initial}</div>}
+                <span style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sender}</span>
+              </div>
               <div style={{ maxWidth: '82%', borderRadius: 12, borderTopRightRadius: mine ? 4 : 12, borderTopLeftRadius: mine ? 12 : 4, padding: '0.55rem 0.8rem', background: mine ? 'var(--primary)' : 'var(--bg-subtle, #f1f1f1)', color: mine ? 'var(--bg)' : 'var(--text-primary)', border: mine ? 'none' : '1px solid var(--border)' }}>
                 <div style={{ whiteSpace: 'pre-wrap', fontSize: '0.875rem', lineHeight: 1.45 }}>{m.message}</div>
-                <div style={{ fontSize: '0.6875rem', opacity: 0.75, marginTop: '0.25rem' }}>{m.sender || 'You'} · {new Date(m.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                <div style={{ fontSize: '0.6875rem', opacity: 0.75, marginTop: '0.25rem' }}>{new Date(m.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
               </div>
             </div>
           );

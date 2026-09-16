@@ -102,15 +102,25 @@ export default function SupportChatPage() {
           </span>
         </div>
 
-        <div ref={threadRef} style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'var(--bg-chat, #f6f7f9)' }}>
-          {ticket.messages.map((m: any) => (
-            <div key={m.id} style={{ display: 'flex', justifyContent: isDevRole(m.role) ? 'flex-end' : 'flex-start' }}>
-              <div style={{ maxWidth: '72%', borderRadius: 14, borderTopRightRadius: isDevRole(m.role) ? 4 : 14, borderTopLeftRadius: isDevRole(m.role) ? 14 : 4, padding: '0.55rem 0.8rem', background: isDevRole(m.role) ? 'var(--primary)' : 'var(--bg-secondary)', color: isDevRole(m.role) ? 'var(--bg)' : 'var(--text)', border: isDevRole(m.role) ? 'none' : '1px solid var(--border)', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }}>
-                <div style={{ whiteSpace: 'pre-wrap', fontSize: '0.875rem', lineHeight: 1.45 }}>{m.message}</div>
-                <div style={{ fontSize: '0.6875rem', opacity: 0.7, marginTop: '0.25rem', textAlign: 'right' }}>{new Date(m.createdAt).toLocaleString()}</div>
+        <div ref={threadRef} style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'var(--bg-chat, #f6f7f9)' }}>
+          {ticket.messages.map((m: any) => {
+            const mine = isDevRole(m.role);
+            const sender = mine ? 'You' : (m.sender || 'Customer');
+            const initial = (sender[0] || '?').toUpperCase();
+            const showTime = new Date(m.createdAt).toLocaleString();
+            return (
+              <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.18rem', maxWidth: '100%' }}>
+                  {!mine && <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--silver)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bg)', fontWeight: 600, fontSize: '0.625rem', flexShrink: 0 }}>{initial}</div>}
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sender}</span>
+                </div>
+                <div style={{ maxWidth: '72%', borderRadius: 14, borderTopRightRadius: mine ? 4 : 14, borderTopLeftRadius: mine ? 14 : 4, padding: '0.55rem 0.8rem', background: mine ? 'var(--primary)' : 'var(--silver-dark)', color: mine ? 'var(--bg)' : 'var(--text)', border: mine ? 'none' : '1px solid var(--border)', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }}>
+                  <div style={{ whiteSpace: 'pre-wrap', fontSize: '0.875rem', lineHeight: 1.45 }}>{m.message}</div>
+                  <div style={{ fontSize: '0.6875rem', opacity: 0.7, marginTop: '0.25rem', textAlign: 'right' }}>{showTime}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {ticket.messages.length === 0 && <div style={{ margin: 'auto', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>No messages yet.</div>}
         </div>
 
