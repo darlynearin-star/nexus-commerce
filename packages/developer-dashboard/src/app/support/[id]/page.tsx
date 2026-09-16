@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -30,6 +30,7 @@ export default function SupportChatPage() {
   const [notFound, setNotFound] = useState(false);
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
+  const threadRef = useRef<HTMLDivElement | null>(null);
 
   const load = useCallback(() => {
     api.get<any>(`/admin/support/tickets/${params.id}`)
@@ -43,6 +44,10 @@ export default function SupportChatPage() {
     if (user.role !== 'DEVELOPER' && user.role !== 'SUPER_DEVELOPER') { router.push('/login'); return; }
     load();
   }, [user, load]);
+
+  useEffect(() => {
+    threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight });
+  }, [ticket?.messages?.length]);
 
   async function setStatus(status: string) {
     await api.put(`/admin/support/tickets/${ticket.id}`, { status });
@@ -76,55 +81,49 @@ export default function SupportChatPage() {
 
   const customer = ticket.customer?.user || {};
   const status = STATUS_LABELS[ticket.status] || STATUS_LABELS.OPEN;
+  const initial = (senderName(ticket)[0] || '?').toUpperCase();
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <div style={{ marginBottom: '1rem' }}>
-        <button className="btn btn-ghost btn-sm" onClick={() => router.push('/support')}><ChevronLeft size={16} /> Back to Inbox</button>
-      </div>
-
-      <div style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', background: 'var(--bg-card, #fff)' }}>
-        <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)', background: 'var(--bg-subtle, #f7f7f8)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontWeight: 600 }}>{ticket.subject}</div>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{senderName(ticket)} · {customer.email || '—'} · {new Date(ticket.createdAt).toLocaleString()}</div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
-              <span className={`badge ${ticket.status === 'RESOLVED' ? 'badge-success' : ticket.status === 'CLOSED' ? '' : 'badge-warning'}`} style={{ color: status.color, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                {ticket.status === 'OPEN' ? <AlertCircle size={12} /> : ticket.status === 'RESOLVED' ? <CheckCircle2 size={12} /> : <XCircle size={12} />} {status.label}
-              </span>
-              {ticket.status !== 'RESOLVED' && <button className="btn btn-ghost btn-sm" onClick={() => setStatus('RESOLVED')}>Mark resolved</button>}
-              {ticket.status !== 'CLOSED' && <button className="btn btn-ghost btn-sm" onClick={() => setStatus('CLOSED')}>Close</button>}
-            </div>
+    <div style={{ height: '100vh', boxSizing: 'border-box', padding: '1rem' }}>
+      <div style={{ maxWidth: 720, margin: '0 auto', height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden', background: 'var(--bg-card, #fff)', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem 1rem', borderBottom: '1px solid var(--border)', background: 'var(--bg-subtle, #f7f7f8)', flexShrink: 0 }}>
+          <button className="btn btn-ghost btn-icon" onClick={() => router.push('/support')} aria-label="Back to inbox"><ChevronLeft size={20} /></button>
+          <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--primary)', color: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.9375rem', flexShrink: 0 }}>{initial}</div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontWeight: 600, fontSize: '0.9375rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{senderName(ticket)}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{customer.email || '—'} · {ticket.subject}</div>
           </div>
+          <span className={`badge ${ticket.status === 'RESOLVED' ? 'badge-success' : ticket.status === 'CLOSED' ? '' : 'badge-warning'}`} style={{ color: status.color, display: 'inline-flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0 }}>
+            {ticket.status === 'OPEN' ? <AlertCircle size={12} /> : ticket.status === 'RESOLVED' ? <CheckCircle2 size={12} /> : <XCircle size={12} />} {status.label}
+          </span>
+          <span style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }}>
+            {ticket.status !== 'RESOLVED' && <button className="btn btn-ghost btn-sm" onClick={() => setStatus('RESOLVED')}>Resolve</button>}
+            {ticket.status !== 'CLOSED' && <button className="btn btn-ghost btn-sm" onClick={() => setStatus('CLOSED')}>Close</button>}
+          </span>
         </div>
 
-        <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.6rem', maxHeight: 460, overflowY: 'auto' }}>
+        <div ref={threadRef} style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'var(--bg-chat, #f6f7f9)' }}>
           {ticket.messages.map((m: any) => (
             <div key={m.id} style={{ display: 'flex', justifyContent: isDevRole(m.role) ? 'flex-end' : 'flex-start' }}>
-              <div style={{ maxWidth: '82%', borderRadius: 12, borderTopRightRadius: isDevRole(m.role) ? 4 : 12, borderTopLeftRadius: isDevRole(m.role) ? 12 : 4, padding: '0.55rem 0.8rem', background: isDevRole(m.role) ? 'var(--primary)' : 'var(--bg-subtle, #f1f1f2)', color: isDevRole(m.role) ? '#fff' : 'inherit' }}>
+              <div style={{ maxWidth: '72%', borderRadius: 14, borderTopRightRadius: isDevRole(m.role) ? 4 : 14, borderTopLeftRadius: isDevRole(m.role) ? 14 : 4, padding: '0.55rem 0.8rem', background: isDevRole(m.role) ? 'var(--primary)' : 'var(--bg-card, #ffffff)', color: isDevRole(m.role) ? 'var(--bg)' : 'inherit', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }}>
                 <div style={{ whiteSpace: 'pre-wrap', fontSize: '0.875rem', lineHeight: 1.45 }}>{m.message}</div>
-                <div style={{ fontSize: '0.6875rem', opacity: 0.75, marginTop: '0.25rem' }}>{m.sender || 'Support'} · {new Date(m.createdAt).toLocaleString()}</div>
+                <div style={{ fontSize: '0.6875rem', opacity: 0.7, marginTop: '0.25rem', textAlign: 'right' }}>{new Date(m.createdAt).toLocaleString()}</div>
               </div>
             </div>
           ))}
+          {ticket.messages.length === 0 && <div style={{ margin: 'auto', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>No messages yet.</div>}
         </div>
 
-        <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid var(--border)' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>Description:</div>
-          <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>{ticket.description}</div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <input
-              value={reply}
-              onChange={e => setReply(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && reply.trim()) sendReply(); }}
-              placeholder="Reply to this ticket..."
-              maxLength={5000}
-              style={{ flex: 1, padding: '0.55rem 0.75rem', borderRadius: 8, border: '1px solid var(--border)', fontSize: '0.875rem' }}
-            />
-            <button type="button" className="btn btn-primary btn-sm" disabled={!reply.trim() || sending} onClick={sendReply}><Send size={14} style={{ marginRight: '0.25rem' }} /> Send</button>
-          </div>
+        <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '0.5rem', background: 'var(--bg-subtle, #f7f7f8)', flexShrink: 0 }}>
+          <input
+            value={reply}
+            onChange={e => setReply(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && reply.trim()) sendReply(); }}
+            placeholder="Type a reply..."
+            maxLength={5000}
+            style={{ flex: 1, padding: '0.55rem 0.9rem', borderRadius: 20, border: '1px solid var(--border)', fontSize: '0.875rem', background: 'var(--bg-card, #fff)' }}
+          />
+          <button type="button" className="btn btn-primary" disabled={!reply.trim() || sending} onClick={sendReply} style={{ borderRadius: 20, padding: '0.5rem 0.9rem' }}><Send size={16} /></button>
         </div>
       </div>
     </div>
