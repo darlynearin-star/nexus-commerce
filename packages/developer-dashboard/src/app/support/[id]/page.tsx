@@ -105,7 +105,7 @@ export default function SupportChatPage() {
         <div ref={threadRef} style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'var(--bg-chat, #f6f7f9)' }}>
           {ticket.messages.map((m: any) => (
             <div key={m.id} style={{ display: 'flex', justifyContent: isDevRole(m.role) ? 'flex-end' : 'flex-start' }}>
-              <div style={{ maxWidth: '72%', borderRadius: 14, borderTopRightRadius: isDevRole(m.role) ? 4 : 14, borderTopLeftRadius: isDevRole(m.role) ? 14 : 4, padding: '0.55rem 0.8rem', background: isDevRole(m.role) ? 'var(--primary)' : 'var(--bg-card, #ffffff)', color: isDevRole(m.role) ? 'var(--bg)' : 'inherit', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }}>
+              <div style={{ maxWidth: '72%', borderRadius: 14, borderTopRightRadius: isDevRole(m.role) ? 4 : 14, borderTopLeftRadius: isDevRole(m.role) ? 14 : 4, padding: '0.55rem 0.8rem', background: isDevRole(m.role) ? 'var(--primary)' : 'var(--bg-secondary)', color: isDevRole(m.role) ? 'var(--bg)' : 'var(--text)', border: isDevRole(m.role) ? 'none' : '1px solid var(--border)', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }}>
                 <div style={{ whiteSpace: 'pre-wrap', fontSize: '0.875rem', lineHeight: 1.45 }}>{m.message}</div>
                 <div style={{ fontSize: '0.6875rem', opacity: 0.7, marginTop: '0.25rem', textAlign: 'right' }}>{new Date(m.createdAt).toLocaleString()}</div>
               </div>

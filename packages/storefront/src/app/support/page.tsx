@@ -119,7 +119,7 @@ function ThreadCard({ ticket, me, onReply }: { ticket: any; me: string; onReply:
           const mine = m.userId === me;
           return (
             <div key={m.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
-              <div style={{ maxWidth: '82%', borderRadius: 12, borderTopRightRadius: mine ? 4 : 12, borderTopLeftRadius: mine ? 12 : 4, padding: '0.55rem 0.8rem', background: mine ? 'var(--primary)' : 'var(--bg-subtle, #f1f1f1)', color: mine ? 'var(--bg)' : 'var(--text-primary)' }}>
+              <div style={{ maxWidth: '82%', borderRadius: 12, borderTopRightRadius: mine ? 4 : 12, borderTopLeftRadius: mine ? 12 : 4, padding: '0.55rem 0.8rem', background: mine ? 'var(--primary)' : 'var(--bg-subtle, #f1f1f1)', color: mine ? 'var(--bg)' : 'var(--text-primary)', border: mine ? 'none' : '1px solid var(--border)' }}>
                 <div style={{ whiteSpace: 'pre-wrap', fontSize: '0.875rem', lineHeight: 1.45 }}>{m.message}</div>
                 <div style={{ fontSize: '0.6875rem', opacity: 0.75, marginTop: '0.25rem' }}>{m.sender || 'You'} · {new Date(m.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
               </div>
