@@ -76,7 +76,7 @@ export default function SupportPage() {
       <div style={{ borderRadius: 16, background: 'var(--bg-card, #fff)', border: '1px solid var(--border)', padding: '1rem', marginBottom: '2rem' }}>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
           {KIND_CHIPS.map(c => (
-            <button key={c.id} onClick={() => setKind(c.id)} className="btn btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: kind === c.id ? 'var(--primary)' : 'transparent', color: kind === c.id ? '#fff' : 'var(--text-primary)', border: `1px solid ${kind === c.id ? 'var(--primary)' : 'var(--border)'}` }}>{c.icon} {c.label}</button>
+            <button key={c.id} onClick={() => setKind(c.id)} className="btn btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: kind === c.id ? 'var(--primary)' : 'transparent', color: kind === c.id ? 'var(--bg)' : 'var(--text-primary)', border: `1px solid ${kind === c.id ? 'var(--primary)' : 'var(--border)'}` }}>{c.icon} {c.label}</button>
           ))}
         </div>
         <input value={subject} onChange={e => setSubject(e.target.value)} placeholder={`Short title${kind === 'Bug' ? ' (e.g. "Checkout button does nothing")' : ''}`} maxLength={120} style={{ width: '100%', padding: '0.6rem 0.75rem', borderRadius: 10, border: '1px solid var(--border)', marginBottom: '0.5rem', background: 'var(--bg-input, #fff)', fontSize: '0.9375rem' }} />
@@ -119,7 +119,7 @@ function ThreadCard({ ticket, me, onReply }: { ticket: any; me: string; onReply:
           const mine = m.userId === me;
           return (
             <div key={m.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
-              <div style={{ maxWidth: '82%', borderRadius: 12, borderTopRightRadius: mine ? 4 : 12, borderTopLeftRadius: mine ? 12 : 4, padding: '0.55rem 0.8rem', background: mine ? 'var(--primary)' : 'var(--bg-subtle, #f1f1f1)', color: mine ? '#fff' : 'var(--text-primary)' }}>
+              <div style={{ maxWidth: '82%', borderRadius: 12, borderTopRightRadius: mine ? 4 : 12, borderTopLeftRadius: mine ? 12 : 4, padding: '0.55rem 0.8rem', background: mine ? 'var(--primary)' : 'var(--bg-subtle, #f1f1f1)', color: mine ? 'var(--bg)' : 'var(--text-primary)' }}>
                 <div style={{ whiteSpace: 'pre-wrap', fontSize: '0.875rem', lineHeight: 1.45 }}>{m.message}</div>
                 <div style={{ fontSize: '0.6875rem', opacity: 0.75, marginTop: '0.25rem' }}>{m.sender || 'You'} · {new Date(m.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
               </div>

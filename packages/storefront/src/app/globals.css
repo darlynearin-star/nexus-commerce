@@ -33,6 +33,10 @@
   --border: #2B261E;
   --glow: rgba(201, 167, 110, 0.12);
   --bg-raw: 20 18 14;
+  --bg-card: var(--surface);
+  --bg-subtle: var(--bg-secondary);
+  --bg-input: var(--surface);
+  --text-primary: var(--text);
 }
 
 [data-theme="light"] {
@@ -47,6 +51,10 @@
   --border: #E3DCCE;
   --glow: rgba(125, 95, 42, 0.1);
   --bg-raw: 251 250 247;
+  --bg-card: var(--surface);
+  --bg-subtle: var(--bg-secondary);
+  --bg-input: var(--surface);
+  --text-primary: var(--text);
 }
 
 body {
