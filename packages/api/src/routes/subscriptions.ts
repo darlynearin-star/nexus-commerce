@@ -378,14 +378,20 @@ subscriptionsRouter.post('/enforce', authenticate, requireRole(UserRole.SUPER_DE
 // DEV: reset a retailer's subscription to a fresh paid week
 subscriptionsRouter.post('/:id/reset-week', authenticate, requireRole(UserRole.SUPER_DEVELOPER), async (req: AuthRequest, res, next) => {
   try {
-    const sub = await prisma.retailerSubscription.findUnique({ where: { id: req.params.id } });
+    const sub = await prisma.retailerSubscription.findUnique({ where: { id: req.params.id }, include: { retailer: true } });
     if (!sub) return res.status(404).json({ success: false, error: 'Subscription not found' });
     const now = new Date();
     const nextBilling = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const updated = await prisma.retailerSubscription.update({
       where: { id: sub.id },
-      data: { status: 'ACTIVE', lastBillingDate: now, nextBillingDate: nextBilling },
+      data: { status: 'ACTIVE', lastBillingDate: now, nextBillingDate: nextBilling, graceNotifiedAt: null, suspendedAt: null },
     });
+    // A reset must also bring the store back live: enforcement/suspend flips
+    // store.isActive=false, and a subscription change alone leaves the
+    // storefront serving "disabled" until the next payment flow re-activates it.
+    if (sub.retailer?.storeSlug) {
+      await prisma.store.updateMany({ where: { slug: sub.retailer.storeSlug }, data: { isActive: true } });
+    }
     await prisma.subscriptionPayment.create({
       data: {
         subscriptionId: sub.id,
