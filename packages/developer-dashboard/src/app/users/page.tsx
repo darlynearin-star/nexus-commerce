@@ -2,9 +2,14 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useDismiss } from '@/lib/use-dismiss';
-import { Search, Shield, ShieldOff, Lock, Plus, X, Check, AlertTriangle } from 'lucide-react';
+import { Search, Shield, ShieldOff, Lock, Plus, X, Check, AlertTriangle, Eye, Activity, KeyRound, ShoppingBag, BarChart3, Globe, User as UserIcon, ShieldCheck } from 'lucide-react';
 
 const ROLES = ['CUSTOMER', 'RETAILER', 'DEVELOPER', 'SUPER_DEVELOPER'];
+
+const fmt = (n: number) => new Intl.NumberFormat('en-UG').format(Math.round(n || 0));
+const fmtMoney = (n: number) => `UGX ${fmt(n)}`;
+const dt = (d?: string) => d ? new Date(d).toLocaleString() : '—';
+const dateOnly = (d?: string) => d ? new Date(d).toLocaleDateString() : '—';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -14,7 +19,17 @@ export default function UsersPage() {
   const [error, setError] = useState('');
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', role: 'CUSTOMER', password: '' });
 
+  const [trackingUser, setTrackingUser] = useState<any>(null);
+  const [trackingData, setTrackingData] = useState<any>(null);
+  const [trackingLoading, setTrackingLoading] = useState(false);
+  const [resetTarget, setResetTarget] = useState<any>(null);
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetError, setResetError] = useState('');
+  const [resetSuccess, setResetSuccess] = useState('');
+
   const createModalRef = useDismiss(showCreate, () => setShowCreate(false));
+  const trackModalRef = useDismiss(trackingUser, () => { setTrackingUser(null); setTrackingData(null); });
+  const resetModalRef = useDismiss(resetTarget, () => { setResetTarget(null); setResetPassword(''); setResetError(''); setResetSuccess(''); });
 
   const load = async () => {
     try { const r: any = await api.get('/admin/users'); setUsers(r.data); } catch (e: any) { console.error('API error:', e); }
@@ -24,6 +39,28 @@ export default function UsersPage() {
   const toggleUser = async (id: string, isActive: boolean) => {
     await api.put(`/admin/users/${id}`, { isActive: !isActive });
     setUsers(prev => prev.map(u => u.id === id ? { ...u, isActive: !isActive } : u));
+  };
+
+  const loadTracking = async (id: string) => {
+    setTrackingUser(users.find(u => u.id === id) || null);
+    setTrackingData(null);
+    setTrackingLoading(true);
+    try {
+      const r: any = await api.get(`/admin/users/${id}/tracking`);
+      setTrackingData(r.data);
+    } catch (e: any) { setTrackingData({ error: e?.message || 'Failed to load tracking data' }); }
+    finally { setTrackingLoading(false); }
+  };
+
+  const confirmReset = async () => {
+    if (!resetTarget || !resetPassword) return;
+    setResetError(''); setResetSuccess('');
+    try {
+      await api.put(`/admin/users/${resetTarget.id}`, { password: resetPassword });
+      setResetSuccess('Password updated. The user can now sign in with the new password.');
+      setResetPassword('');
+      setTrackingData(null);
+    } catch (e: any) { setResetError(e?.message || 'Failed to reset password'); }
   };
 
   const createUser = async () => {
@@ -97,19 +134,165 @@ export default function UsersPage() {
                 <td><span className={`badge ${u.twoFactorEnabled ? 'badge-success' : 'badge-info'}`}>{u.twoFactorEnabled ? 'Enabled' : 'Disabled'}</span></td>
                 <td style={{ fontSize: '0.875rem' }}>{u._count?.sessions || 0}</td>
                 <td>
-                  {u.role === 'SUPER_DEVELOPER' ? (
-                    <span className="btn btn-ghost btn-icon" title="Protected account"><Lock size={14} /></span>
-                  ) : (
-                    <button className={`btn btn-ghost btn-icon ${!u.isActive ? 'badge-success' : 'badge-error'}`} title={u.isActive ? 'Suspend user' : 'Reactivate user'} aria-label={u.isActive ? 'Suspend user' : 'Reactivate user'} onClick={() => toggleUser(u.id, u.isActive)}>
-                      {u.isActive ? <ShieldOff size={14} /> : <Shield size={14} />}
-                    </button>
-                  )}
+                  <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
+                    <button className="btn btn-ghost btn-icon" title="Track account activity" aria-label="Track account activity" onClick={() => loadTracking(u.id)}><Eye size={14} /></button>
+                    {u.role === 'SUPER_DEVELOPER' ? (
+                      <span className="btn btn-ghost btn-icon" title="Protected account"><Lock size={14} /></span>
+                    ) : (
+                      <button className={`btn btn-ghost btn-icon ${!u.isActive ? 'badge-success' : 'badge-error'}`} title={u.isActive ? 'Suspend user' : 'Reactivate user'} aria-label={u.isActive ? 'Suspend user' : 'Reactivate user'} onClick={() => toggleUser(u.id, u.isActive)}>
+                        {u.isActive ? <ShieldOff size={14} /> : <Shield size={14} />}
+                      </button>
+                    )}
+                    {u.role === 'SUPER_DEVELOPER' ? (
+                      <span className="btn btn-ghost btn-icon" title="Protected account"><KeyRound size={14} /></span>
+                    ) : (
+                      <button className="btn btn-ghost btn-icon" title="Reset password" aria-label="Reset password" onClick={() => { setResetTarget(u); setResetPassword(''); setResetError(''); setResetSuccess(''); }}><KeyRound size={14} /></button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table></div>
       </div>
+
+      {trackingUser && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 120, overflow: 'auto', padding: '1rem' }}>
+          <div className="card" ref={trackModalRef} tabIndex={-1} style={{ width: 'min(920px, 94vw)', maxHeight: '92vh', overflow: 'auto', padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', gap: '1rem' }}>
+              <div>
+                <h3 style={{ fontWeight: 700, fontSize: '1.125rem' }}>Account Tracking — {trackingUser.firstName} {trackingUser.lastName}</h3>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{trackingUser.email}</p>
+              </div>
+              <button className="btn btn-ghost btn-icon" onClick={() => { setTrackingUser(null); setTrackingData(null); }} aria-label="Close dialog"><X size={18} /></button>
+            </div>
+
+            {trackingLoading ? (
+              <div style={{ padding: '2rem 0' }}><div className="skeleton" style={{ height: 300 }} /></div>
+            ) : trackingData?.error ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '1rem', borderRadius: '0.5rem', background: '#2e0505', color: '#f87171' }}><AlertTriangle size={16} /> {trackingData.error}</div>
+            ) : trackingData ? (
+              <>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                  {(() => {
+                    const d = trackingData;
+                    const cards = [
+                      { icon: <UserIcon size={18} />, label: 'Role', value: d.user?.role || '—' },
+                      { icon: <ShieldCheck size={18} />, label: 'Status', value: d.user?.isActive ? 'Active' : 'Suspended' },
+                      { icon: <Activity size={18} />, label: 'Logins (sessions)', value: `${d.sessions?.active || 0} active / ${d.sessions?.total || 0} total` },
+                      { icon: <Globe size={18} />, label: 'Account activity', value: `${d.activity?.total || 0} events` },
+                      { icon: <BarChart3 size={18} />, label: 'Traffic (pageviews)', value: `${d.analytics?.total || 0}` },
+                    ];
+                    return cards.map((c, i) => (
+                      <div key={i} className="card" style={{ flex: '1 1 150px', padding: '0.875rem' }}>
+                        <div style={{ color: 'var(--primary)', marginBottom: '0.375rem' }}>{c.icon}</div>
+                        <p style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', marginBottom: '0.125rem' }}>{c.label}</p>
+                        <p style={{ fontSize: '0.9375rem', fontWeight: 700 }}>{c.value}</p>
+                      </div>
+                    ));
+                  })()}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+                  <div className="card" style={{ padding: '1rem' }}>
+                    <h4 style={{ fontWeight: 600, marginBottom: '0.5rem' }}>Store & Orders</h4>
+                    {trackingData.store ? (
+                      <div style={{ fontSize: '0.8125rem', display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                        <div><span style={{ color: 'var(--text-secondary)' }}>Store:</span> {trackingData.store.name} <span style={{ color: 'var(--text-secondary)' }}>(/{trackingData.store.slug})</span></div>
+                        <div><span style={{ color: 'var(--text-secondary)' }}>Products:</span> {trackingData.store.products}</div>
+                        <div style={{ paddingTop: '0.25rem', borderTop: '1px solid var(--border)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-secondary)' }}>Orders (store)</span><span>{trackingData.storeOrders?.count || 0}</span></div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-secondary)' }}>Revenue</span><span style={{ fontWeight: 600 }}>{fmtMoney(trackingData.storeOrders?.revenue || 0)}</span></div>
+                          {(trackingData.storeOrders?.recent || []).length > 0 && (
+                            <div style={{ marginTop: '0.5rem' }}>
+                              <p style={{ color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Recent orders</p>
+                              {trackingData.storeOrders.recent.slice(0, 5).map((o: any) => (
+                                <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.125rem 0' }}>
+                                  <span>{o.orderNumber} <span style={{ color: 'var(--text-secondary)' }}>({o.status})</span></span>
+                                  <span style={{ fontWeight: 500 }}>{fmtMoney(o.total)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : trackingData.customerOrders ? (
+                      <div style={{ fontSize: '0.8125rem', display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-secondary)' }}>Orders (placed)</span><span>{trackingData.customerOrders.count}</span></div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-secondary)' }}>Total spent</span><span style={{ fontWeight: 600 }}>{fmtMoney(trackingData.customerOrders.spent)}</span></div>
+                        {(trackingData.customerOrders?.recent || []).length > 0 && (
+                          <div style={{ marginTop: '0.5rem' }}>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Recent orders</p>
+                            {trackingData.customerOrders.recent.slice(0, 5).map((o: any) => (
+                              <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.125rem 0' }}>
+                                <span>{o.orderNumber} <span style={{ color: 'var(--text-secondary)' }}>({o.store?.name || ''} / {o.status})</span></span>
+                                <span style={{ fontWeight: 500 }}>{fmtMoney(o.total)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>No store or customer orders for this account.</p>
+                    )}
+                  </div>
+
+                  <div className="card" style={{ padding: '1rem' }}>
+                    <h4 style={{ fontWeight: 600, marginBottom: '0.5rem' }}>Traffic</h4>
+                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Pageview / analytics events tied to this account ({trackingData.analytics?.total || 0} total)</div>
+                    {(trackingData.analytics?.recent || []).length === 0
+                      ? <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>No analytics events recorded yet.</p>
+                      : <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          {trackingData.analytics.recent.slice(0, 8).map((e: any) => (
+                            <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
+                              <span><span className="badge badge-info">{e.eventType}</span> {e.pageUrl || ''}</span>
+                              <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{dt(e.createdAt)}</span>
+                            </div>
+                          ))}
+                        </div>}
+                  </div>
+                </div>
+
+                <div className="card" style={{ padding: '1rem' }}>
+                  <h4 style={{ fontWeight: 600, marginBottom: '0.5rem' }}>Recent Activity</h4>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Last session: {dt(trackingData.sessions?.last?.lastActivity)} from {trackingData.sessions?.last?.ipAddress || '—'}</div>
+                  {(trackingData.activity?.recent || []).length === 0
+                    ? <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>No activity recorded yet.</p>
+                    : <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        {trackingData.activity.recent.slice(0, 12).map((l: any) => (
+                          <div key={l.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', fontSize: '0.75rem', padding: '0.25rem 0', borderBottom: '1px solid var(--border)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0 }}>
+                              <span className="badge badge-info">{l.action}</span>
+                              <span style={{ color: 'var(--text-secondary)' }}>{l.resource}{l.resourceId ? ` #${l.resourceId.slice(0, 8)}` : ''}</span>
+                            </div>
+                            <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{dt(l.createdAt)}</span>
+                          </div>
+                        ))}
+                      </div>}
+                </div>
+              </>
+            ) : null}
+          </div>
+        </div>
+      )}
+
+      {resetTarget && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 130 }}>
+          <div className="card" ref={resetModalRef} tabIndex={-1} style={{ width: 'min(440px, 92vw)', padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ fontWeight: 600 }}>Reset Password</h3>
+              <button className="btn btn-ghost btn-icon" onClick={() => { setResetTarget(null); setResetPassword(''); setResetError(''); setResetSuccess(''); }} aria-label="Close dialog"><X size={18} /></button>
+            </div>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Set a new password for <strong>{resetTarget.email}</strong>. They can then sign in with this password (Google sign-in keeps working too).</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div><label htmlFor="resetPasswordInput" style={{ fontSize: '0.75rem', fontWeight: 500, display: 'block', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}>New password</label><input id="resetPasswordInput" className="input" type="password" placeholder="New password" value={resetPassword} onChange={e => setResetPassword(e.target.value)} /></div>
+              {resetError && <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', background: '#2e0505', color: '#f87171', fontSize: '0.8125rem' }}><AlertTriangle size={14} /> {resetError}</div>}
+              {resetSuccess && <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', background: '#052e16', color: '#4ade80', fontSize: '0.8125rem' }}><Check size={14} /> {resetSuccess}</div>}
+              <button className="btn btn-primary" onClick={confirmReset} disabled={!resetPassword}><KeyRound size={16} /> Set New Password</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
