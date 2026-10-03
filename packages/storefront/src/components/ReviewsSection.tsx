@@ -116,7 +116,7 @@ export default function ReviewsSection({ productId, initialReviews = [], isAuthe
     <section id="reviews" className="panel" style={{ padding: '1.5rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
         <div>
-          <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.125rem', marginBottom: '0.375rem' }}>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.125rem', marginBottom: '0.375rem' }}>
             Customer Reviews
           </h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -193,7 +193,7 @@ export default function ReviewsSection({ productId, initialReviews = [], isAuthe
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
         {isAuthenticated ? (
           <>
-            <h4 style={{ fontFamily: 'var(--font-serif)', fontSize: '1rem', marginBottom: '0.75rem' }}>Write a Review</h4>
+            <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', marginBottom: '0.75rem' }}>Write a Review</h4>
             <div style={{ marginBottom: '0.75rem' }}>
               <RatingInput value={rating} onChange={setRating} />
             </div>
@@ -212,7 +212,7 @@ export default function ReviewsSection({ productId, initialReviews = [], isAuthe
               className="input"
               style={{ width: '100%', maxWidth: 420, resize: 'vertical', marginBottom: '0.75rem' }}
             />
-            {error && <p style={{ fontSize: '0.8125rem', color: 'var(--danger, #b91c1c)', marginBottom: '0.5rem' }}>{error}</p>}
+            {error && <p style={{ fontSize: '0.8125rem', color: 'var(--error)', marginBottom: '0.5rem' }}>{error}</p>}
             {notice && (
               <p style={{ fontSize: '0.8125rem', color: 'var(--gold)', marginBottom: '0.5rem' }}>{notice}</p>
             )}

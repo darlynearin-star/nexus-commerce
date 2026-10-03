@@ -6,7 +6,7 @@ import { StoreRequest, requireStore, requireStoreOwner } from '../middleware/res
 export const couponsRouter = Router();
 couponsRouter.use(requireStore);
 
-couponsRouter.get('/', async (req: StoreRequest, res, next) => {
+couponsRouter.get('/', authenticate, requireStoreOwner, async (req: StoreRequest, res, next) => {
   try {
     const coupons = await prisma.coupon.findMany({ where: { storeId: req.storeId!, isActive: true, expiresAt: { gte: new Date() } } });
     res.json({ success: true, data: coupons });

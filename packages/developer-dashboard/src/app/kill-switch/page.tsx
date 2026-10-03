@@ -50,7 +50,7 @@ export default function KillSwitchPage() {
   return (
     <div style={{ padding: '2rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-        <AlertTriangle size={28} color="var(--danger)" />
+        <AlertTriangle size={28} color="var(--error)" />
         <div><h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Emergency Kill Switch</h1><p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Instantly disable platform features</p></div>
       </div>
       {activeCount > 0 && (
@@ -62,7 +62,7 @@ export default function KillSwitchPage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
         {switches.map(s => (
-          <div key={s.key} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: state[s.key] ? '2px solid var(--danger)' : '1px solid var(--border)' }}>
+          <div key={s.key} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: state[s.key] ? '2px solid var(--error)' : '1px solid var(--border)' }}>
             <div>
               <p style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{s.label}</p>
               <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{s.desc}</p>

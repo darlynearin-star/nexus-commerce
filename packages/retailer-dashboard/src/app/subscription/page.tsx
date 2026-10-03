@@ -108,7 +108,7 @@ export default function SubscriptionPage() {
           <CreditCard size={32} style={{ color: 'var(--primary)' }} />
           <div>
             <h2 style={{ fontWeight: 600 }}>Store Subscription</h2>
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>3,000 UGX / week after trial</p>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{sub?.weeklyAmount ? `${Number(sub.weeklyAmount).toLocaleString()} UGX / week after trial` : '3,000 UGX / week after trial'}</p>
           </div>
         </div>
 
@@ -163,7 +163,7 @@ export default function SubscriptionPage() {
         )}
 
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-          {(sub?.status === 'TRIAL' || sub?.status === 'SUSPENDED') && (
+          {(sub?.status === 'TRIAL' || sub?.status === 'SUSPENDED' || sub?.status === 'CANCELLED') && (
             <button className="btn btn-primary" onClick={subscribe} disabled={subscribing} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <CreditCard size={16} /> Activate Subscription
             </button>

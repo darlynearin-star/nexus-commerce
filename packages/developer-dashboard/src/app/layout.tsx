@@ -39,7 +39,7 @@ function Sidebar({ children }: { children: React.ReactNode }) {
     { href: '/ads', label: 'Ad Studio', icon: <Video size={18} /> },
     { href: '/cache', label: 'Cache', icon: <RefreshCw size={18} /> },
     { href: '/backups', label: 'Backups', icon: <HardDrive size={18} /> },
-  ];
+  ].filter(item => item.href !== '/subscriptions' || user?.role === 'SUPER_DEVELOPER');
 
   if (pathname === '/login') return <>{children}</>;
 
@@ -68,8 +68,8 @@ function Sidebar({ children }: { children: React.ReactNode }) {
         <div style={{ padding: '0.75rem', borderTop: '1px solid var(--border)', marginTop: 'auto' }}>
           {!collapsed && user && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', padding: '0 0.5rem' }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 600, fontSize: '0.8125rem' }}>{user.firstName[0]}</div>
-              <div style={{ fontSize: '0.8125rem' }}><p style={{ fontWeight: 500 }}>{user.firstName} {user.lastName}</p><p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>{user.role}</p></div>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 600, fontSize: '0.8125rem' }}>{(user.firstName || 'U')[0]}</div>
+              <div style={{ fontSize: '0.8125rem' }}><p style={{ fontWeight: 500 }}>{user.firstName || 'Dev'} {user.lastName || ''}</p><p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>{user.role}</p></div>
             </div>
           )}
           <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: collapsed ? 'center' : 'flex-start', color: 'var(--error)' }} onClick={logout}><LogOut size={16} /> {!collapsed && 'Sign Out'}</button>

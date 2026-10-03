@@ -140,7 +140,7 @@ function InboxRow({ ticket, expanded, onToggleExpand, onOpen }: { ticket: any; e
           {recent.length === 0 && <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>No messages yet — {ticket.subject}</div>}
           {recent.map((m: any) => (
             <div key={m.id} style={{ display: 'flex', gap: '0.5rem', padding: '0.3rem 0', fontSize: '0.8125rem', minWidth: 0 }}>
-              <span style={{ fontWeight: 600, color: isDevRole(m.role) ? 'var(--primary)' : 'var(--text-primary)', flexShrink: 0, maxWidth: '35%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isDevRole(m.role) ? 'You' : (m.sender || 'User')}</span>
+              <span style={{ fontWeight: 600, color: isDevRole(m.role) ? 'var(--primary)' : 'var(--text)', flexShrink: 0, maxWidth: '35%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isDevRole(m.role) ? 'You' : (m.sender || 'User')}</span>
               <span style={{ color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.message}</span>
             </div>
           ))}

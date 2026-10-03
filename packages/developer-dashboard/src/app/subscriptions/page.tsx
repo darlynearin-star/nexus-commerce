@@ -147,7 +147,7 @@ export default function SubscriptionsPage() {
         </div>
       )}
 
-      {error && <div className="alert" style={{ color: 'var(--danger)', marginBottom: '1rem' }}>{error}</div>}
+      {error && <div className="alert" style={{ color: 'var(--error)', marginBottom: '1rem' }}>{error}</div>}
 
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -167,7 +167,7 @@ export default function SubscriptionsPage() {
               const userActive = sub.retailer?.user?.isActive !== false;
               const store = sub.store;
               const locked = sub.status === 'SUSPENDED' || !userActive;
-              const barColor = locked || p.expired ? 'var(--danger)' : p.used >= 0.75 ? 'var(--warning, #f59e0b)' : 'var(--primary)';
+              const barColor = locked || p.expired ? 'var(--error)' : p.used >= 0.75 ? 'var(--warning, #f59e0b)' : 'var(--primary)';
               const st = statusLabel(sub);
               return (
                 <tr key={sub.id} style={{ borderBottom: '1px solid var(--border)' }}>

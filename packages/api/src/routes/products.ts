@@ -79,10 +79,17 @@ productsRouter.get('/', optionalAuth, async (req: StoreRequest, res, next) => {
     }
 
     const where: any = { storeId: req.storeId! };
-    if (!(req as any).user) {
+    const caller = (req as any).user;
+    if (!caller) {
       where.status = 'PUBLISHED';
-    } else if (status) {
-      where.status = status;
+    } else {
+      const isOwnerOrStaff = caller.role === 'DEVELOPER' || caller.role === 'SUPER_DEVELOPER' || (req.store && req.store.ownerId === caller.userId);
+      if (!isOwnerOrStaff) {
+        // Authenticated non-owner callers only ever see published products.
+        where.status = 'PUBLISHED';
+      } else if (status) {
+        where.status = status;
+      }
     }
     if (search) {
       where.OR = [

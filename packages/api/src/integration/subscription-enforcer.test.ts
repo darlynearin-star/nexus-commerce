@@ -62,7 +62,7 @@ function baseSub(overrides: any = {}) {
 }
 
 describe('runSubscriptionEnforcement', () => {
-  it('sends a grace notice for a lapsed trial and records the grace start', async () => {
+  it('sends a grace notice for a lapsed trial and records the grace start', { timeout: 10_000 }, async () => {
     prismaMock.setting.findUnique.mockResolvedValue({ value: '3' });
     prismaMock.retailerSubscription.findMany.mockResolvedValue([baseSub()]);
 
@@ -77,7 +77,7 @@ describe('runSubscriptionEnforcement', () => {
     expect(prismaMock.store.updateMany).not.toHaveBeenCalled();
   });
 
-  it('does not resend the grace notice on subsequent runs', async () => {
+  it('does not resend the grace notice on subsequent runs', { timeout: 10_000 }, async () => {
     prismaMock.setting.findUnique.mockResolvedValue({ value: '3' });
     prismaMock.retailerSubscription.findMany.mockResolvedValue([baseSub({ graceNotifiedAt: daysAgo(1) })]);
 
@@ -89,7 +89,7 @@ describe('runSubscriptionEnforcement', () => {
     expect(prismaMock.notification.create).not.toHaveBeenCalled();
   });
 
-  it('suspends the store and subscription once the grace period elapses', async () => {
+  it('suspends the store and subscription once the grace period elapses', { timeout: 10_000 }, async () => {
     prismaMock.setting.findUnique.mockResolvedValue({ value: '3' });
     prismaMock.retailerSubscription.findMany.mockResolvedValue([baseSub({ graceNotifiedAt: daysAgo(4) })]);
 
@@ -104,7 +104,7 @@ describe('runSubscriptionEnforcement', () => {
     expect(prismaMock.notification.create).toHaveBeenCalled();
   });
 
-  it('treats an ACTIVE subscription past its billing date as expired', async () => {
+  it('treats an ACTIVE subscription past its billing date as expired', { timeout: 10_000 }, async () => {
     prismaMock.setting.findUnique.mockResolvedValue({ value: '3' });
     prismaMock.retailerSubscription.findMany.mockResolvedValue([
       baseSub({ status: 'ACTIVE', trialEnd: daysAhead(10), nextBillingDate: daysAgo(2) }),
@@ -116,7 +116,7 @@ describe('runSubscriptionEnforcement', () => {
     expect(result.suspended).toBe(0);
   });
 
-  it('uses the default grace period (3 days) when no setting is configured', async () => {
+  it('uses the default grace period (3 days) when no setting is configured', { timeout: 10_000 }, async () => {
     prismaMock.setting.findUnique.mockResolvedValue(undefined);
     prismaMock.retailerSubscription.findMany.mockResolvedValue([baseSub({ graceNotifiedAt: daysAgo(3) })]);
 
@@ -125,7 +125,7 @@ describe('runSubscriptionEnforcement', () => {
     expect(result.suspended).toBe(1);
   });
 
-  it('ignores subscriptions that are not lapsed', async () => {
+  it('ignores subscriptions that are not lapsed', { timeout: 10_000 }, async () => {
     prismaMock.setting.findUnique.mockResolvedValue({ value: '3' });
     prismaMock.retailerSubscription.findMany.mockResolvedValue([]);
 

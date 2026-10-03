@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import prisma from '@nexus/database';
 import { authenticate, requirePermission, invalidateUserCache, AuthRequest } from '../middleware/auth';
-import { Permission } from '@nexus/shared';
+import { Permission, UserRole } from '@nexus/shared';
 import { requireFeatureEnabled } from '../middleware/feature-flags';
 import { logActivity } from '../utils/activity-log';
 import { cacheGet, cacheSet, cacheInvalidate, cacheInvalidateStore } from '../utils/cache';
@@ -159,10 +159,17 @@ storesRouter.put('/:id', authenticate, async (req: AuthRequest, res, next) => {
 });
 
 // Toggle store active state
-storesRouter.post('/:id/toggle', authenticate, requirePermission(Permission.MANAGE_SYSTEM), async (req: AuthRequest, res, next) => {
+storesRouter.post('/:id/toggle', authenticate, async (req: AuthRequest, res, next) => {
   try {
     const store = await prisma.store.findUnique({ where: { id: req.params.id } });
     if (!store) return res.status(404).json({ success: false, error: 'Store not found' });
+
+    // The store owner can toggle their own store; staff roles keep full control.
+    const isOwner = store.ownerId === req.user!.userId;
+    const isStaff = req.user!.role === UserRole.DEVELOPER || req.user!.role === UserRole.SUPER_DEVELOPER;
+    if (!isOwner && !isStaff) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
 
     const updated = await prisma.store.update({
       where: { id: req.params.id },

@@ -19,18 +19,28 @@ export async function requireActiveSubscription(req: AuthRequest, res: Response,
     }
 
     const sub = retailer.subscription;
-    if (sub.status === 'SUSPENDED') {
-      return res.status(403).json({ success: false, error: 'Store is suspended due to payment. Please renew your subscription.' });
-    }
-    if (sub.status === 'CANCELLED') {
-      return res.status(403).json({ success: false, error: 'Store subscription has been cancelled.' });
-    }
-    if (sub.status === 'TRIAL' && sub.trialEnd < new Date()) {
-      await prisma.retailerSubscription.update({ where: { id: sub.id }, data: { status: 'SUSPENDED' } });
-      return res.status(403).json({ success: false, error: 'Trial period has ended. Please subscribe to continue selling.' });
+    const expiredTrial = sub.status === 'TRIAL' && sub.trialEnd < new Date();
+    const lapsed = sub.status === 'SUSPENDED' || sub.status === 'CANCELLED' || expiredTrial;
+    const lapsedMessage = sub.status === 'CANCELLED'
+      ? 'Store subscription has been cancelled.'
+      : expiredTrial
+        ? 'Trial period has ended. Please subscribe to continue selling.'
+        : 'Store is suspended due to payment. Please renew your subscription.';
+
+    if (!lapsed) return next();
+
+    // Platform staff bypass subscription gating entirely.
+    if (req.user && (req.user.role === 'DEVELOPER' || req.user.role === 'SUPER_DEVELOPER')) return next();
+
+    // The store owner must keep an active subscription to operate the store.
+    if (req.user && store.ownerId === req.user.userId) {
+      return res.status(403).json({ success: false, error: lapsedMessage });
     }
 
-    next();
+    // Non-owner callers (customers) may always READ their data; only writes
+    // (e.g. placing new orders) are blocked while the store is lapsed.
+    if (req.method === 'GET' || req.method === 'HEAD') return next();
+    return res.status(403).json({ success: false, error: lapsedMessage });
   } catch (error) {
     next(error);
   }

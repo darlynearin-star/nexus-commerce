@@ -24,7 +24,6 @@
   --success: #4F9D69;
   --warning: #C07F2E;
   --error: #C44E4E;
-  --danger: #C44E4E;
   --info: #4E7C9D;
 }
 
@@ -54,7 +53,7 @@ body {
 .btn-secondary:hover { border-color: var(--text-secondary); }
 .btn-ghost { background: transparent; color: var(--text-secondary); }
 .btn-ghost:hover { background: var(--bg-card); }
-.btn-danger { background: var(--danger); color: white; }
+.btn-danger { background: var(--error); color: white; }
 .btn-danger:hover { opacity: 0.9; }
 .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.8125rem; }
 .btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
@@ -107,7 +106,7 @@ body {
 }
 .nav-item:hover { background: var(--glow); color: var(--text); }
 .nav-item.active { background: var(--glow); color: var(--primary); }
-.nav-item.danger { color: var(--danger); }
+.nav-item.danger { color: var(--error); }
 .nav-item.danger:hover { background: rgba(220,38,38,0.1); color: var(--error); }
 
 .table {
@@ -159,7 +158,7 @@ body {
 }
 
 .kill-switch-card {
-  border: 2px solid var(--danger); background: rgba(220,38,38,0.05);
+  border: 2px solid var(--error); background: rgba(220,38,38,0.05);
   border-radius: 0.75rem; padding: 1.5rem;
 }
 

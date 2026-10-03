@@ -21,10 +21,8 @@ subscriptionsRouter.get('/', authenticate, requireRole(UserRole.RETAILER), async
       return res.json({ success: true, data: subscription });
     }
     const sub = retailer.subscription;
-    if (sub.status === 'TRIAL' && sub.trialEnd < new Date()) {
-      const updated = await prisma.retailerSubscription.update({ where: { id: sub.id }, data: { status: 'SUSPENDED' } });
-      return res.json({ success: true, data: updated });
-    }
+    // Never mutate state on a GET. The enforcer is the only writer that
+    // advances TRIAL -> grace -> SUSPENDED (with store deactivation).
     res.json({ success: true, data: sub });
   } catch (error) { next(error); }
 });
@@ -445,7 +443,7 @@ subscriptionsRouter.post('/:id/unlock', authenticate, requireRole(UserRole.SUPER
       const now = new Date();
       await prisma.retailerSubscription.update({
         where: { id: sub.id },
-        data: { status: 'ACTIVE', lastBillingDate: now, nextBillingDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+        data: { status: 'ACTIVE', lastBillingDate: now, nextBillingDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), graceNotifiedAt: null, suspendedAt: null },
       });
     }
     logActivity({ userId: req.user!.userId, action: 'subscription:dev_unlock', resource: 'subscription', resourceId: sub.id, req: req as any });
