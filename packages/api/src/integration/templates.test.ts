@@ -102,6 +102,29 @@ describe('withColorDefaults', () => {
   it('always returns all six keys, even from null', () => {
     expect(Object.keys(withColorDefaults(null)).sort()).toEqual([...THEME_COLOR_KEYS].sort());
   });
+
+  it('accepts colours delivered as a JSON string (Prisma Json column)', () => {
+    // Regression: StoreTheme.colors is written with an explicit
+    // JSON.stringify, so the API can return it as a raw string. Reading
+    // str[key] yields undefined for every key, which used to silently
+    // substitute the built-in palette instead of the store's own colours.
+    const asString = JSON.stringify({ primary: '#5b8c5a', bg: '#f8f6f0' });
+    const out = withColorDefaults(asString);
+    expect(out.primary).toBe('#5b8c5a');
+    expect(out.bg).toBe('#f8f6f0');
+    expect(out.text).toBe(DEFAULT_THEME_COLORS.text);
+  });
+
+  it('treats an unparseable or non-object string as no colours', () => {
+    expect(withColorDefaults('not json')).toEqual(withColorDefaults({}));
+    expect(withColorDefaults('"just-a-string"')).toEqual(withColorDefaults({}));
+    expect(withColorDefaults('null')).toEqual(withColorDefaults({}));
+  });
+
+  it('produces identical output for object and JSON-string input', () => {
+    const obj = { primary: '#5b8c5a', secondary: '#4a7349', bg: '#f8f6f0', surface: '#f0ede4', text: '#2c2c2c', accent: '#7dad7c' };
+    expect(withColorDefaults(JSON.stringify(obj))).toEqual(withColorDefaults(obj));
+  });
 });
 
 describe('dark/light is derived from the background', () => {

@@ -118,15 +118,37 @@ export function normalizeHex(value: string): string | null {
 }
 
 /**
+ * Accepts theme colours as an object OR a JSON string.
+ *
+ * `StoreTheme.colors` is a Prisma `Json` column, but this codebase writes it
+ * with an explicit `JSON.stringify(...)`, so it can come back from the API as a
+ * raw string. Reading `str[key]` off a string yields `undefined` for every key,
+ * which silently made `withColorDefaults` substitute the built-in palette.
+ */
+function coerceColors(colors: unknown): Partial<ThemeColors> {
+  if (!colors) return {};
+  if (typeof colors === 'string') {
+    try {
+      const parsed = JSON.parse(colors);
+      return parsed && typeof parsed === 'object' ? (parsed as Partial<ThemeColors>) : {};
+    } catch {
+      return {};
+    }
+  }
+  return typeof colors === 'object' ? (colors as Partial<ThemeColors>) : {};
+}
+
+/**
  * Fills in any missing/blank colour with the default so a theme is always
  * complete. Every returned value is a lowercase 6-digit hex, which is the
  * format `<input type="color">` requires - uppercase or 3-digit values make
  * the native picker fall back to black.
  */
-export function withColorDefaults(colors: Partial<ThemeColors> | null | undefined): ThemeColors {
+export function withColorDefaults(colors: Partial<ThemeColors> | string | null | undefined): ThemeColors {
+  const source = coerceColors(colors);
   const out = {} as ThemeColors;
   for (const key of THEME_COLOR_KEYS) {
-    const v = colors?.[key];
+    const v = source[key];
     const norm = typeof v === 'string' ? normalizeHex(v) : null;
     out[key] = norm || normalizeHex(DEFAULT_THEME_COLORS[key]) || '#000000';
   }
