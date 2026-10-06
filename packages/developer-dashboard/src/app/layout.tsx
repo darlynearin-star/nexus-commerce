@@ -4,7 +4,7 @@ import './globals.css';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/lib/auth-guard';
 import { useDismiss } from '@/lib/use-dismiss';
-import { LayoutDashboard, Users, Shield, Database, Activity, Settings, AlertTriangle, LogOut, Menu, X, Server, FileText, Flag, Store, Key, Megaphone, RefreshCw, HardDrive, Globe, CreditCard, Video, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Users, Shield, Database, Activity, Settings, AlertTriangle, LogOut, Menu, X, Server, FileText, Flag, Store, Key, Megaphone, RefreshCw, HardDrive, Globe, CreditCard, Video, MessageSquare, LayoutTemplate } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -32,6 +32,7 @@ function Sidebar({ children }: { children: React.ReactNode }) {
     { href: '/kill-switch', label: 'Kill Switch', icon: <AlertTriangle size={18} />, danger: true },
     { href: '/settings', label: 'Global Settings', icon: <Settings size={18} /> },
     { href: '/api-config', label: 'API Configuration', icon: <Key size={18} /> },
+    { href: '/templates', label: 'Store Templates', icon: <LayoutTemplate size={18} /> },
     { href: '/feature-flags', label: 'Feature Flags', icon: <Flag size={18} /> },
     { href: '/logs', label: 'Activity Logs', icon: <FileText size={18} /> },
     { href: '/announcements', label: 'Announcements', icon: <Megaphone size={18} /> },

@@ -1,18 +1,35 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { setStoreSlug } from '@/lib/store-api';
+import {
+  BUILT_IN_TEMPLATES, DEFAULT_TEMPLATE_ID, THEME_COLOR_KEYS,
+  applyThemeColors, snapshotSiteTheme, restoreSiteTheme, resolveThemeMode,
+  normalizeHex, withColorDefaults,
+  type StoreThemeTemplate, type ThemeColors,
+} from '@nexus/shared';
 import { ArrowRight, Check, X, Store, Palette, CreditCard, Shield, Gem, Smartphone, ChevronRight, Phone, MessageCircle, Mail } from 'lucide-react';
 
-const TEMPLATES = [
-  { id: 'elegance', name: 'Elegance', desc: 'Gold accents on dark, timeless luxury', colors: { primary: '#D4A843', secondary: '#A8822E', bg: '#0A0A0A', surface: '#141414', text: '#FAFAFA', accent: '#F0D48A' } },
-  { id: 'minimal', name: 'Minimal', desc: 'Clean whites, soft grays, modern simplicity', colors: { primary: '#2D2D2D', secondary: '#6B6B6B', bg: '#FFFFFF', surface: '#F8F8F6', text: '#1A1A1A', accent: '#B8B8B8' } },
-  { id: 'bold', name: 'Bold', desc: 'High contrast red on dark, energetic edge', colors: { primary: '#FF4433', secondary: '#CC3322', bg: '#0A0A0A', surface: '#1A1A1A', text: '#FAFAFA', accent: '#FF6655' } },
-  { id: 'nature', name: 'Nature', desc: 'Earthy greens, warm browns, organic feel', colors: { primary: '#5B8C5A', secondary: '#4A7349', bg: '#F8F6F0', surface: '#F0EDE4', text: '#2C2C2C', accent: '#7DAD7C' } },
-];
+const COLOR_LABELS: Record<string, string> = {
+  primary: 'Primary',
+  secondary: 'Secondary',
+  bg: 'Background',
+  surface: 'Surface',
+  text: 'Text',
+  accent: 'Accent',
+};
+
+const COLOR_HINTS: Record<string, string> = {
+  primary: 'Buttons, links and highlights',
+  secondary: 'Hover and pressed button states',
+  bg: 'Page background. This also decides light or dark mode.',
+  surface: 'Cards and panels',
+  text: 'Body text',
+  accent: 'Subtle highlights and gradients',
+};
 
 const slides = [
   {
@@ -25,7 +42,7 @@ const slides = [
     icon: <Palette size={48} />,
     title: 'Pick Your Style',
     desc: 'Choose from four designer-crafted templates: Elegance (gold & dark), Minimal (clean & modern), Bold (vibrant & energetic), or Nature (organic & fresh). Every color is customizable.',
-    feat: ['Live preview as you customize', 'Dark & light mode support', 'Mobile-friendly design'],
+    feat: ['Live preview as you customise', 'Automatic dark & light mode', 'Mobile-friendly design'],
   },
   {
     icon: <Smartphone size={48} />,
@@ -40,8 +57,12 @@ export default function CreateStorePage() {
   const [step, setStep] = useState(0);
   const [slideIdx, setSlideIdx] = useState(0);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [template, setTemplate] = useState(TEMPLATES[0]);
-  const [colors, setColors] = useState(template.colors);
+  const [templates, setTemplates] = useState<StoreThemeTemplate[]>(BUILT_IN_TEMPLATES);
+  const [templateId, setTemplateId] = useState(DEFAULT_TEMPLATE_ID);
+  const [colors, setColors] = useState<ThemeColors>(withColorDefaults(BUILT_IN_TEMPLATES[0].defaultColors));
+  // Free-text hex entry, kept separately so a half-typed value like "#D4A"
+  // does not fight the picker or get normalised out from under the user.
+  const [hexDrafts, setHexDrafts] = useState<Partial<Record<string, string>>>({});
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [slugAvailable, setSlugAvailable] = useState(true);
@@ -51,12 +72,77 @@ export default function CreateStorePage() {
   const [error, setError] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
 
+  const template = useMemo(
+    () => templates.find(t => t.id === templateId) || templates[0] || BUILT_IN_TEMPLATES[0],
+    [templates, templateId]
+  );
+
+  const themeMode = useMemo(() => resolveThemeMode(colors), [colors]);
+
+  // Templates are admin-editable via /api/templates, with the built-in set as
+  // an offline fallback so the wizard never renders an empty gallery.
   useEffect(() => {
-    setColors(template.colors);
-    document.documentElement.setAttribute('data-theme', template.id === 'elegance' || template.id === 'bold' ? 'dark' : 'light');
+    let cancelled = false;
+    api.get<any>('/templates')
+      .then((r: any) => {
+        const list = Array.isArray(r?.data) ? r.data : [];
+        if (cancelled || !list.length) return;
+        const clean: StoreThemeTemplate[] = list.map((t: any) => ({
+          id: String(t.id),
+          name: String(t.name || t.id),
+          description: String(t.description || ''),
+          defaultColors: withColorDefaults(t.defaultColors),
+        }));
+        setTemplates(clean);
+        setTemplateId(prev => (clean.some(t => t.id === prev) ? prev : clean[0].id));
+      })
+      .catch(() => { /* keep built-ins */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Live preview. This deliberately repaints the whole page while the wizard is
+  // open so the operator sees real colours, then restoreSiteTheme puts the
+  // platform theme back on unmount. Previously nothing was restored, so
+  // visiting this page left the entire site repainted.
+  const previewSnapshot = useRef<ReturnType<typeof snapshotSiteTheme> | null>(null);
+  useEffect(() => {
     const root = document.documentElement;
-    Object.entries(template.colors).forEach(([k, v]) => root.style.setProperty(`--${k === 'primary' ? 'primary' : k === 'secondary' ? 'primary-dark' : k === 'accent' ? 'primary-light' : k}`, v));
-  }, [template]);
+    if (!previewSnapshot.current) previewSnapshot.current = snapshotSiteTheme(root);
+    root.setAttribute('data-theme', themeMode);
+    applyThemeColors(colors, root);
+    return () => {
+      if (previewSnapshot.current) {
+        restoreSiteTheme(previewSnapshot.current, root);
+        previewSnapshot.current = null;
+      }
+    };
+  }, [colors, themeMode]);
+
+  const pickTemplate = useCallback((t: StoreThemeTemplate) => {
+    setTemplateId(t.id);
+    setColors(withColorDefaults(t.defaultColors));
+    setHexDrafts({});
+  }, []);
+
+  const setColor = useCallback((key: keyof ThemeColors, value: string) => {
+    setColors(prev => ({ ...prev, [key]: value }));
+  }, []);
+
+  // Only accept a well-formed hex; otherwise keep the last good colour so the
+  // live preview and the saved theme never receive junk.
+  const commitHex = useCallback((key: keyof ThemeColors, raw: string) => {
+    setHexDrafts(prev => ({ ...prev, [key]: raw }));
+    const norm = normalizeHex(raw);
+    if (norm) setColor(key, norm);
+  }, [setColor]);
+
+  const invalidHexKeys = useMemo(
+    () => THEME_COLOR_KEYS.filter(k => {
+      const draft = hexDrafts[k];
+      return draft !== undefined && draft.trim() !== '' && !normalizeHex(draft);
+    }),
+    [hexDrafts]
+  );
 
   useEffect(() => {
     if (slug.length >= 3) {
@@ -71,7 +157,15 @@ export default function CreateStorePage() {
     setSubmitting(true);
     setError('');
     try {
-      const res = await api.post('/stores', { name, slug, template: template.id, colors, logoUrl: logoUrl || undefined, phone, whatsapp });
+      const res = await api.post('/stores', {
+        name,
+        slug,
+        template: template.id,
+        colors: withColorDefaults(colors),
+        logoUrl: logoUrl || undefined,
+        phone,
+        whatsapp,
+      });
       if (res.success) {
         localStorage.setItem('activeStoreSlug', slug);
         setStoreSlug(slug);
@@ -150,18 +244,43 @@ export default function CreateStorePage() {
       {step === 1 && (
         <div>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem' }}>Choose a template</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Pick a starting design. You can customize colors in the next step.</p>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Pick a starting design. You can customise every colour in the next step.</p>
           <div style={{ display: 'grid', gap: '1rem' }}>
-            {TEMPLATES.map(t => (
-              <button key={t.id} onClick={() => { setTemplate(t); }} style={{ display: 'flex', gap: '1rem', alignItems: 'center', padding: '1.25rem', borderRadius: '0.75rem', border: `2px solid ${template.id === t.id ? 'var(--primary)' : 'var(--border)'}`, background: 'var(--surface)', cursor: 'pointer', textAlign: 'left', width: '100%' }}>
-                <div style={{ width: 48, height: 48, borderRadius: '0.5rem', background: t.colors.bg, border: `2px solid ${t.colors.primary}`, flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontWeight: 600 }}>{t.name}</div>
-                  <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{t.desc}</div>
-                </div>
-                {template.id === t.id && <Check size={20} style={{ color: 'var(--primary)', marginLeft: 'auto' }} />}
-              </button>
-            ))}
+            {templates.map(t => {
+              const c = withColorDefaults(t.defaultColors);
+              const selected = template.id === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => pickTemplate(t)}
+                  aria-pressed={selected}
+                  style={{ display: 'flex', gap: '1rem', alignItems: 'center', padding: '1rem', borderRadius: '0.75rem', border: `2px solid ${selected ? 'var(--primary)' : 'var(--border)'}`, background: 'var(--surface)', cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                >
+                  {/* Miniature storefront: header bar, hero block and two cards,
+                      painted with the template's own palette. */}
+                  <div aria-hidden="true" style={{ width: 108, height: 68, borderRadius: '0.5rem', overflow: 'hidden', flexShrink: 0, background: c.bg, border: `1px solid ${c.surface}`, display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ height: 12, background: c.surface, display: 'flex', alignItems: 'center', padding: '0 4px', gap: 3 }}>
+                      <div style={{ width: 14, height: 4, borderRadius: 2, background: c.primary }} />
+                      <div style={{ width: 8, height: 4, borderRadius: 2, background: c.text, opacity: 0.35 }} />
+                    </div>
+                    <div style={{ flex: 1, padding: 4, display: 'flex', gap: 3 }}>
+                      <div style={{ flex: 1, borderRadius: 3, background: c.surface, borderLeft: `2px solid ${c.accent}` }} />
+                      <div style={{ width: 26, borderRadius: 3, background: c.primary }} />
+                    </div>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600 }}>{t.name}</div>
+                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{t.description}</div>
+                    <div style={{ display: 'flex', gap: 4, marginTop: '0.4rem' }}>
+                      {THEME_COLOR_KEYS.map(k => (
+                        <span key={k} title={`${COLOR_LABELS[k]} ${c[k]}`} style={{ width: 14, height: 14, borderRadius: 4, background: c[k], border: '1px solid rgba(128,128,128,0.35)' }} />
+                      ))}
+                    </div>
+                  </div>
+                  {selected && <Check size={20} style={{ color: 'var(--primary)', marginLeft: 'auto', flexShrink: 0 }} />}
+                </button>
+              );
+            })}
           </div>
           <button className="btn btn-primary" style={{ marginTop: '2rem', width: '100%', justifyContent: 'center' }} onClick={() => setStep(2)}>Continue <ArrowRight size={16} /></button>
         </div>
@@ -170,17 +289,84 @@ export default function CreateStorePage() {
       {/* Step 2: Customize Colors */}
       {step === 2 && (
         <div>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 600, marginBottom: '2rem' }}>Customize colors</h2>
-          {Object.entries(colors).map(([key, val]) => (
-            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-              <label htmlFor={`color-${key}`} style={{ width: 100, fontSize: '0.875rem', fontWeight: 500, textTransform: 'capitalize' }}>{key}</label>
-              <input id={`color-${key}`} type="color" value={val} onChange={e => { const c = { ...colors, [key]: e.target.value }; setColors(c); document.documentElement.style.setProperty(`--${key}`, e.target.value); }} style={{ width: 48, height: 40, padding: 0, border: 'none', cursor: 'pointer', background: 'transparent' }} />
-              <input aria-label={`${key} hex value`} type="text" value={val} onChange={e => { const c = { ...colors, [key]: e.target.value }; setColors(c); }} style={{ flex: 1 }} className="input" />
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem' }}>Customise colours</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+            The page behind this panel updates live as you type. Your background colour decides whether the store is dark or light.
+          </p>
+
+          {invalidHexKeys.length > 0 && (
+            <div role="alert" style={{ padding: '0.75rem 1rem', borderRadius: '0.5rem', marginBottom: '1rem', background: 'rgba(196,78,78,0.12)', border: '1px solid var(--error)', color: 'var(--error)', fontSize: '0.8125rem' }}>
+              Not a valid hex colour: {invalidHexKeys.map(k => COLOR_LABELS[k] || k).join(', ')}. Use 3 or 6 hex digits, e.g. #D4A843.
             </div>
-          ))}
+          )}
+
+          <div style={{ display: 'grid', gap: '0.75rem' }}>
+            {THEME_COLOR_KEYS.map(key => {
+              const val = colors[key];
+              const draft = hexDrafts[key] ?? val;
+              const invalid = draft.trim() !== '' && !normalizeHex(draft);
+              return (
+                <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <label htmlFor={`color-${key}`} style={{ width: 92, flexShrink: 0, fontSize: '0.875rem', fontWeight: 500 }}>
+                    {COLOR_LABELS[key] || key}
+                  </label>
+                  <input
+                    id={`color-${key}`}
+                    type="color"
+                    value={val}
+                    onChange={e => { setColor(key, e.target.value); setHexDrafts(p => ({ ...p, [key]: e.target.value })); }}
+                    style={{ width: 46, height: 38, padding: 0, border: `1px solid ${invalid ? 'var(--error)' : 'var(--border)'}`, borderRadius: '0.4rem', cursor: 'pointer', background: 'transparent', flexShrink: 0 }}
+                  />
+                  <input
+                    aria-label={`${COLOR_LABELS[key] || key} hex value`}
+                    type="text"
+                    value={draft}
+                    spellCheck={false}
+                    onChange={e => commitHex(key, e.target.value)}
+                    onBlur={() => setHexDrafts(p => ({ ...p, [key]: undefined }))}
+                    style={{ flex: 1, fontFamily: 'monospace', fontSize: '0.8125rem', borderColor: invalid ? 'var(--error)' : undefined }}
+                    className="input"
+                  />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', flex: 2, minWidth: 0, display: 'none' }}>{COLOR_HINTS[key]}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+            Mode: <strong style={{ color: 'var(--text)' }}>{themeMode === 'dark' ? 'Dark' : 'Light'}</strong> (from your background colour)
+          </p>
+
+          {/* Real store preview: a miniature storefront painted with the exact
+              colours that will be saved. This is what the marketing copy
+              promises - it did not exist before. */}
+          <div style={{ marginTop: '1.5rem' }}>
+            <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Preview</p>
+            <div style={{ borderRadius: '0.75rem', overflow: 'hidden', border: '1px solid var(--border)' }}>
+              <div style={{ height: 30, background: colors.surface, display: 'flex', alignItems: 'center', padding: '0 0.75rem', gap: '0.75rem' }}>
+                <span style={{ width: 14, height: 14, borderRadius: 4, background: colors.primary }} />
+                <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: colors.text }}>{name || 'Your Store'}</span>
+                <span style={{ marginLeft: 'auto', fontSize: '0.6875rem', color: colors.text, opacity: 0.7 }}>Shop&nbsp;&nbsp;About</span>
+              </div>
+              <div style={{ background: colors.bg, padding: '1.25rem' }}>
+                <div style={{ height: 8, width: '45%', borderRadius: 4, background: colors.text, opacity: 0.85, marginBottom: '0.5rem' }} />
+                <div style={{ height: 6, width: '65%', borderRadius: 3, background: colors.text, opacity: 0.4, marginBottom: '0.875rem' }} />
+                <span style={{ display: 'inline-block', fontSize: '0.75rem', fontWeight: 600, color: colors.bg, background: colors.primary, padding: '0.35rem 0.875rem', borderRadius: 999 }}>Shop now</span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginTop: '0.875rem' }}>
+                  {[0, 1, 2].map(i => (
+                    <div key={i} style={{ background: colors.surface, borderRadius: 6, padding: '0.5rem', borderLeft: `2px solid ${i === 1 ? colors.accent : 'transparent'}` }}>
+                      <div style={{ height: 5, width: '70%', borderRadius: 3, background: colors.text, opacity: 0.5, marginBottom: 4 }} />
+                      <div style={{ height: 5, width: '40%', borderRadius: 3, background: colors.primary }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
             <button className="btn btn-secondary" onClick={() => setStep(1)}>Back</button>
-            <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setStep(3)}>Next: Details <ArrowRight size={16} /></button>
+            <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} disabled={invalidHexKeys.length > 0} onClick={() => setStep(3)}>Next: Details <ArrowRight size={16} /></button>
           </div>
         </div>
       )}

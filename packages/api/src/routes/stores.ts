@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import prisma from '@nexus/database';
 import { authenticate, requirePermission, invalidateUserCache, AuthRequest } from '../middleware/auth';
-import { Permission, UserRole } from '@nexus/shared';
+import { Permission, UserRole, DEFAULT_TEMPLATE_ID, withColorDefaults } from '@nexus/shared';
 import { requireFeatureEnabled } from '../middleware/feature-flags';
 import { logActivity } from '../utils/activity-log';
 import { cacheGet, cacheSet, cacheInvalidate, cacheInvalidateStore } from '../utils/cache';
@@ -94,7 +94,7 @@ storesRouter.post('/', authenticate, requireFeatureEnabled('storeCreation'), asy
     const store = await prisma.store.create({
       data: {
         name, slug, logoUrl: logoUrl || null, ownerId: req.user!.userId,
-        theme: { create: { template: template || 'elegance', colors: JSON.stringify(colors || { primary: '#D4A843', secondary: '#A8822E', bg: '#0A0A0A', surface: '#141414', text: '#FAFAFA', accent: '#F0D48A' }) } },
+        theme: { create: { template: template || DEFAULT_TEMPLATE_ID, colors: JSON.stringify(withColorDefaults(colors)) } },
         settings: { create: { currency: 'UGX', location: 'Kampala, Uganda' } },
       },
       include: { settings: true, theme: true },
@@ -142,12 +142,27 @@ storesRouter.put('/:id', authenticate, async (req: AuthRequest, res, next) => {
     if (isActive !== undefined) updateData.isActive = isActive;
     if (logoUrl !== undefined) updateData.logoUrl = logoUrl;
 
+    // Theme colours are normalised on write so every consumer (storefront,
+    // dashboards, colour inputs) can trust the stored shape. Previously any
+    // arbitrary object could be persisted and break `type="color"` inputs.
+    let themeUpsert: any = null;
+    if (theme) {
+      const template = typeof theme.template === 'string' && theme.template.trim()
+        ? theme.template.trim().slice(0, 60)
+        : DEFAULT_TEMPLATE_ID;
+      const colors = JSON.stringify(withColorDefaults(theme.colors));
+      themeUpsert = {
+        create: { template, colors },
+        update: { template, colors },
+      };
+    }
+
     const updated = await prisma.store.update({
       where: { id: req.params.id },
       data: {
         ...updateData,
         ...(settings ? { settings: { upsert: { create: settings, update: settings } } } : {}),
-        ...(theme ? { theme: { upsert: { create: { template: theme.template || 'elegance', colors: JSON.stringify(theme.colors || {}) }, update: { template: theme.template, ...(theme.colors ? { colors: JSON.stringify(theme.colors) } : {}) } } } } : {}),
+        ...(themeUpsert ? { theme: { upsert: themeUpsert } } : {}),
       },
       include: { settings: true, theme: true },
     });
