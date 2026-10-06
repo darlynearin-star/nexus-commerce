@@ -1,6 +1,7 @@
 'use client';
 import { AuthProvider } from '@/lib/auth';
 import { ThemeProvider } from '@/lib/theme';
+import { BetaBanner } from '@nexus/web';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
@@ -16,6 +17,7 @@ export default function ClientProviders({ children }: { children: React.ReactNod
       <SeoManager />
       <ThemeProvider>
         <AuthProvider>
+          <BetaBanner />
           <AnnouncementBanner />
           <Header />
           <main style={{ minHeight: 'calc(100vh - 64px)', position: 'relative', zIndex: 1 }}>{children}</main>

@@ -4,3 +4,4 @@ export { decodeJwt, captureTokenFromUrl } from './jwt';
 export { getStoreSlugFromUrl, getActiveStoreSlug } from './store-slug';
 export { createAuthGuard } from './auth-guard';
 export type { AuthState } from './auth-guard';
+export { default as BetaBanner, BETA_DISMISS_KEY } from './beta-banner';

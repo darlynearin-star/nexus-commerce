@@ -8,6 +8,7 @@ import ErrorBoundary from '@/lib/error-boundary';
 import { useDismiss } from '@/lib/use-dismiss';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
 import { LayoutDashboard, Package, ShoppingCart, Users, BarChart3, Settings, Image, Megaphone, LogOut, Menu, X, Store, CreditCard, Eye, ExternalLink, BookOpen, Star, Palette } from 'lucide-react';
+import { BetaBanner } from '@nexus/web';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -86,8 +87,11 @@ function Sidebar({ children }: { children: React.ReactNode }) {
       </div>
       <div className="main-content" role="main" style={{ marginLeft: collapsed ? 64 : 'var(--sidebar)', transition: 'margin 0.2s' }}>
         <button className="btn btn-ghost btn-icon mobile-sidebar-btn" onClick={() => setMobileOpen(true)} style={{ position: 'fixed', top: '0.75rem', left: '0.75rem', zIndex: 50, background: 'var(--bg-card)' }} aria-label="Open menu"><Menu size={20} /></button>
-        <div style={{ padding: '1rem 1.5rem 0', maxWidth: 1200, margin: '0 auto' }}>
-          <AnnouncementBanner />
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <BetaBanner />
+          <div style={{ padding: '1rem 1.5rem 0' }}>
+            <AnnouncementBanner />
+          </div>
         </div>
         <SubscriptionGuard><ErrorBoundary>{children}</ErrorBoundary></SubscriptionGuard>
       </div>

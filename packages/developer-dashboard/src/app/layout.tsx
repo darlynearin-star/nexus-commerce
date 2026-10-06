@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/lib/auth-guard';
 import { useDismiss } from '@/lib/use-dismiss';
 import { LayoutDashboard, Users, Shield, Database, Activity, Settings, AlertTriangle, LogOut, Menu, X, Server, FileText, Flag, Store, Key, Megaphone, RefreshCw, HardDrive, Globe, CreditCard, Video, MessageSquare, LayoutTemplate } from 'lucide-react';
+import { BetaBanner } from '@nexus/web';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -78,6 +79,7 @@ function Sidebar({ children }: { children: React.ReactNode }) {
       </div>
       <div className="main-content" role="main" style={{ marginLeft: collapsed ? 64 : 'var(--sidebar)', transition: 'margin 0.2s' }}>
         <button className="btn btn-ghost btn-icon mobile-sidebar-btn" onClick={() => setMobileOpen(true)} style={{ position: 'fixed', top: '0.75rem', left: '0.75rem', zIndex: 50, background: 'var(--bg-card)' }} aria-label="Open menu"><Menu size={20} /></button>
+        <BetaBanner />
         {children}
       </div>
     </AuthGuard>
