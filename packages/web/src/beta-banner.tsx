@@ -93,20 +93,23 @@ export default function BetaBanner({ compact = false }: { compact?: boolean }) {
         aria-label="Dismiss beta notice for this visit"
         style={{
           flexShrink: 0,
-          marginTop: 1,
-          width: 22,
-          height: 22,
+          marginTop: 0,
+          width: 28,
+          height: 28,
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
           border: 'none',
-          borderRadius: 4,
+          borderRadius: 'var(--radius-sm, 6px)',
           background: 'transparent',
           color: 'var(--text-secondary, #a8a096)',
           cursor: 'pointer',
-          fontSize: '1rem',
+          fontSize: '1.125rem',
           lineHeight: 1,
+          transition: 'background 0.15s, color 0.15s',
         }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-secondary, rgba(0,0,0,0.06))'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
       >
         <span aria-hidden="true">&times;</span>
       </button>

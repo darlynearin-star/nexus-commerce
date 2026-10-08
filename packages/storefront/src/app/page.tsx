@@ -240,7 +240,7 @@ function MarketingGuest() {
     <div ref={rootRef} style={{ position: 'relative', zIndex: 1 }}>
 
       {/* Hero */}
-      <section className="hero-overlay" style={{ position: 'relative', padding: 'clamp(4rem, 10vw, 7rem) 0' }}>
+      <section className="hero-overlay" style={{ position: 'relative', padding: 'var(--section-y) 0' }}>
         <div className="hero-bg-cycle">
           {heroImages.map((src, i) => (
             <div key={src} className={`hero-bg-slide ${i === bgIndex ? 'active' : ''}`} style={{ backgroundImage: `url(${src})` }} />
@@ -249,11 +249,11 @@ function MarketingGuest() {
         <div className="container" style={{ position: 'relative', zIndex: 2 }}>
           <div style={{ maxWidth: 780, margin: '0 auto', textAlign: 'center' }}>
               <p className="eyebrow" style={{ textAlign: 'center' }}>For independent merchants across Uganda</p>
-              <h1 style={{ fontSize: 'clamp(2.6rem, 6vw, 4.4rem)', letterSpacing: '-0.03em', marginBottom: '1.25rem', fontWeight: 800, lineHeight: 1.05 }}>
+              <h1 style={{ fontSize: 'var(--text-hero)', letterSpacing: 'var(--tracking-display)', marginBottom: '1.25rem', fontWeight: 'var(--weight-display)', lineHeight: 1.04 }}>
                 Launch your online store{' '}
                 <span style={{ fontStyle: 'italic', color: 'var(--primary)' }}>in minutes.</span>
               </h1>
-              <p style={{ fontSize: '1.1875rem', color: 'var(--text-secondary)', maxWidth: 560, margin: '0 auto', lineHeight: 1.65, marginBottom: '1.75rem' }}>
+              <p style={{ fontSize: 'var(--text-lead)', color: 'var(--text-secondary)', maxWidth: 580, margin: '0 auto', lineHeight: 1.65, marginBottom: '1.75rem' }}>
                 Pick a template, set your colors, add your products, and start selling. No coding, no hassle. MTN MoMo &amp; Airtel Money built in.
               </p>
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '2rem', justifyContent: 'center' }}>
