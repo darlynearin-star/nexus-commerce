@@ -187,8 +187,8 @@ function OverviewTab({ user, orders, isStoreOwner, retailer, subscription, tierN
             </div>
             {subscription?.trialEnd && (
               <div>
-                <div style={{ height: 6, borderRadius: 3, background: 'var(--bg-secondary)', overflow: 'hidden', marginBottom: '0.25rem' }}>
-                  <div style={{ height: '100%', width: `${Math.min(100, tierProgress)}%`, borderRadius: 3, background: tierProgress > 80 ? 'var(--error)' : 'var(--primary)', transition: 'width 0.3s' }} />
+                <div style={{ height: 6, borderRadius: 'var(--radius-sm)', background: 'var(--bg-secondary)', overflow: 'hidden', marginBottom: '0.25rem' }}>
+                  <div style={{ height: '100%', width: `${Math.min(100, tierProgress)}%`, borderRadius: 'var(--radius-sm)', background: tierProgress > 80 ? 'var(--error)' : 'var(--primary)', transition: 'width 0.3s' }} />
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{tierProgress}% of trial period</p>
               </div>

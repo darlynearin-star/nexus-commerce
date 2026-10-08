@@ -69,7 +69,7 @@ export default function Header() {
             {navLinks.map(l => (
               <Link key={l.href} href={l.href} style={{
                 padding: '0.45rem 0.875rem',
-                borderRadius: 8,
+                borderRadius: 'var(--radius-md)',
                 fontSize: '0.875rem',
                 fontWeight: 500,
                 color: isActive(l.href) ? 'var(--primary)' : 'var(--text-secondary)',
@@ -81,9 +81,9 @@ export default function Header() {
           </nav>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', justifyContent: 'flex-end', minWidth: 0 }}>
-            <button className="btn btn-ghost btn-icon" style={{ borderRadius: 8 }} onClick={() => setSearchOpen(!searchOpen)} aria-label="Search"><Search size={19} /></button>
-            <Link href="/wishlist" className="btn btn-ghost btn-icon desktop-only" style={{ borderRadius: 8 }} aria-label="Wishlist"><Heart size={19} /></Link>
-            <Link href="/cart" className="btn btn-ghost btn-icon desktop-only" style={{ borderRadius: 8 }} aria-label="Cart"><ShoppingCart size={19} /></Link>
+            <button className="btn btn-ghost btn-icon" style={{ borderRadius: 'var(--radius-md)' }} onClick={() => setSearchOpen(!searchOpen)} aria-label="Search"><Search size={19} /></button>
+            <Link href="/wishlist" className="btn btn-ghost btn-icon desktop-only" style={{ borderRadius: 'var(--radius-md)' }} aria-label="Wishlist"><Heart size={19} /></Link>
+            <Link href="/cart" className="btn btn-ghost btn-icon desktop-only" style={{ borderRadius: 'var(--radius-md)' }} aria-label="Cart"><ShoppingCart size={19} /></Link>
             {user ? (
               <Link href="/account" className="btn btn-ghost btn-sm desktop-only" style={{ gap: '0.375rem' }}>
                 <User size={18} /> <span className="user-name-header">{user.firstName}</span>
@@ -91,10 +91,10 @@ export default function Header() {
             ) : (
               <Link href="/login" className="btn btn-primary btn-sm desktop-only">Sign In</Link>
             )}
-            <button className="btn btn-ghost btn-icon" style={{ borderRadius: 8 }} onClick={toggleDark} aria-label="Toggle theme">
+            <button className="btn btn-ghost btn-icon" style={{ borderRadius: 'var(--radius-md)' }} onClick={toggleDark} aria-label="Toggle theme">
               {isDark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-            <button className="btn btn-ghost btn-icon mobile-menu-btn" style={{ borderRadius: 8 }} onClick={() => setMobileMenu(!mobileMenu)} aria-label="Menu">
+            <button className="btn btn-ghost btn-icon mobile-menu-btn" style={{ borderRadius: 'var(--radius-md)' }} onClick={() => setMobileMenu(!mobileMenu)} aria-label="Menu">
               {mobileMenu ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
@@ -118,7 +118,7 @@ export default function Header() {
           <Link href="/" onClick={close} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', fontWeight: 600, color: 'var(--text)', textDecoration: 'none' }}>
             <Image src={logoSrc} alt="Lyn-nyx Stores" width={70} height={30} sizes="80px" style={{ height: 30, width: 'auto', objectFit: 'contain', display: 'block' }} />
           </Link>
-          <button className="btn btn-ghost btn-icon" style={{ borderRadius: 8 }} onClick={close} aria-label="Close"><X size={20} /></button>
+          <button className="btn btn-ghost btn-icon" style={{ borderRadius: 'var(--radius-md)' }} onClick={close} aria-label="Close"><X size={20} /></button>
         </div>
 
         <div style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>

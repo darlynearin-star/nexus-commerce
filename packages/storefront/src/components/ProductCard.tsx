@@ -63,7 +63,7 @@ function HeartButton({ product, top, right }: { product: ProductCardProps['produ
           storeApi.post('/wishlist/remove', { productId: product.id }).catch(() => setSaved(true));
         }
       }}
-      style={{ position: 'absolute', top, right, background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer', color: saved ? 'var(--error)' : 'var(--text-secondary)', padding: '0.375rem', borderRadius: 999, zIndex: 1, lineHeight: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}
+      style={{ position: 'absolute', top, right, background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer', color: saved ? 'var(--error)' : 'var(--text-secondary)', padding: '0.375rem', borderRadius: 'var(--radius-pill)', zIndex: 1, lineHeight: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}
       aria-label="Toggle wishlist"
     >
       <Heart size={16} fill={saved ? 'currentColor' : 'none'} />
@@ -84,9 +84,9 @@ export default function ProductCard({ product, showAddToCart = true, storeSlug: 
   // LIST: horizontal layout, image left, details right. Best for scanning many products.
   if (view === 'list') {
     return (
-      <Link href={href} className="card" style={{ display: 'flex', gap: '1rem', textDecoration: 'none', color: 'inherit', position: 'relative', padding: '0.75rem', alignItems: 'stretch', borderRadius: 10 }}>
+      <Link href={href} className="card" style={{ display: 'flex', gap: '1rem', textDecoration: 'none', color: 'inherit', position: 'relative', padding: '0.75rem', alignItems: 'stretch', borderRadius: 'var(--radius-md)' }}>
         <HeartButton product={product} top="0.5rem" right="0.5rem" />
-        <div style={{ width: 'clamp(90px, 18vw, 160px)', minHeight: 'clamp(90px, 18vw, 160px)', aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: 8, overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
+        <div style={{ width: 'clamp(90px, 18vw, 160px)', minHeight: 'clamp(90px, 18vw, 160px)', aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
           <Image src={firstImage(product)} alt={product.name} fill sizes="(max-width: 768px) 50vw, 300px" style={{ objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = img((product as any).id); }} />
         </div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem', paddingRight: '1.75rem' }}>
@@ -108,9 +108,9 @@ export default function ProductCard({ product, showAddToCart = true, storeSlug: 
   // MINIMAL: image, name, price only: cleanest, most lightweight.
   if (view === 'minimal') {
     return (
-      <Link href={href} className="card" style={{ ...base, display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.5rem', borderRadius: 10 }}>
+      <Link href={href} className="card" style={{ ...base, display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.5rem', borderRadius: 'var(--radius-md)' }}>
         <HeartButton product={product} top="0.375rem" right="0.375rem" />
-        <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+        <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', overflow: 'hidden', position: 'relative' }}>
           <Image src={firstImage(product)} alt={product.name} fill sizes="(max-width: 768px) 50vw, 300px" style={{ objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = img((product as any).id); }} />
         </div>
         <div style={{ padding: '0 0.25rem' }}>
@@ -124,9 +124,9 @@ export default function ProductCard({ product, showAddToCart = true, storeSlug: 
   // COMPACT: denser card for shop floors with lots of products.
   if (view === 'compact') {
     return (
-      <Link href={href} className="card" style={{ ...base, display: 'flex', flexDirection: 'column', gap: '0.5rem', borderRadius: 10 }}>
+      <Link href={href} className="card" style={{ ...base, display: 'flex', flexDirection: 'column', gap: '0.5rem', borderRadius: 'var(--radius-md)' }}>
         <HeartButton product={product} top="0.5rem" right="0.5rem" />
-        <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+        <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', overflow: 'hidden', position: 'relative' }}>
           <Image src={firstImage(product)} alt={product.name} fill sizes="(max-width: 768px) 50vw, 300px" style={{ objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = img((product as any).id); }} />
         </div>
         <div>
@@ -143,9 +143,9 @@ export default function ProductCard({ product, showAddToCart = true, storeSlug: 
 
   // GRID (default): full-featured card, balanced for product browsing.
   return (
-    <Link href={href} className="card" style={{ ...base, display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '0.625rem', borderRadius: 12 }}>
+    <Link href={href} className="card" style={{ ...base, display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '0.625rem', borderRadius: 'var(--radius-md)' }}>
       <HeartButton product={product} top="0.5rem" right="0.5rem" />
-      <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+      <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', overflow: 'hidden', position: 'relative' }}>
         <Image src={firstImage(product)} alt={product.name} fill sizes="(max-width: 768px) 50vw, 300px" style={{ objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = img((product as any).id); }} />
       </div>
       <div style={{ padding: '0 0.25rem 0.125rem' }}>

@@ -20,7 +20,7 @@ export default function Footer() {
         <div className="footer-grid">
           <div>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.0625rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.75rem' }}>
-              <span style={{ width: 24, height: 24, borderRadius: 7, background: 'var(--primary)', color: 'var(--bg)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8125rem' }}>N</span>
+              <span style={{ width: 24, height: 24, borderRadius: 'var(--radius-md)', background: 'var(--primary)', color: 'var(--bg)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8125rem' }}>N</span>
               <span className={isDark ? '' : ''}>Lyn-nyx Stores</span>
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6, maxWidth: 260 }}>Shop, sell, and scale. Premium products, smart commerce, powered by local makers.</p>

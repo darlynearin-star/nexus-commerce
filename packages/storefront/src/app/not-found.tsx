@@ -6,7 +6,7 @@ export default function NotFound() {
   return (
     <div className="container" style={{ maxWidth: 520, margin: '0 auto', padding: 'clamp(4rem, 10vw, 6rem) 1rem', textAlign: 'center' }}>
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-        <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+        <div style={{ width: 56, height: 56, borderRadius: 'var(--radius-lg)', background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
           <Compass size={28} />
         </div>
       </div>

@@ -61,7 +61,7 @@ export default function LandingPage() {
 
         {/* Store status bar */}
         <section style={{ marginBottom: '2.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', padding: '1.25rem 1.5rem', border: '1px solid var(--border)', borderRadius: 14, background: 'var(--surface)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', padding: '1.25rem 1.5rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', background: 'var(--surface)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{ color: status.color }}>{status.icon}</div>
               <div>
@@ -158,7 +158,7 @@ export default function LandingPage() {
               { step: '3', title: 'Share your store link', desc: 'Get a unique URL. Accept MTN MoMo & Airtel Money payments immediately.' },
             ].map((s, i) => (
               <div key={i} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                <div style={{ width: 30, height: 30, borderRadius: 999, border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.8125rem', color: 'var(--primary)', flexShrink: 0 }}>{s.step}</div>
+                <div style={{ width: 30, height: 30, borderRadius: 'var(--radius-pill)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.8125rem', color: 'var(--primary)', flexShrink: 0 }}>{s.step}</div>
                 <div>
                   <p style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{s.title}</p>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{s.desc}</p>
@@ -358,7 +358,7 @@ function MarketingGuest() {
               { step: '4', title: 'Go live', desc: 'Share your store link. Start accepting MTN MoMo and Airtel Money payments immediately.' },
             ].map((s, i) => (
               <div key={i} data-reveal={String((i % 6) + 1)} style={{ display: 'flex', gap: '1.25rem', padding: '1.25rem 0', borderBottom: i < 3 ? '1px solid var(--border)' : 'none' }}>
-                <div style={{ width: 40, height: 40, borderRadius: 999, border: '1px solid var(--primary)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, flexShrink: 0 }}>{s.step}</div>
+                <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-pill)', border: '1px solid var(--primary)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, flexShrink: 0 }}>{s.step}</div>
                 <div>
                   <h3 style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{s.title}</h3>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>{s.desc}</p>
@@ -370,7 +370,7 @@ function MarketingGuest() {
       </section>
 
       {/* Final CTA */}
-      <section style={{ textAlign: 'center', padding: 'clamp(3.5rem, 8vw, 5rem) 1rem' }}>
+      <section style={{ textAlign: 'center', padding: 'var(--section-y) 1rem' }}>
         <div className="container" data-reveal>
           <p className="section-label" style={{ textAlign: 'center' }}>Ready when you are</p>
           <h2 className="section-title" style={{ textAlign: 'center' }}>Start selling today</h2>

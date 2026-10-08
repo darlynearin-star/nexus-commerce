@@ -200,7 +200,7 @@ export default function CreateStorePage() {
         {/* Slide indicators */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '2rem' }}>
           {slides.map((_, i) => (
-            <div key={i} style={{ width: slideIdx === i ? 24 : 8, height: 8, borderRadius: 4, background: slideIdx === i ? 'var(--primary)' : 'var(--border)', transition: 'all 0.2s' }} />
+            <div key={i} style={{ width: slideIdx === i ? 24 : 8, height: 8, borderRadius: 'var(--radius-sm)', background: slideIdx === i ? 'var(--primary)' : 'var(--border)', transition: 'all 0.2s' }} />
           ))}
         </div>
 
@@ -260,12 +260,12 @@ export default function CreateStorePage() {
                       painted with the template's own palette. */}
                   <div aria-hidden="true" style={{ width: 108, height: 68, borderRadius: '0.5rem', overflow: 'hidden', flexShrink: 0, background: c.bg, border: `1px solid ${c.surface}`, display: 'flex', flexDirection: 'column' }}>
                     <div style={{ height: 12, background: c.surface, display: 'flex', alignItems: 'center', padding: '0 4px', gap: 3 }}>
-                      <div style={{ width: 14, height: 4, borderRadius: 2, background: c.primary }} />
-                      <div style={{ width: 8, height: 4, borderRadius: 2, background: c.text, opacity: 0.35 }} />
+                      <div style={{ width: 14, height: 4, borderRadius: 'var(--radius-sm)', background: c.primary }} />
+                      <div style={{ width: 8, height: 4, borderRadius: 'var(--radius-sm)', background: c.text, opacity: 0.35 }} />
                     </div>
                     <div style={{ flex: 1, padding: 4, display: 'flex', gap: 3 }}>
-                      <div style={{ flex: 1, borderRadius: 3, background: c.surface, borderLeft: `2px solid ${c.accent}` }} />
-                      <div style={{ width: 26, borderRadius: 3, background: c.primary }} />
+                      <div style={{ flex: 1, borderRadius: 'var(--radius-sm)', background: c.surface, borderLeft: `2px solid ${c.accent}` }} />
+                      <div style={{ width: 26, borderRadius: 'var(--radius-sm)', background: c.primary }} />
                     </div>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -273,7 +273,7 @@ export default function CreateStorePage() {
                     <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{t.description}</div>
                     <div style={{ display: 'flex', gap: 4, marginTop: '0.4rem' }}>
                       {THEME_COLOR_KEYS.map(k => (
-                        <span key={k} title={`${COLOR_LABELS[k]} ${c[k]}`} style={{ width: 14, height: 14, borderRadius: 4, background: c[k], border: '1px solid rgba(128,128,128,0.35)' }} />
+                        <span key={k} title={`${COLOR_LABELS[k]} ${c[k]}`} style={{ width: 14, height: 14, borderRadius: 'var(--radius-sm)', background: c[k], border: '1px solid rgba(128,128,128,0.35)' }} />
                       ))}
                     </div>
                   </div>
@@ -344,19 +344,19 @@ export default function CreateStorePage() {
             <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Preview</p>
             <div style={{ borderRadius: '0.75rem', overflow: 'hidden', border: '1px solid var(--border)' }}>
               <div style={{ height: 30, background: colors.surface, display: 'flex', alignItems: 'center', padding: '0 0.75rem', gap: '0.75rem' }}>
-                <span style={{ width: 14, height: 14, borderRadius: 4, background: colors.primary }} />
+                <span style={{ width: 14, height: 14, borderRadius: 'var(--radius-sm)', background: colors.primary }} />
                 <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: colors.text }}>{name || 'Your Store'}</span>
                 <span style={{ marginLeft: 'auto', fontSize: '0.6875rem', color: colors.text, opacity: 0.7 }}>Shop&nbsp;&nbsp;About</span>
               </div>
               <div style={{ background: colors.bg, padding: '1.25rem' }}>
-                <div style={{ height: 8, width: '45%', borderRadius: 4, background: colors.text, opacity: 0.85, marginBottom: '0.5rem' }} />
-                <div style={{ height: 6, width: '65%', borderRadius: 3, background: colors.text, opacity: 0.4, marginBottom: '0.875rem' }} />
-                <span style={{ display: 'inline-block', fontSize: '0.75rem', fontWeight: 600, color: colors.bg, background: colors.primary, padding: '0.35rem 0.875rem', borderRadius: 999 }}>Shop now</span>
+                <div style={{ height: 8, width: '45%', borderRadius: 'var(--radius-sm)', background: colors.text, opacity: 0.85, marginBottom: '0.5rem' }} />
+                <div style={{ height: 6, width: '65%', borderRadius: 'var(--radius-sm)', background: colors.text, opacity: 0.4, marginBottom: '0.875rem' }} />
+                <span style={{ display: 'inline-block', fontSize: '0.75rem', fontWeight: 600, color: colors.bg, background: colors.primary, padding: '0.35rem 0.875rem', borderRadius: 'var(--radius-pill)' }}>Shop now</span>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginTop: '0.875rem' }}>
                   {[0, 1, 2].map(i => (
-                    <div key={i} style={{ background: colors.surface, borderRadius: 6, padding: '0.5rem', borderLeft: `2px solid ${i === 1 ? colors.accent : 'transparent'}` }}>
-                      <div style={{ height: 5, width: '70%', borderRadius: 3, background: colors.text, opacity: 0.5, marginBottom: 4 }} />
-                      <div style={{ height: 5, width: '40%', borderRadius: 3, background: colors.primary }} />
+                    <div key={i} style={{ background: colors.surface, borderRadius: 'var(--radius-sm)', padding: '0.5rem', borderLeft: `2px solid ${i === 1 ? colors.accent : 'transparent'}` }}>
+                      <div style={{ height: 5, width: '70%', borderRadius: 'var(--radius-sm)', background: colors.text, opacity: 0.5, marginBottom: 4 }} />
+                      <div style={{ height: 5, width: '40%', borderRadius: 'var(--radius-sm)', background: colors.primary }} />
                     </div>
                   ))}
                 </div>

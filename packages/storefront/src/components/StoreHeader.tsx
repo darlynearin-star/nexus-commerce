@@ -43,7 +43,7 @@ export default function StoreHeader() {
           {navLinks.map(l => (
             <Link key={l.href} href={l.href} style={{
               padding: '0.45rem 0.875rem',
-              borderRadius: 8,
+              borderRadius: 'var(--radius-md)',
               fontSize: '0.875rem',
               fontWeight: 500,
               color: isActive(l.href, l.endsWith) ? 'var(--primary)' : 'var(--text-secondary)',
@@ -55,9 +55,9 @@ export default function StoreHeader() {
         </nav>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-          <button className="btn btn-ghost btn-icon" style={{ borderRadius: 8 }} onClick={() => setSearchOpen(!searchOpen)} aria-label="Search"><Search size={19} /></button>
-          <Link href="/wishlist" className="btn btn-ghost btn-icon" style={{ borderRadius: 8 }} aria-label="Wishlist"><Heart size={19} /></Link>
-          <Link href="/cart" className="btn btn-ghost btn-icon" style={{ borderRadius: 8 }} aria-label="Cart"><ShoppingCart size={19} /></Link>
+          <button className="btn btn-ghost btn-icon" style={{ borderRadius: 'var(--radius-md)' }} onClick={() => setSearchOpen(!searchOpen)} aria-label="Search"><Search size={19} /></button>
+          <Link href="/wishlist" className="btn btn-ghost btn-icon" style={{ borderRadius: 'var(--radius-md)' }} aria-label="Wishlist"><Heart size={19} /></Link>
+          <Link href="/cart" className="btn btn-ghost btn-icon" style={{ borderRadius: 'var(--radius-md)' }} aria-label="Cart"><ShoppingCart size={19} /></Link>
           {user ? (
             <Link href="/account" className="btn btn-ghost btn-sm" style={{ gap: '0.375rem' }}>
               <User size={18} /> {user.firstName}
@@ -67,7 +67,7 @@ export default function StoreHeader() {
               <User size={18} /> Sign In
             </Link>
           )}
-          <button className="btn btn-ghost btn-icon store-mobile-menu-btn" style={{ borderRadius: 8 }} onClick={() => setMobileMenu(!mobileMenu)} aria-label="Menu">
+          <button className="btn btn-ghost btn-icon store-mobile-menu-btn" style={{ borderRadius: 'var(--radius-md)' }} onClick={() => setMobileMenu(!mobileMenu)} aria-label="Menu">
             {mobileMenu ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>

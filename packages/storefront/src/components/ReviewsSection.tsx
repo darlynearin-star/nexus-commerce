@@ -138,7 +138,7 @@ export default function ReviewsSection({ productId, initialReviews = [], isAuthe
                 style={{
                   flex: 1,
                   height: 6,
-                  borderRadius: 3,
+                  borderRadius: 'var(--radius-sm)',
                   background: 'var(--bg-secondary)',
                   overflow: 'hidden',
                 }}
@@ -148,7 +148,7 @@ export default function ReviewsSection({ productId, initialReviews = [], isAuthe
                     height: '100%',
                     width: `${(count / maxBucket) * 100}%`,
                     background: 'var(--gold)',
-                    borderRadius: 3,
+                    borderRadius: 'var(--radius-sm)',
                   }}
                 />
               </div>
@@ -169,7 +169,7 @@ export default function ReviewsSection({ productId, initialReviews = [], isAuthe
           allReviews.map(review => (
             <div
               key={review.id}
-              style={{ padding: '0.875rem', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)' }}
+              style={{ padding: '0.875rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg)' }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.375rem' }}>
                 <StarRating rating={review.rating} size={13} />
