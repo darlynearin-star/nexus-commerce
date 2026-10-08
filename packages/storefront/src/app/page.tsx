@@ -192,6 +192,13 @@ function MarketingGuest() {
   const { isDark } = useTheme();
   const [bgIndex, setBgIndex] = useState(0);
 
+  const templates = [
+    { name: 'Elegance', slug: 'elegance', desc: 'Burnished gold & warm dark' },
+    { name: 'Minimal', slug: 'minimal', desc: 'Clean & understated' },
+    { name: 'Bold', slug: 'bold', desc: 'Vibrant & energetic' },
+    { name: 'Nature', slug: 'nature', desc: 'Organic & fresh' },
+  ];
+
   const features = [
     { icon: <Layout size={20} />, title: '4 Templates', desc: 'Elegance, Minimal, Bold, Nature: pick the look that fits your brand.' },
     { icon: <Palette size={20} />, title: 'Custom Branding', desc: 'Set your colors, upload your logo and banner. Your store, your identity.' },
@@ -228,8 +235,22 @@ function MarketingGuest() {
 
   useEffect(() => {
     const pills = document.querySelectorAll('.trust-pill');
+    if (!pills.length) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      pills.forEach((p) => p.classList.add('revealed'));
+      return;
+    }
+    // One-way, same rule as useScrollReveal: add on enter, never remove on
+    // exit, otherwise the pills re-animate every time you scroll back up.
     const obs = new IntersectionObserver(
-      (entries) => { for (const e of entries) { if (e.isIntersecting) e.target.classList.add('revealed'); else e.target.classList.remove('revealed'); } },
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            e.target.classList.add('revealed');
+            obs.unobserve(e.target);
+          }
+        }
+      },
       { threshold: 0.3 }
     );
     pills.forEach((p) => obs.observe(p));
@@ -311,6 +332,27 @@ function MarketingGuest() {
                   <h3 style={{ fontWeight: 700, fontSize: '1.0625rem', marginBottom: '0.375rem' }}>{f.title}</h3>
                   <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{i === 0 ? 'Four curated starter looks that match your brand, each fully customizable in one click.' : f.desc}</p>
                 </div>
+                {/* The .bento-lg card spans two grid rows (470px) while its text
+                    ended at 153px, leaving 317px of dead space below the copy.
+                    Showing the four real templates there fills it with the thing
+                    the card is actually describing. */}
+                {i === 0 && (
+                  <div style={{ marginTop: 'auto', paddingTop: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                    {templates.map(t => (
+                      <div key={t.slug} style={{ position: 'relative', borderRadius: 'var(--radius-sm)', overflow: 'hidden', aspectRatio: '16 / 10', border: '1px solid var(--border)' }}>
+                        <img
+                          src={`/template-${t.slug}.svg`}
+                          alt={`${t.name} template preview`}
+                          loading="lazy"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        />
+                        <span style={{ position: 'absolute', left: 6, bottom: 5, fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#fff', background: 'rgba(0,0,0,0.62)', padding: '2px 6px', borderRadius: 4 }}>
+                          {t.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -327,15 +369,15 @@ function MarketingGuest() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem', marginTop: '2.5rem' }}>
             {[
-              { name: 'Elegance', img: '/template-elegance.jpg', desc: 'Burnished gold & warm dark' },
-              { name: 'Minimal', img: '/template-minimal.jpg', desc: 'Clean & understated' },
-              { name: 'Bold', img: '/template-bold.jpg', desc: 'Vibrant & energetic' },
-              { name: 'Nature', img: '/template-nature.jpg', desc: 'Organic & fresh' },
+              { name: 'Elegance', img: '/template-elegance.svg', desc: 'Burnished gold & warm dark' },
+              { name: 'Minimal', img: '/template-minimal.svg', desc: 'Clean & understated' },
+              { name: 'Bold', img: '/template-bold.svg', desc: 'Vibrant & energetic' },
+              { name: 'Nature', img: '/template-nature.svg', desc: 'Organic & fresh' },
             ].map((t, i) => (
-              <div key={t.name} data-reveal={String((i % 6) + 1)} className="template-preview" style={{ backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15)), url(${t.img})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+              <div key={t.name} data-reveal={String((i % 6) + 1)} className="template-preview" style={{ backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.28), rgba(0,0,0,0.52)), url(${t.img})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
                 <div style={{ position: 'relative', zIndex: 1 }}>
-                  <h3 style={{ fontWeight: 700, fontSize: '1.3125rem', color: '#fff', marginBottom: '0.25rem' }}>{t.name}</h3>
-                  <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.85)' }}>{t.desc}</p>
+                  <h3 style={{ fontWeight: 700, fontSize: '1.3125rem', color: '#fff', marginBottom: '0.25rem', textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}>{t.name}</h3>
+                  <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.85)', textShadow: '0 1px 6px rgba(0,0,0,0.45)' }}>{t.desc}</p>
                 </div>
               </div>
             ))}
