@@ -429,7 +429,7 @@ describe('password reset self-service (TASK-047)', () => {
   });
 
   it('responds generically and creates a token + email when the user exists', async () => {
-    prismaMock.user.findUnique.mockResolvedValue({ id: 'u_1', email: 'reset@example.com', firstName: 'Res', lastName: 'et', role: 'CUSTOMER', passwordHash: 'old', isActive: true });
+    prismaMock.user.findFirst.mockResolvedValue({ id: 'u_1', email: 'reset@example.com', firstName: 'Res', lastName: 'et', role: 'CUSTOMER', passwordHash: 'old', isActive: true });
     prismaMock.passwordResetToken.create.mockResolvedValue({ id: 't_1' });
 
     const res = await request(app)
@@ -438,15 +438,33 @@ describe('password reset self-service (TASK-047)', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.message).toContain('link has been sent');
-    // Lookup normalizes to lowercase.
-    expect(prismaMock.user.findUnique).toHaveBeenCalledWith({ where: { email: 'reset@example.com' } });
+    // Lookup is case-insensitive, not a lowercase-equality match. The old
+    // code lowercased the input and compared exactly, which silently missed
+    // any account whose stored row still held capitals.
+    expect(prismaMock.user.findFirst).toHaveBeenCalledWith({
+      where: { email: { equals: 'reset@example.com', mode: 'insensitive' } },
+    });
     expect(prismaMock.passwordResetToken.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ email: 'reset@example.com' }) }),
     );
   });
 
+  it('finds a mixed-case stored row when the request is typed in lower case', async () => {
+    // The lockout case. A real row that kept its original capitals must still
+    // resolve, otherwise the user gets the neutral reply, no mail, no way in.
+    prismaMock.user.findFirst.mockResolvedValue({ id: 'u_1', email: 'Legacy.User@Example.com', isActive: true });
+    prismaMock.passwordResetToken.create.mockResolvedValue({ id: 't_1' });
+
+    const res = await request(app)
+      .post('/api/auth/password-reset/request')
+      .send({ email: 'legacy.user@example.com' });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.passwordResetToken.create).toHaveBeenCalledTimes(1);
+  });
+
   it('does not disclose whether the account exists', async () => {
-    prismaMock.user.findUnique.mockResolvedValue(null);
+    prismaMock.user.findFirst.mockResolvedValue(null);
 
     const res = await request(app)
       .post('/api/auth/password-reset/request')
@@ -480,7 +498,7 @@ describe('password reset self-service (TASK-047)', () => {
     prismaMock.passwordResetToken.findUnique.mockResolvedValue({
       id: 't_1', token: 'tok', email: 'reset@example.com', expiresAt: new Date(Date.now() + 86_400_000), usedAt: null,
     });
-    prismaMock.user.findUnique.mockResolvedValue({ id: 'u_1', email: 'reset@example.com', isActive: true, passwordHash: 'old' });
+    prismaMock.user.findFirst.mockResolvedValue({ id: 'u_1', email: 'reset@example.com', isActive: true, passwordHash: 'old' });
     (prismaMock as any).$transaction = vi.fn(async (ops: any[]) => Promise.all(ops));
 
     const res = await request(app)

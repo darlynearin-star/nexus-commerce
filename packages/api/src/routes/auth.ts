@@ -15,6 +15,34 @@ export const authRouter = Router();
 const COOKIE_NAME = 'nexus_refresh';
 const isProd = process.env.NODE_ENV === 'production';
 
+/**
+ * Email is the login identity, so it has to compare the same way every time.
+ *
+ * Before this, addresses were stored and looked up exactly as typed. Verified
+ * against production: registering "Auth.Test@Example.COM" and then
+ * "auth.test@example.com" returned 201 twice and created two accounts for one
+ * person. Worse, the password reset request lowercased its input while the
+ * stored record kept the original casing, so a user who typed their address
+ * with different capitals got the neutral "if this email is registered" reply
+ * and no mail at all. Permanently locked out, with nothing telling them why.
+ *
+ * Reads go through a case-insensitive lookup so records written before this
+ * change still resolve, and writes are canonicalised so the duplicates cannot
+ * be created again.
+ */
+export function canonicalEmail(input: unknown): string {
+  return typeof input === 'string' ? input.trim().toLowerCase() : '';
+}
+
+/** Case-insensitive user lookup. Matches legacy rows that kept their casing. */
+export function findUserByEmail(email: unknown) {
+  const value = canonicalEmail(email);
+  if (!value) return Promise.resolve(null);
+  return prisma.user.findFirst({
+    where: { email: { equals: value, mode: 'insensitive' } },
+  });
+}
+
 // httpOnly refresh cookie: not readable by JS, so XSS cannot exfiltrate it.
 // SameSite=Lax blocks cross-site sends; Secure is applied in production.
 function setRefreshCookie(res: any, token: string) {
@@ -61,16 +89,20 @@ authRouter.post('/register', async (req, res, next) => {
     const emailError = validateEmail(email);
     if (emailError) return res.status(400).json({ success: false, error: emailError });
 
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = await findUserByEmail(email);
     if (existing) {
       return res.status(409).json({ success: false, error: 'Email already registered' });
     }
+
+    // Canonical from here down, so this address can never be re-registered
+    // under a different casing later.
+    const emailKey = canonicalEmail(email);
 
     const passwordHash = await bcrypt.hash(password, 10);
     const role = 'CUSTOMER';
 
     const user = await prisma.user.create({
-      data: { email, passwordHash, firstName, lastName, role, emailVerified: false },
+      data: { email: emailKey, passwordHash, firstName, lastName, role, emailVerified: false },
     });
 
     // All users get a customer profile (for purchasing)
@@ -81,10 +113,10 @@ authRouter.post('/register', async (req, res, next) => {
     if (emailConfigured) {
       const token = crypto.randomBytes(32).toString('hex');
       await prisma.magicLinkToken.create({
-        data: { token, email, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
+        data: { token, email: emailKey, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
       });
       const frontendUrl = (await getSetting('AUTH_REDIRECT_URL')) || 'https://lynnyxstores.vercel.app';
-      const link = `${frontendUrl}/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
+      const link = `${frontendUrl}/auth/verify-email?token=${token}&email=${encodeURIComponent(emailKey)}`;
       await sendEmail({
         to: email,
         subject: 'Verify your email',
@@ -129,13 +161,15 @@ authRouter.post('/verify-email', async (req, res, next) => {
     if (!token || !email) return res.status(400).json({ success: false, error: 'Token and email are required' });
 
     const record = await prisma.magicLinkToken.findUnique({ where: { token } });
-    if (!record || record.email !== email || record.usedAt || record.expiresAt < new Date()) {
+    // Compared case-insensitively: the link carries the canonical address, but
+    // the visitor's browser or a mail client can hand back different capitals.
+    if (!record || record.email.toLowerCase() !== canonicalEmail(email) || record.usedAt || record.expiresAt < new Date()) {
       return res.status(401).json({ success: false, error: 'Invalid or expired verification link' });
     }
 
     await prisma.magicLinkToken.update({ where: { id: record.id }, data: { usedAt: new Date() } });
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await findUserByEmail(email);
     if (!user) return res.status(404).json({ success: false, error: 'User not found' });
     if (user.emailVerified) return res.json({ success: true, message: 'Email already verified. You can sign in.' });
 
@@ -152,7 +186,7 @@ authRouter.post('/resend-verification', async (req, res, next) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ success: false, error: 'Email is required' });
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await findUserByEmail(email);
     if (!user) return res.status(404).json({ success: false, error: 'No account found with that email' });
     if (user.emailVerified) return res.status(400).json({ success: false, error: 'Email is already verified' });
 
@@ -183,19 +217,24 @@ authRouter.post('/login', async (req, res, next) => {  try {
       return res.status(400).json({ success: false, error: 'Email and password are required' });
     }
 
+    // The lockout key must be canonical for the same reason the lookup is.
+    // Keying it on the raw address would let someone reset the counter just by
+    // changing the capitals in their next attempt.
+    const emailKey = canonicalEmail(email);
+
     // Account-level lockout (progressive backoff after repeated failures).
-    const lock = isAccountLocked(email);
+    const lock = isAccountLocked(emailKey);
     if (lock.locked) {
       return res.status(429).json({ success: false, error: `Too many failed attempts. Try again in ${Math.ceil((lock.retryAfterMs || 0) / 1000)}s.` });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await findUserByEmail(emailKey);
     if (!user || !user.passwordHash || !(await bcrypt.compare(password, user.passwordHash))) {
-      recordFailure(email);
+      recordFailure(emailKey);
       return res.status(401).json({ success: false, error: 'Invalid email or password' });
     }
 
-    recordSuccess(email);
+    recordSuccess(emailKey);
 
     if (!user.isActive) {
       return res.status(403).json({ success: false, error: 'Account is suspended' });
@@ -323,16 +362,19 @@ authRouter.post('/magic-link', async (req, res, next) => {
     }
 
     // Always create a token so the flow works for both existing and new users.
+    // Stored canonically, so redeeming it cannot land on a differently-cased
+    // duplicate account.
+    const emailKey = canonicalEmail(email);
     const token = crypto.randomBytes(32).toString('hex');
     await prisma.magicLinkToken.create({
-      data: { token, email, expiresAt: new Date(Date.now() + 15 * 60 * 1000) },
+      data: { token, email: emailKey, expiresAt: new Date(Date.now() + 15 * 60 * 1000) },
     });
 
     const frontendUrl = (await getSetting('AUTH_REDIRECT_URL')) || 'https://lynnyxstores.vercel.app';
-    const link = `${frontendUrl}/auth/magic-link?token=${token}&email=${encodeURIComponent(email)}`;
+    const link = `${frontendUrl}/auth/magic-link?token=${token}&email=${encodeURIComponent(emailKey)}`;
 
     await sendEmail({
-      to: email,
+      to: emailKey,
       subject: 'Your sign-in link',
       text: `Sign in to Lyn-nyx Stores: ${link}`,
       html: magicLinkHtml(link),
@@ -349,17 +391,18 @@ authRouter.post('/magic-link/verify', async (req, res, next) => {
     if (!token || !email) return res.status(400).json({ success: false, error: 'Token and email are required' });
 
     const record = await prisma.magicLinkToken.findUnique({ where: { token } });
-    if (!record || record.email !== email || record.usedAt || record.expiresAt < new Date()) {
+    if (!record || record.email.toLowerCase() !== canonicalEmail(email) || record.usedAt || record.expiresAt < new Date()) {
       return res.status(401).json({ success: false, error: 'Invalid or expired link' });
     }
 
     await prisma.magicLinkToken.update({ where: { id: record.id }, data: { usedAt: new Date() } });
 
-    let user = await prisma.user.findUnique({ where: { email } });
+    const emailKey = canonicalEmail(email);
+    let user = await findUserByEmail(emailKey);
     if (!user) {
-      const firstName = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ') || 'New';
+      const firstName = emailKey.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ') || 'New';
       user = await prisma.user.create({
-        data: { email, firstName, lastName: '', passwordHash: null, role: 'CUSTOMER', emailVerified: true },
+        data: { email: emailKey, firstName, lastName: '', passwordHash: null, role: 'CUSTOMER', emailVerified: true },
       });
       await prisma.customer.create({ data: { userId: user.id } });
     } else if (!user.emailVerified) {
@@ -412,7 +455,11 @@ authRouter.post('/password-reset/request', async (req, res, next) => {
       return res.status(503).json({ success: false, error: 'Password reset is not configured yet' });
     }
 
-    const user = await prisma.user.findUnique({ where: { email: String(email).toLowerCase().trim() } });
+    // This lowercased its input while the stored row kept whatever capitals the
+    // person registered with, so a correctly-typed address in the wrong case
+    // matched nothing. The user got the neutral "if this email is registered"
+    // reply, no mail, and no way in. Look up case-insensitively instead.
+    const user = await findUserByEmail(email);
     if (user) {
       const token = crypto.randomBytes(32).toString('hex');
       await prisma.passwordResetToken.create({
@@ -444,11 +491,11 @@ authRouter.post('/password-reset/confirm', async (req, res, next) => {
     if (passwordError) return res.status(400).json({ success: false, error: passwordError });
 
     const record = await prisma.passwordResetToken.findUnique({ where: { token } });
-    if (!record || record.email !== email || record.usedAt || record.expiresAt < new Date()) {
+    if (!record || record.email.toLowerCase() !== canonicalEmail(email) || record.usedAt || record.expiresAt < new Date()) {
       return res.status(401).json({ success: false, error: 'Invalid or expired reset link' });
     }
 
-    const user = await prisma.user.findUnique({ where: { email: record.email } });
+    const user = await findUserByEmail(record.email);
     if (!user) return res.status(401).json({ success: false, error: 'Invalid or expired reset link' });
     if (!user.isActive) return res.status(403).json({ success: false, error: 'Account is suspended' });
 
@@ -544,7 +591,9 @@ authRouter.get('/google/callback', async (req, res, next) => {
 
     let user = await prisma.user.findUnique({ where: { googleId: profile.sub } });
     if (!user) {
-      user = await prisma.user.findUnique({ where: { email } });
+      // Google already lowercases, but a row created here earlier might hold a
+      // mixed-case address, so match it the same way every other path does.
+      user = await findUserByEmail(email);
     }
 
     if (!user) {
