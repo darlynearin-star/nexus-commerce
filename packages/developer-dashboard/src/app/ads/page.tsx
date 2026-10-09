@@ -93,7 +93,7 @@ export default function AdStudioPage() {
 
       <div className="card" style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
         <label htmlFor="adUrl" style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, marginBottom: '0.25rem' }}>Website link</label>
-        <input id="adUrl" className="input" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://nexus-storefront-dusky.vercel.app/store/adorn" style={{ fontFamily: 'monospace' }} />
+        <input id="adUrl" className="input" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://lynnyxstores.vercel.app/store/adorn" style={{ fontFamily: 'monospace' }} />
         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Any storefront / store / product page. The renderer captures a screenshot of it for the middle section.</span>
         <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <select className="input" value={format} onChange={e => setFormat(e.target.value as any)} style={{ width: 'auto' }}>

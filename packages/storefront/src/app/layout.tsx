@@ -17,7 +17,7 @@ const inter = Inter({
   display: 'swap',
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
+const SITE_URL = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://lynnyxstores.vercel.app';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

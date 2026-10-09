@@ -6,6 +6,10 @@ import { compressImage } from '@/lib/compress-image';
 import { ArrowLeft, Plus, X, Upload } from 'lucide-react';
 import FieldInfo from '@/components/FieldInfo';
 
+// Was hardcoded to the old storefront project, so the share-link field showed
+// merchants a URL that no longer resolved.
+const STOREFRONT_URL = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://lynnyxstores.vercel.app';
+
 interface AttributeDef { key: string; label: string; type: 'text' | 'number' | 'select' | 'multiselect' | 'boolean'; placeholder?: string; options?: { value: string; label: string }[]; }
 
 interface Category { id: string; name: string; slug: string; parentId: string | null; children?: Category[]; }
@@ -277,13 +281,13 @@ export default function EditProductPage() {
               <input
                 className="input"
                 readOnly
-                value={`https://nexus-storefront-dusky.vercel.app/store/${storeSlug}/product/${form.slug}`}
+                value={`${STOREFRONT_URL}/store/${storeSlug}/product/${form.slug}`}
                 aria-label="Product share link"
                 style={{ flex: 1, fontSize: '0.8125rem', userSelect: 'all' }}
                 onClick={e => (e.target as HTMLInputElement).select()}
               />
               <button className="btn btn-secondary" onClick={() => {
-                const link = `https://nexus-storefront-dusky.vercel.app/store/${storeSlug}/product/${form.slug}`;
+                const link = `${STOREFRONT_URL}/store/${storeSlug}/product/${form.slug}`;
                 const fallback = () => {
                   const ta = document.createElement('textarea');
                   ta.value = link;

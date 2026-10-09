@@ -16,7 +16,7 @@ async function ensureStore() {
     await api.get('/stores/mine');
   } catch (e: any) {
     if (e?.status === 404) {
-      const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
+      const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://lynnyxstores.vercel.app';
       window.location.href = `${storefrontUrl}/create-store#token=${encodeURIComponent(token)}`;
     }
   }
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (payload) {
       setUser({ id: payload.userId, email: payload.email, role: payload.role, firstName: '', lastName: '', avatar: undefined });
     }
-    const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
+    const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://lynnyxstores.vercel.app';
     if (res.data.user?.role === 'RETAILER') {
       const hasStore = await api.get('/stores/mine').then(() => true).catch(() => false);
       if (hasStore) {

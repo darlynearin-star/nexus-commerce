@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 
 const SITE_URL = (typeof window !== 'undefined' ? window.location.origin : '') ||
   process.env.NEXT_PUBLIC_STOREFRONT_URL ||
-  'https://nexus-storefront-dusky.vercel.app';
+  'https://lynnyxstores.vercel.app';
 
 function upsertMeta(attr: 'name' | 'property', key: string, content: string) {
   const selector = attr === 'name' ? `meta[name="${key}"]` : `meta[property="${key}"]`;

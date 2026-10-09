@@ -4,6 +4,10 @@ import { api } from '@/lib/api';
 import { Plus, Edit2, Trash2, Copy, Search, ExternalLink, Package, Link2, Check, Upload, X } from 'lucide-react';
 import Link from 'next/link';
 
+// Was hardcoded, so renaming the storefront project silently handed merchants
+// dead product links. Env-first, matching the rest of the package.
+const STOREFRONT_URL = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://lynnyxstores.vercel.app';
+
 export default function ProductsPage() {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkContent, setBulkContent] = useState('');
@@ -20,7 +24,7 @@ export default function ProductsPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const copyLink = (p: any) => {
-    const link = `https://nexus-storefront-dusky.vercel.app/store/${p.store?.slug || localStorage.getItem('activeStoreSlug')}/product/${p.slug}`;
+    const link = `${STOREFRONT_URL}/store/${p.store?.slug || localStorage.getItem('activeStoreSlug')}/product/${p.slug}`;
     const fallback = () => {
       const ta = document.createElement('textarea');
       ta.value = link;
@@ -224,7 +228,7 @@ export default function ProductsPage() {
                         <button className="btn btn-ghost btn-icon" onClick={() => copyLink(p)} title="Copy product link" aria-label="Copy product link">{copiedId === p.id ? <Check size={14} style={{ color: 'var(--success, #4ade80)' }} /> : <Link2 size={14} />}</button>
                         <button className="btn btn-ghost btn-icon" onClick={() => duplicateProduct(p.id)} title="Duplicate" aria-label="Duplicate"><Copy size={14} /></button>
                         <button className="btn btn-ghost btn-icon" style={{ color: 'var(--error)' }} onClick={() => deleteProduct(p.id)} title="Delete" aria-label="Delete"><Trash2 size={14} /></button>
-                        {p.store?.slug && <Link href={`https://nexus-storefront-dusky.vercel.app/store/${p.store.slug}/product/${p.slug}`} target="_blank" className="btn btn-ghost btn-icon" title="View on store"><ExternalLink size={14} /></Link>}
+                        {p.store?.slug && <Link href={`${STOREFRONT_URL}/store/${p.store.slug}/product/${p.slug}`} target="_blank" className="btn btn-ghost btn-icon" title="View on store"><ExternalLink size={14} /></Link>}
                       </div>
                     </td>
                   </tr>

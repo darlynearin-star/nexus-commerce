@@ -229,7 +229,11 @@ app.use((_req, res, next) => {
   res.setHeader('Referrer-Policy', 'same-origin');
   next();
 });
-const corsAllowList = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'https://nexus-storefront-dusky.vercel.app', 'https://nexus-commerce-retailer-dashboard.vercel.app', 'https://nexus-commerce-developer-dashboard.vercel.app'];
+// The old storefront project name is kept alongside the new one. Renaming a
+// Vercel project does not reliably leave the previous hostname resolving, and
+// a stale entry in an allowlist costs nothing, whereas a missing one blocks
+// every browser request from that origin.
+const corsAllowList = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'https://lynnyxstores.vercel.app', 'https://nexus-storefront-dusky.vercel.app', 'https://nexus-commerce-retailer-dashboard.vercel.app', 'https://nexus-commerce-developer-dashboard.vercel.app'];
 const raw = process.env.CORS_ORIGIN;
 app.use(cors({
   origin: raw === '*' ? (origin, cb) => cb(null, origin || '*') : ((raw?.split(',') || corsAllowList) as any),

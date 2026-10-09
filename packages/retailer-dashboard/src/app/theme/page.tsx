@@ -124,7 +124,7 @@ export default function ThemeEditorPage() {
 
   if (loading) return <div style={{ padding: '2rem', color: 'var(--text-secondary)' }}>Loading theme...</div>;
 
-  const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
+  const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://lynnyxstores.vercel.app';
   const slug = typeof window !== 'undefined' ? localStorage.getItem('activeStoreSlug') : null;
   const dirty = JSON.stringify(withColorDefaults(colors)) !== JSON.stringify(colors) || invalidHexKeys.length > 0;
 

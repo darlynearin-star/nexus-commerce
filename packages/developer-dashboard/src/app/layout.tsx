@@ -20,7 +20,7 @@ function Sidebar({ children }: { children: React.ReactNode }) {
 
   const mobileRef = useDismiss(mobileOpen, closeMobile);
 
-  const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
+  const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://lynnyxstores.vercel.app';
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },

@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 import { useScrollReveal } from '@/lib/use-scroll-reveal';
 import { Store, Palette, Globe, Smartphone, Gift, CreditCard, ArrowRight, CheckCircle, Layout, Users, DollarSign, ExternalLink, ShoppingBag, BookOpen, HelpCircle, EyeOff, Terminal, TrendingUp, ShieldCheck, Zap } from 'lucide-react';
 
-const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
+const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://lynnyxstores.vercel.app';
 const dashboardUrl = process.env.NEXT_PUBLIC_RETAILER_DASHBOARD_URL || 'https://nexus-commerce-retailer-dashboard.vercel.app';
 const devDashUrl = process.env.NEXT_PUBLIC_DEVELOPER_DASHBOARD_URL || 'https://nexus-commerce-developer-dashboard.vercel.app';
 

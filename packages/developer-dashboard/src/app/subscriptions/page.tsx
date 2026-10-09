@@ -109,7 +109,7 @@ export default function SubscriptionsPage() {
   if (!user) return <div style={{ padding: '2rem' }}>Redirecting...</div>;
   if (loading) return <div style={{ padding: '2rem', color: 'var(--text-secondary)' }}>Loading subscriptions...</div>;
 
-  const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
+  const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://lynnyxstores.vercel.app';
 
   return (
     <div style={{ padding: '2rem' }}>

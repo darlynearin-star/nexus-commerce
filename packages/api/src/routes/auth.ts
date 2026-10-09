@@ -83,7 +83,7 @@ authRouter.post('/register', async (req, res, next) => {
       await prisma.magicLinkToken.create({
         data: { token, email, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
       });
-      const frontendUrl = (await getSetting('AUTH_REDIRECT_URL')) || 'https://nexus-storefront-dusky.vercel.app';
+      const frontendUrl = (await getSetting('AUTH_REDIRECT_URL')) || 'https://lynnyxstores.vercel.app';
       const link = `${frontendUrl}/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
       await sendEmail({
         to: email,
@@ -163,7 +163,7 @@ authRouter.post('/resend-verification', async (req, res, next) => {
     await prisma.magicLinkToken.create({
       data: { token, email, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
     });
-    const frontendUrl = (await getSetting('AUTH_REDIRECT_URL')) || 'https://nexus-storefront-dusky.vercel.app';
+    const frontendUrl = (await getSetting('AUTH_REDIRECT_URL')) || 'https://lynnyxstores.vercel.app';
     const link = `${frontendUrl}/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
     await sendEmail({
       to: email,
@@ -328,7 +328,7 @@ authRouter.post('/magic-link', async (req, res, next) => {
       data: { token, email, expiresAt: new Date(Date.now() + 15 * 60 * 1000) },
     });
 
-    const frontendUrl = (await getSetting('AUTH_REDIRECT_URL')) || 'https://nexus-storefront-dusky.vercel.app';
+    const frontendUrl = (await getSetting('AUTH_REDIRECT_URL')) || 'https://lynnyxstores.vercel.app';
     const link = `${frontendUrl}/auth/magic-link?token=${token}&email=${encodeURIComponent(email)}`;
 
     await sendEmail({
@@ -419,7 +419,7 @@ authRouter.post('/password-reset/request', async (req, res, next) => {
         data: { token, email: user.email, expiresAt: new Date(Date.now() + 30 * 60 * 1000) },
       });
 
-      const frontendUrl = (await getSetting('AUTH_REDIRECT_URL')) || 'https://nexus-storefront-dusky.vercel.app';
+      const frontendUrl = (await getSetting('AUTH_REDIRECT_URL')) || 'https://lynnyxstores.vercel.app';
       const link = `${frontendUrl}/auth/reset-password?token=${token}&email=${encodeURIComponent(user.email)}`;
       await sendEmail({
         to: user.email,
@@ -514,7 +514,7 @@ authRouter.get('/google/callback', async (req, res, next) => {
 
     const clientId = await getSetting('GOOGLE_CLIENT_ID');
     const clientSecret = await getSetting('GOOGLE_CLIENT_SECRET');
-    const frontendUrl = (await getSetting('AUTH_REDIRECT_URL')) || 'https://nexus-storefront-dusky.vercel.app';
+    const frontendUrl = (await getSetting('AUTH_REDIRECT_URL')) || 'https://lynnyxstores.vercel.app';
     if (!clientId || !clientSecret) return res.status(503).json({ success: false, error: 'Google login is not configured yet' });
 
     const callbackUrl = `${req.protocol}://${req.get('host')}/api/auth/google/callback`;

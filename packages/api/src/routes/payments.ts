@@ -8,7 +8,7 @@ import { logActivity } from '../utils/activity-log';
 
 export const paymentsRouter = Router();
 
-const STOREFRONT_URL = process.env.STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
+const STOREFRONT_URL = process.env.STOREFRONT_URL || 'https://lynnyxstores.vercel.app';
 
 async function markPaid(transactionId: string) {
   const payment = await prisma.payment.findFirst({ where: { transactionId } });

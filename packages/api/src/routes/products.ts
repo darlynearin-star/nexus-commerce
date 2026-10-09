@@ -39,7 +39,7 @@ async function getCategoryDescendantIds(storeId: string, categoryId: string): Pr
 export const productsRouter = Router();
 
 // Short-link redirect: no store context needed
-const STOREFRONT_URL = process.env.STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
+const STOREFRONT_URL = process.env.STOREFRONT_URL || 'https://lynnyxstores.vercel.app';
 productsRouter.get('/s/:code', async (req: StoreRequest, res, next) => {
   try {
     const product = await prisma.product.findFirst({ where: { shortCode: req.params.code }, include: { store: true } });

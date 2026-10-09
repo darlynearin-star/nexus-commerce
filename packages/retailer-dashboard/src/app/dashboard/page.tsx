@@ -18,7 +18,7 @@ function DashboardContent() {
   const [copied, setCopied] = useState(false);
 
   const copyStoreLink = (slug: string) => {
-    const link = `${process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app'}/store/${slug}`;
+    const link = `${process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://lynnyxstores.vercel.app'}/store/${slug}`;
     const done = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); };
     const fallback = () => {
       const ta = document.createElement('textarea');
@@ -62,7 +62,7 @@ function DashboardContent() {
   }, [user, loading]);
 
   const storeSlug = store?.slug || localStorage.getItem('activeStoreSlug');
-  const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://nexus-storefront-dusky.vercel.app';
+  const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://lynnyxstores.vercel.app';
 
   if (loading || !user) return (
     <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
