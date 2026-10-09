@@ -1,14 +1,8 @@
-// Shared password policy. Kept deliberately simple: minimum length plus a
-// letters-and-digits check, with a clear message. Applied at registration,
-// password reset, and admin user creation.
-export const PASSWORD_MIN_LENGTH = 8;
-
-export function validatePassword(password: string): string | null {
-  if (!password || password.length < PASSWORD_MIN_LENGTH) {
-    return `Password must be at least ${PASSWORD_MIN_LENGTH} characters`;
-  }
-  if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
-    return 'Password must contain both letters and numbers';
-  }
-  return null;
-}
+// The policy itself now lives in @nexus/shared so the forms that accept a
+// password can enforce exactly the same rules the server does. It used to
+// live here alone, and the register form drifted to a 6 character minimum with
+// no letters-and-numbers check, so people were rejected after submitting.
+//
+// This module stays so existing `from '../utils/password-policy'` imports keep
+// working, but it no longer owns the rules.
+export { PASSWORD_MIN_LENGTH, validatePassword } from '@nexus/shared';

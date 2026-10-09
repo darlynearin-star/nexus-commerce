@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { KeyRound, AlertCircle, CheckCircle } from 'lucide-react';
+import { validatePassword } from '@nexus/shared';
 
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
@@ -23,8 +24,11 @@ export default function ResetPasswordPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
-      setError('Password must be at least 8 characters with both letters and numbers.');
+    // Same shared policy the API and the register form use, rather than a
+    // third hand-written copy of the rule.
+    const policyError = validatePassword(password);
+    if (policyError) {
+      setError(policyError);
       return;
     }
     if (password !== confirm) {
