@@ -78,13 +78,17 @@ export default function BetaBanner({ compact = false }: { compact?: boolean }) {
       </span>
 
       <p style={{ margin: 0, flex: 1 }}>
-        Lyn-nyx is still being tested, so you may notice small problems while we fix them.
+        Lyn-nyx is currently in beta. Some features may be incomplete or may change as the
+        service develops.
         {' '}
-        <strong style={{ fontWeight: 600 }}>What you pay only covers what it costs to run the service</strong>
+        <strong style={{ fontWeight: 600 }}>
+          Subscription fees cover the cost of operating the platform
+        </strong>
         {' '}
-        (servers, database and file storage), not profit, so prices may change as we grow
+        (infrastructure, databases and file storage) and do not represent a profit, which
+        means pricing may be adjusted during beta and
         {' '}
-        <em>and are likely to change once beta ends</em>.
+        <em>is likely to change once beta ends</em>.
       </p>
 
       <button

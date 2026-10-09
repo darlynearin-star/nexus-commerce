@@ -275,7 +275,7 @@ function MarketingGuest() {
                 <span style={{ fontStyle: 'italic', color: 'var(--primary)' }}>in minutes.</span>
               </h1>
               <p style={{ fontSize: 'var(--text-lead)', color: 'var(--text-secondary)', maxWidth: 580, margin: '0 auto', lineHeight: 1.65, marginBottom: '1.75rem' }}>
-                Pick a template, set your colors, add your products, and start selling. No coding, no hassle. MTN MoMo &amp; Airtel Money built in.
+                Pick a template, set your colors, add your products, and start selling. No coding, no hassle.
               </p>
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '2rem', justifyContent: 'center' }}>
                 <Link href="/register" className="btn btn-primary" style={{ fontSize: '1rem', padding: '0.8125rem 1.65rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>

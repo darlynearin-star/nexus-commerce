@@ -47,12 +47,19 @@ describe('BetaBanner', () => {
   it('covers all three points the notice exists to make', () => {
     // Assert on source text: this component is SSR-hidden, so the rendered
     // output is intentionally empty and cannot be asserted against.
+    // Wording was tightened for a more professional register, but the three
+    // required disclosures must survive any future rewording, so these
+    // assertions track the meaning rather than one exact phrasing.
     expect(source).toMatch(/Beta/);
-    expect(source).toMatch(/still being tested/i);
-    expect(source).toMatch(/only covers what it costs to run the service/i);
-    expect(source).toMatch(/servers, database and file storage/i);
-    expect(source).toMatch(/not profit/i);
-    expect(source).toMatch(/prices may change as we grow/i);
+    // 1. still being tested, and that things may be incomplete
+    expect(source).toMatch(/currently in beta/i);
+    expect(source).toMatch(/features may be incomplete/i);
+    // 2. fees cover running costs, not profit
+    expect(source).toMatch(/cover the cost of operating the platform/i);
+    expect(source).toMatch(/infrastructure, databases and file storage/i);
+    expect(source).toMatch(/do not represent a profit/i);
+    // 3. pricing may change, and is likely to change after beta
+    expect(source).toMatch(/pricing may be adjusted during beta/i);
     expect(source).toMatch(/likely to change once beta ends/i);
   });
 
