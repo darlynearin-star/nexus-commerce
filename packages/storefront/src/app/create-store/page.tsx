@@ -46,9 +46,9 @@ const slides = [
   },
   {
     icon: <Smartphone size={48} />,
-    title: 'Accept UGX Payments Instantly',
-    desc: 'Your customers can pay with MTN Mobile Money and Airtel Money from day one. Everything in Uganda Shillings: local shipping, local rates, local payments.',
-    feat: ['MTN MoMo & Airtel Money', 'Flutterwave card payments', '14-day free trial, then 3,000 UGX/week'],
+    title: 'Priced in Uganda Shillings',
+    desc: 'Set prices in UGX and keep everything in one currency. Local shipping rates, no currency conversion for you or your customers.',
+    feat: ['UGX pricing throughout', 'Local shipping rates', '14-day free trial, then 3,000 UGX/week'],
   },
 ];
 

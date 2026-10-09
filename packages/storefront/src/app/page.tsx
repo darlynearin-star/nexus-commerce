@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
 import { api } from '@/lib/api';
 import { useScrollReveal } from '@/lib/use-scroll-reveal';
-import { Store, Palette, Globe, Smartphone, Gift, CreditCard, ArrowRight, CheckCircle, Layout, Users, DollarSign, ExternalLink, ShoppingBag, BookOpen, HelpCircle, EyeOff, Terminal, TrendingUp, ShieldCheck, Zap } from 'lucide-react';
+import { Store, Palette, Globe, Gift, CreditCard, ArrowRight, CheckCircle, Layout, Users, DollarSign, ExternalLink, ShoppingBag, BookOpen, HelpCircle, EyeOff, Terminal, TrendingUp, ShieldCheck, Zap } from 'lucide-react';
 
 const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://lynnyxstores.vercel.app';
 const dashboardUrl = process.env.NEXT_PUBLIC_RETAILER_DASHBOARD_URL || 'https://nexus-commerce-retailer-dashboard.vercel.app';
@@ -99,7 +99,7 @@ export default function LandingPage() {
               { icon: <ShoppingBag size={20} />, title: 'Add your first products', desc: 'Upload photos, set UGX prices, organize categories, and manage stock from your dashboard.' },
               { icon: <Palette size={20} />, title: 'Customize your store', desc: 'Change templates, colors, upload a logo, and set your store name to match your brand.' },
               { icon: <Globe size={20} />, title: 'Share your store link', desc: `Your store is live at ${storefrontUrl}/store/${storeSlug}. Share it everywhere!` },
-              { icon: <CreditCard size={20} />, title: 'Payment & subscription', desc: 'MTN MoMo and Airtel Money supported. 3,000 UGX/week after the free trial.' },
+              { icon: <CreditCard size={20} />, title: 'Your subscription', desc: '3,000 UGX per week after the free trial. Cancel at any time.' },
               { icon: <Users size={20} />, title: 'Grow your customers', desc: 'Track orders, view customer data, and build relationships through your dashboard.' },
               { icon: <HelpCircle size={20} />, title: 'Need help?', desc: 'Email Mr.Dev at lyn.nyx.store@gmail.com for support, questions, or bug reports.' },
             ].map((item, i) => (
@@ -155,7 +155,7 @@ export default function LandingPage() {
             {[
               { step: '1', title: 'Sign up & pick a template', desc: 'Choose from Elegance, Minimal, Bold, or Nature. Customize every color.' },
               { step: '2', title: 'Add your products', desc: 'Upload photos, set UGX prices, organize categories, and manage stock.' },
-              { step: '3', title: 'Share your store link', desc: 'Get a unique URL. Accept MTN MoMo & Airtel Money payments immediately.' },
+              { step: '3', title: 'Share your store link', desc: 'Get a unique URL for your store and share it anywhere.' },
             ].map((s, i) => (
               <div key={i} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
                 <div style={{ width: 30, height: 30, borderRadius: 'var(--radius-pill)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.8125rem', color: 'var(--primary)', flexShrink: 0 }}>{s.step}</div>
@@ -205,7 +205,6 @@ function MarketingGuest() {
     { icon: <Globe size={20} />, title: 'Your Own URL', desc: 'Get a unique Lyn-nyx Stores URL for your store. Share it everywhere.' },
     { icon: <Store size={20} />, title: 'Own Products', desc: 'List your items, set UGX prices, organize categories, manage stock.' },
     { icon: <Users size={20} />, title: 'Own Customers', desc: 'Build your customer base. Track orders and engagement.' },
-    { icon: <Smartphone size={20} />, title: 'Mobile Money', desc: 'Accept MTN MoMo and Airtel Money payments from day one.' },
     { icon: <DollarSign size={20} />, title: 'UGX Pricing', desc: 'Everything in Uganda Shillings. Local shipping, local rates.' },
     { icon: <TrendingUp size={20} />, title: 'Fast Setup', desc: 'From signup to live store in under 10 minutes. No code needed.' },
   ];
@@ -216,7 +215,6 @@ function MarketingGuest() {
 
   const marqueeTags = [
     '4 designer templates',
-    'MTN MoMo & Airtel Money',
     'UGX pricing',
     'Your own store URL',
     'Custom colors & logo',
@@ -289,9 +287,9 @@ function MarketingGuest() {
                 {[
                   { icon: <CheckCircle size={15} style={{ color: 'var(--success)' }} />, label: '14 days free' },
                   { icon: <CheckCircle size={15} style={{ color: 'var(--success)' }} />, label: '3,000 UGX/week after' },
-                  { icon: <CreditCard size={15} style={{ color: 'var(--success)' }} />, label: 'MTN MoMo & Airtel' },
                   { icon: <ShieldCheck size={15} style={{ color: 'var(--success)' }} />, label: 'Cancel anytime' },
                   { icon: <Zap size={15} style={{ color: 'var(--success)' }} />, label: 'Live in 10 minutes' },
+                  { icon: <CheckCircle size={15} style={{ color: 'var(--success)' }} />, label: 'No coding required' },
                 ].map((t, i) => (
                   <span key={i} className="trust-pill" style={{ border: '1px solid var(--border)', background: 'var(--surface)' }}>{t.icon} {t.label}</span>
                 ))}
@@ -324,7 +322,10 @@ function MarketingGuest() {
               <div
                 key={i}
                 data-reveal={String((i % 6) + 1)}
-                className={`card ${i === 0 ? 'bento-lg' : i === 6 ? 'bento-wide' : ''}`}
+                // The last two cards both take the wide span. The grid is four
+                // columns, so with 7 cards a single bento-wide left the final
+                // row three quarters full and visibly ragged; two wides fill it.
+                className={`card ${i === 0 ? 'bento-lg' : i >= 5 ? 'bento-wide' : ''}`}
                 style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', height: '100%' }}
               >
                 <div className="feature-icon" style={{ background: 'var(--glow)', color: 'var(--primary)' }}>{f.icon}</div>
@@ -397,7 +398,7 @@ function MarketingGuest() {
               { step: '1', title: 'Sign up', desc: 'Create your account with email. Free for 14 days.' },
               { step: '2', title: 'Pick a template', desc: 'Choose from Elegance, Minimal, Bold, or Nature. Customize colors to match your brand.' },
               { step: '3', title: 'Add products', desc: 'Upload photos, set UGX prices, organize categories, and manage stock.' },
-              { step: '4', title: 'Go live', desc: 'Share your store link. Start accepting MTN MoMo and Airtel Money payments immediately.' },
+              { step: '4', title: 'Go live', desc: 'Share your store link and start taking orders.' },
             ].map((s, i) => (
               <div key={i} data-reveal={String((i % 6) + 1)} style={{ display: 'flex', gap: '1.25rem', padding: '1.25rem 0', borderBottom: i < 3 ? '1px solid var(--border)' : 'none' }}>
                 <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-pill)', border: '1px solid var(--primary)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, flexShrink: 0 }}>{s.step}</div>
@@ -417,7 +418,7 @@ function MarketingGuest() {
           <p className="section-label" style={{ textAlign: 'center' }}>Ready when you are</p>
           <h2 className="section-title" style={{ textAlign: 'center' }}>Start selling today</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '0.375rem', fontSize: '1rem' }}>14 days free. Then 3,000 UGX/week. Cancel anytime.</p>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.75rem', fontSize: '0.875rem' }}>MTN MoMo &amp; Airtel Money supported. No coding required.</p>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.75rem', fontSize: '0.875rem' }}>No coding required. Set up in minutes.</p>
           <Link href="/register" className="btn btn-primary" style={{ fontSize: '1.0625rem', padding: '0.8125rem 2rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
             <Gift size={18} /> Start Your Free Trial
           </Link>
