@@ -9,14 +9,14 @@
       "type": "local",
       "command": ["npx", "-y", "@stripe/mcp"],
       "environment": {
-        "STRIPE_SECRET_KEY": ""
+        "STRIPE_SECRET_KEY": "{env:STRIPE_SECRET_KEY}"
       }
     },
     "github": {
       "type": "local",
       "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
       "environment": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": ""
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:GITHUB_PERSONAL_ACCESS_TOKEN}"
       }
     }
   }
