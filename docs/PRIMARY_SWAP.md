@@ -75,8 +75,13 @@ Redeploy. `/api/system/database` should now report the Supabase host as primary.
 
 - Set `DB_MANUAL_SWITCH=false`: if Supabase ever pauses or errors, requests
   auto-fail-over to Neon instead of erroring
-- Add a weekly uptime ping to the storefront homepage (any page view counts as
-  Supabase activity and prevents the 7-day pause)
+- Supabase keepalive is a GitHub Actions job: `.github/workflows/keepalive.yml`
+  runs `wake-supabase` daily at 03:17 UTC and pings `<project>/rest/v1/` so a
+  free project never reaches 7 days of inactivity. It needs two repo secrets:
+  `SUPABASE_URL` and `SUPABASE_ANON_KEY` (Settings -> Secrets and variables ->
+  Actions). Note that the Render health check in the same file does **not** count
+  as Supabase activity — `/api/health` returns a static JSON body and never
+  opens a database connection, so it wakes Render only.
 
 ---
 

@@ -2,7 +2,11 @@ name: keepalive
 
 on:
   schedule:
+    # Render free plan spins a service down after ~15 minutes idle.
     - cron: '*/10 * * * *'
+    # Supabase pauses a free project after 7 days with no activity.
+    # Daily gives a 7x margin, and 03:17 avoids the top-of-hour Actions rush.
+    - cron: '17 3 * * *'
   workflow_dispatch:
 
 permissions:
@@ -19,3 +23,47 @@ jobs:
             --max-time 90 https://nexus-api-69q5.onrender.com/api/health)
           echo "HTTP $code"
           test "$code" = "200"
+
+  wake-supabase:
+    name: Wake Supabase
+    # Runs on its own daily cron, or when triggered by hand.
+    if: github.event.schedule == '17 3 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -eu
+
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ]; then
+            echo "::error::SUPABASE_URL and SUPABASE_ANON_KEY must be set as repository secrets."
+            echo "Settings -> Secrets and variables -> Actions -> New repository secret."
+            exit 1
+          fi
+
+          base="${SUPABASE_URL%/}"
+          echo "Pinging ${base}/rest/v1/"
+
+          # A paused project can take 30-60s to answer its first request, so retry
+          # instead of failing on the cold start and waking someone up at 03:17.
+          for attempt in 1 2 3 4 5; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' \
+              --max-time 60 \
+              -H "apikey: ${SUPABASE_ANON_KEY}" \
+              -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+              "${base}/rest/v1/") || code="000"
+
+            echo "attempt ${attempt}: HTTP ${code}"
+
+            if [ "${code}" = "200" ]; then
+              echo "Supabase answered. Project activity recorded."
+              exit 0
+            fi
+
+            sleep 20
+          done
+
+          echo "::error::Supabase did not answer 200 after 5 attempts (last: ${code})."
+          exit 1
