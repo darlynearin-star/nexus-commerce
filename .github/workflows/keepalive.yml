@@ -44,7 +44,10 @@ jobs:
           fi
 
           base="${SUPABASE_URL%/}"
-          echo "Pinging ${base}/rest/v1/"
+          # /rest/v1/ now rejects publishable keys ("Secret API key required"),
+          # and we are not putting a secret key in CI. Auth health requires the
+          # key, so a 200 proves both the project and the credential are live.
+          echo "Pinging ${base}/auth/v1/health"
 
           # A paused project can take 30-60s to answer its first request, so retry
           # instead of failing on the cold start and waking someone up at 03:17.
@@ -53,7 +56,7 @@ jobs:
               --max-time 60 \
               -H "apikey: ${SUPABASE_ANON_KEY}" \
               -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
-              "${base}/rest/v1/") || code="000"
+              "${base}/auth/v1/health") || code="000"
 
             echo "attempt ${attempt}: HTTP ${code}"
 

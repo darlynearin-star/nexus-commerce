@@ -76,10 +76,13 @@ Redeploy. `/api/system/database` should now report the Supabase host as primary.
 - Set `DB_MANUAL_SWITCH=false`: if Supabase ever pauses or errors, requests
   auto-fail-over to Neon instead of erroring
 - Supabase keepalive is a GitHub Actions job: `.github/workflows/keepalive.yml`
-  runs `wake-supabase` daily at 03:17 UTC and pings `<project>/rest/v1/` so a
-  free project never reaches 7 days of inactivity. It needs two repo secrets:
-  `SUPABASE_URL` and `SUPABASE_ANON_KEY` (Settings -> Secrets and variables ->
-  Actions). Note that the Render health check in the same file does **not** count
+  runs `wake-supabase` daily at 03:17 UTC and pings
+  `<project>/auth/v1/health` so a free project never reaches 7 days of
+  inactivity. It needs two repo secrets: `SUPABASE_URL` and `SUPABASE_ANON_KEY`
+  (Settings -> Secrets and variables -> Actions). The anon secret accepts either
+  a legacy anon JWT or a newer `sb_publishable_...` key; `/rest/v1/` cannot be
+  used because it now rejects publishable keys with "Secret API key required",
+  and a service-role key does not belong in CI. Note that the Render health check in the same file does **not** count
   as Supabase activity — `/api/health` returns a static JSON body and never
   opens a database connection, so it wakes Render only.
 
