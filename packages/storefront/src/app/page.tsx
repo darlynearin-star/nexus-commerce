@@ -1,11 +1,11 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useAuth } from '@/lib/auth';
-import { useTheme } from '@/lib/theme';
 import { api } from '@/lib/api';
 import { useScrollReveal } from '@/lib/use-scroll-reveal';
+import LandingStorePreview from '@/components/LandingStorePreview';
+import TemplatePreview, { TEMPLATE_IDS } from '@/components/TemplatePreview';
 import { Store, Palette, Globe, Gift, CreditCard, ArrowRight, CheckCircle, Layout, Users, DollarSign, ExternalLink, ShoppingBag, BookOpen, HelpCircle, EyeOff, Terminal, TrendingUp, ShieldCheck, Zap } from 'lucide-react';
 
 const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://lynnyxstores.vercel.app';
@@ -190,15 +190,6 @@ export default function LandingPage() {
 
 function MarketingGuest() {
   const rootRef = useScrollReveal();
-  const { isDark } = useTheme();
-  const [bgIndex, setBgIndex] = useState(0);
-
-  const templates = [
-    { name: 'Elegance', slug: 'elegance', desc: 'Burnished gold & warm dark' },
-    { name: 'Minimal', slug: 'minimal', desc: 'Clean & understated' },
-    { name: 'Bold', slug: 'bold', desc: 'Vibrant & energetic' },
-    { name: 'Nature', slug: 'nature', desc: 'Organic & fresh' },
-  ];
 
   const features = [
     { icon: <Layout size={20} />, title: '4 Templates', desc: 'Elegance, Minimal, Bold, Nature: pick the look that fits your brand.' },
@@ -210,10 +201,6 @@ function MarketingGuest() {
     { icon: <TrendingUp size={20} />, title: 'Fast Setup', desc: 'From signup to live store in under 10 minutes. No code needed.' },
   ];
 
-  const heroImages = isDark
-    ? ['/feature-editorial-1.jpg', '/feature-editorial-2.jpg']
-    : ['/feature-editorial-light-1.jpg', '/feature-editorial-light-2.jpg'];
-
   const marqueeTags = [
     '4 designer templates',
     'UGX pricing',
@@ -223,14 +210,6 @@ function MarketingGuest() {
     'No coding required',
     'Own your customers',
   ];
-
-  // Rotate hero background image with a gentle crossfade.
-  useEffect(() => {
-    if (heroImages.length < 2) return;
-    setBgIndex(0);
-    const id = setInterval(() => setBgIndex((i) => (i + 1) % heroImages.length), 7000);
-    return () => clearInterval(id);
-  }, [heroImages.length, isDark]);
 
   useEffect(() => {
     const pills = document.querySelectorAll('.trust-pill');
@@ -260,56 +239,37 @@ function MarketingGuest() {
     <div ref={rootRef} style={{ position: 'relative', zIndex: 1 }}>
 
       {/* Hero */}
-      <section className="hero-overlay" style={{ position: 'relative', padding: 'var(--section-y) 0' }}>
-        <div className="hero-bg-cycle">
-          {heroImages.map((src, i) => (
-            <div key={src} className={`hero-bg-slide ${i === bgIndex ? 'active' : ''}`}>
-              {/* next/image instead of a CSS background: the source JPEGs are
-                  135 kB each in light mode, and a background-image never gets
-                  the AVIF/WebP negotiation or the srcset that Image gives us.
-                  These are the page's LCP element, so the first one is
-                  priority; the second only fades in after seven seconds. */}
-              <Image
-                src={src}
-                alt=""
-                fill
-                priority={i === 0}
-                sizes="100vw"
-                style={{ objectFit: 'cover' }}
-              />
+      <section className="hero-overlay lp-hero">
+        <div className="container lp-hero__grid">
+          <div className="lp-hero__copy">
+            <p className="eyebrow">For independent merchants across Uganda</p>
+            <h1 className="lp-hero__title">
+              Launch your online store <em>in minutes.</em>
+            </h1>
+            <p className="lp-hero__lede">
+              Pick a template, set your colors, add your products, and start selling. No coding, no hassle.
+            </p>
+            <div className="lp-hero__actions">
+              <Link href="/register" className="btn btn-primary lp-hero__cta">
+                Start Free Trial <ArrowRight size={16} />
+              </Link>
+              <Link href="/store/adorn" className="btn btn-secondary lp-hero__cta">
+                View Demo Store
+              </Link>
             </div>
-          ))}
-        </div>
-        <div className="container" style={{ position: 'relative', zIndex: 2 }}>
-          <div style={{ maxWidth: 780, margin: '0 auto', textAlign: 'center' }}>
-              <p className="eyebrow" style={{ textAlign: 'center' }}>For independent merchants across Uganda</p>
-              <h1 style={{ fontSize: 'var(--text-hero)', letterSpacing: 'var(--tracking-display)', marginBottom: '1.25rem', fontWeight: 'var(--weight-display)', lineHeight: 1.04 }}>
-                Launch your online store{' '}
-                <span style={{ fontStyle: 'italic', color: 'var(--primary)' }}>in minutes.</span>
-              </h1>
-              <p style={{ fontSize: 'var(--text-lead)', color: 'var(--text-secondary)', maxWidth: 580, margin: '0 auto', lineHeight: 1.65, marginBottom: '1.75rem' }}>
-                Pick a template, set your colors, add your products, and start selling. No coding, no hassle.
-              </p>
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '2rem', justifyContent: 'center' }}>
-                <Link href="/register" className="btn btn-primary" style={{ fontSize: '1rem', padding: '0.8125rem 1.65rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                  Start Free Trial <ArrowRight size={16} />
-                </Link>
-                <Link href="/store/adorn" className="btn btn-secondary" style={{ fontSize: '1rem', padding: '0.8125rem 1.65rem' }}>
-                  View Demo Store
-                </Link>
-              </div>
-              <div className="trust-strip" style={{ marginBottom: '0.25rem', justifyContent: 'center' }}>
-                {[
-                  { icon: <CheckCircle size={15} style={{ color: 'var(--success)' }} />, label: '14 days free' },
-                  { icon: <CheckCircle size={15} style={{ color: 'var(--success)' }} />, label: '3,000 UGX/week after' },
-                  { icon: <ShieldCheck size={15} style={{ color: 'var(--success)' }} />, label: 'Cancel anytime' },
-                  { icon: <Zap size={15} style={{ color: 'var(--success)' }} />, label: 'Live in 10 minutes' },
-                  { icon: <CheckCircle size={15} style={{ color: 'var(--success)' }} />, label: 'No coding required' },
-                ].map((t, i) => (
-                  <span key={i} className="trust-pill" style={{ border: '1px solid var(--border)', background: 'var(--surface)' }}>{t.icon} {t.label}</span>
-                ))}
-              </div>
+            <div className="trust-strip lp-hero__trust">
+              {[
+                { icon: <CheckCircle size={15} style={{ color: 'var(--success)' }} />, label: '14 days free' },
+                { icon: <CheckCircle size={15} style={{ color: 'var(--success)' }} />, label: '3,000 UGX/week after' },
+                { icon: <ShieldCheck size={15} style={{ color: 'var(--success)' }} />, label: 'Cancel anytime' },
+                { icon: <Zap size={15} style={{ color: 'var(--success)' }} />, label: 'Live in 10 minutes' },
+              ].map((t, i) => (
+                <span key={i} className="trust-pill" style={{ border: '1px solid var(--border)', background: 'var(--surface)' }}>{t.icon} {t.label}</span>
+              ))}
             </div>
+          </div>
+
+          <LandingStorePreview />
         </div>
       </section>
 
@@ -353,19 +313,9 @@ function MarketingGuest() {
                     Showing the four real templates there fills it with the thing
                     the card is actually describing. */}
                 {i === 0 && (
-                  <div style={{ marginTop: 'auto', paddingTop: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                    {templates.map(t => (
-                      <div key={t.slug} style={{ position: 'relative', borderRadius: 'var(--radius-sm)', overflow: 'hidden', aspectRatio: '16 / 10', border: '1px solid var(--border)' }}>
-                        <img
-                          src={`/template-${t.slug}.svg`}
-                          alt={`${t.name} template preview`}
-                          loading="lazy"
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                        />
-                        <span style={{ position: 'absolute', left: 6, bottom: 5, fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#fff', background: 'rgba(0,0,0,0.62)', padding: '2px 6px', borderRadius: 4 }}>
-                          {t.name}
-                        </span>
-                      </div>
+                  <div className="bento-templates">
+                    {TEMPLATE_IDS.map((id) => (
+                      <TemplatePreview key={id} id={id} />
                     ))}
                   </div>
                 )}
@@ -375,26 +325,18 @@ function MarketingGuest() {
         </div>
       </section>
 
-      {/* Templates — full-bleed previews */}
+      {/* Templates — drawn from the real palette of each template */}
       <section className="section">
         <div className="container">
           <div data-reveal>
             <p className="section-label">Templates</p>
             <h2 className="section-title">A starting point that fits your brand</h2>
-            <p className="section-subtitle">Each template is a complete, responsive storefront you can make your own.</p>
+            <p className="section-subtitle">Each template is a complete, responsive storefront. Its colours are a starting point — swap them for your own in a click.</p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem', marginTop: '2.5rem' }}>
-            {[
-              { name: 'Elegance', img: '/template-elegance.svg', desc: 'Burnished gold & warm dark' },
-              { name: 'Minimal', img: '/template-minimal.svg', desc: 'Clean & understated' },
-              { name: 'Bold', img: '/template-bold.svg', desc: 'Vibrant & energetic' },
-              { name: 'Nature', img: '/template-nature.svg', desc: 'Organic & fresh' },
-            ].map((t, i) => (
-              <div key={t.name} data-reveal={String((i % 6) + 1)} className="template-preview" style={{ backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.28), rgba(0,0,0,0.52)), url(${t.img})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-                <div style={{ position: 'relative', zIndex: 1 }}>
-                  <h3 style={{ fontWeight: 700, fontSize: '1.3125rem', color: '#fff', marginBottom: '0.25rem', textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}>{t.name}</h3>
-                  <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.85)', textShadow: '0 1px 6px rgba(0,0,0,0.45)' }}>{t.desc}</p>
-                </div>
+          <div className="tpl-grid">
+            {TEMPLATE_IDS.map((id, i) => (
+              <div key={id} data-reveal={String((i % 6) + 1)}>
+                <TemplatePreview id={id} label />
               </div>
             ))}
           </div>
@@ -423,6 +365,47 @@ function MarketingGuest() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="section" id="pricing">
+        <div className="container lp-price-wrap">
+          <div className="lp-price-copy" data-reveal>
+            <p className="section-label">Pricing</p>
+            <h2 className="section-title">One price. Everything included.</h2>
+            <p className="section-subtitle" style={{ marginBottom: '1.25rem' }}>
+              Start free for 14 days. After that it is 3,000 UGX a week — with every template and every feature already in it.
+            </p>
+            <ul className="lp-price-points">
+              <li><CheckCircle size={16} style={{ color: 'var(--success)' }} /> No setup fee</li>
+              <li><CheckCircle size={16} style={{ color: 'var(--success)' }} /> Cancel anytime</li>
+              <li><CheckCircle size={16} style={{ color: 'var(--success)' }} /> No coding required</li>
+            </ul>
+          </div>
+
+          <div className="card lp-price" data-reveal="2">
+            <span className="lp-price__flag">14-day free trial</span>
+            <div className="lp-price__amount">
+              <span className="lp-price__cur">UGX</span> 3,000 <span className="lp-price__per">/ week</span>
+            </div>
+            <p className="lp-price__note">After the trial. Billed weekly, cancel whenever you like.</p>
+            <ul className="lp-price__list">
+              {[
+                'All four templates',
+                'Your own store URL',
+                'Custom colours and logo',
+                'Products, categories and stock',
+                'Orders and customer records',
+                'UGX pricing and local delivery',
+              ].map((item) => (
+                <li key={item}><CheckCircle size={16} style={{ color: 'var(--primary)' }} /> {item}</li>
+              ))}
+            </ul>
+            <Link href="/register" className="btn btn-primary lp-price__cta">
+              Start Free Trial <ArrowRight size={16} />
+            </Link>
           </div>
         </div>
       </section>
