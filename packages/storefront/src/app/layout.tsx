@@ -2,6 +2,7 @@ import { Fraunces, Inter } from 'next/font/google';
 import type { Metadata } from 'next';
 import './globals.css';
 import ClientProviders from '@/components/ClientProviders';
+import LiquidGlassFilters from '@/components/LiquidGlassFilters';
 
 const fraunces = Fraunces({
   subsets: ['latin'],
@@ -68,6 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        <LiquidGlassFilters />
         <ClientProviders>{children}</ClientProviders>
       </body>
     </html>

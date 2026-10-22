@@ -17,7 +17,7 @@ import { useEffect } from 'react';
  * Skipped entirely on coarse pointers and on touch-first devices, where there
  * is no hover to trigger it.
  */
-const SELECTOR = '.glass, .glass-panel, .glass-edge, .card';
+const SELECTOR = '.glass, .glass-panel, .glass-edge, .card, .btn';
 
 export function useLiquidGlass(): void {
   useEffect(() => {

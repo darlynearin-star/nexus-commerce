@@ -227,6 +227,81 @@ button { font-family: inherit; }
 .btn-sm { min-height: 2.25rem; padding: 0.5rem 0.875rem; font-size: 0.8125rem; }
 .btn-icon { min-height: 2.5rem; padding: 0.5rem; border-radius: var(--radius-md); }
 
+/* ---- Liquid glass on buttons ----
+   The glass is painted *over* each button, never instead of it: the button
+   keeps its own background, gradient, border and text colour, and every light
+   effect rides on a pseudo-element that cannot be clicked.
+
+   ::before is the glass body. Its highlights are refracted through an SVG
+   displacement map (LiquidGlassFilters), so light bends at the rim instead of
+   sitting on the surface like a sticker — that bend is the whole difference
+   between this and frosted glass.
+
+   ::after is the rim, built from inset shadows rather than a gradient: a
+   bright top line with a dark line under it, and the same inverted at the
+   bottom. That sandwich is what makes an edge read as thick glass instead of
+   a painted border. */
+.btn {
+  position: relative;
+  isolation: isolate;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    /* specular bloom that follows the cursor */
+    radial-gradient(70px circle at var(--gx, 30%) var(--gy, -6%), rgba(255, 255, 255, 0.48), transparent 62%),
+    /* caustic light bouncing up off the bottom edge */
+    radial-gradient(120% 150% at 50% 118%, rgba(255, 255, 255, 0.34), transparent 48%),
+    /* grazing light along the top */
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.04) 22%, transparent 34%),
+    /* sheen that travels across on hover */
+    linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.30) 50%, transparent 58%);
+  background-size: auto, auto, auto, 240% 100%;
+  background-position: 0 0, 0 0, 0 0, 100% 0;
+  background-repeat: no-repeat;
+  transition: background-position 0.65s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 2px 3px rgba(0, 0, 0, 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.10);
+  transition: filter 0.3s ease;
+}
+
+/* Refracting forty buttons costs forty raster passes. Static that is cheap;
+   on hover it is one element, which is why the filter is limited to devices
+   that can actually hover. Touch keeps the glass, minus the warp. */
+@media (hover: hover) and (pointer: fine) {
+  .btn::before { filter: url(#lg-refract); }
+
+  .btn:hover::before { background-position: 0 0, 0 0, 0 0, 0% 0; }
+  .btn:hover::after { filter: brightness(1.25); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn::before { transition: none; }
+}
+
+/* Ghost buttons have no surface to sit on; the rim alone is enough. */
+.btn-ghost::before { opacity: 0.45; }
+
+
+
 /* ---- Cards ---- */
 .card {
   background: var(--surface);
