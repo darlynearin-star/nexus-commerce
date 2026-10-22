@@ -23,10 +23,8 @@ input, textarea, select { color: inherit; }
      16/58/78/97px scatter measured on the homepage. */
   --section-y: clamp(3rem, 7vw, 5.5rem);
 
-  /* Frosted header. rgba() keeps it theme-agnostic; the blur + saturate is what
-     makes a sticky header feel modern rather than a flat slab. */
-  --header-glass: rgba(20, 18, 14, 0.72);
-  --header-blur: saturate(180%) blur(14px);
+  /* The header now uses the --glass-* tokens below, so there is one material
+     instead of two slightly different ones. */
 
   /* Liquid glass. Three parts, and the blur is only one of them: a tint that
      keeps text readable over busy imagery, a hairline border, and an inset
@@ -92,7 +90,6 @@ input, textarea, select { color: inherit; }
   --border: #E3DCCE;
   --glow: rgba(125, 95, 42, 0.1);
   /* Light header needs a light-tinted glass or it reads as a grey smear. */
-  --header-glass: rgba(251, 250, 247, 0.75);
   /* Light glass is not the dark recipe with the alpha flipped: the border has
      to be dark to register at all, and the highlight is near-white. */
   --glass-tint: rgba(255, 255, 255, 0.66);
@@ -307,12 +304,13 @@ select.input { appearance: auto; }
    feel layered (same trick Linear uses). Falls back to a solid fill where
    backdrop-filter is unsupported. */
 .glass {
-  background: var(--header-glass);
-  -webkit-backdrop-filter: var(--header-blur);
-  backdrop-filter: var(--header-blur);
-  border-bottom: 1px solid var(--border);
-  /* Hairline fade so content dissolves under the bar instead of being cut. */
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+  background: var(--glass-tint);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-border);
+  /* The inset line is what reads as a lit edge; without it this is just a
+     translucent rectangle. The outer hairline stops content cutting hard. */
+  box-shadow: inset 0 1px 0 var(--glass-highlight), 0 1px 0 rgba(0, 0, 0, 0.04);
 }
 
 /* Panels that float over content: drawers, sheets, toasts. Blur is affordable
