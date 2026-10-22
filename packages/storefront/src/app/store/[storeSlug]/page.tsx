@@ -5,13 +5,14 @@ export const dynamic = 'force-dynamic';
 
 export default async function StoreHomePage({ params }: { params: { storeSlug: string } }) {
   const storeSlug = params.storeSlug;
-  const { featured, newArrivals, categories } = await fetchStoreHome(storeSlug);
+  const { featured, newArrivals, categories, latest } = await fetchStoreHome(storeSlug);
 
   return (
     <StoreHomeClient
       initialFeatured={featured}
       initialNewArrivals={newArrivals}
       initialCategories={categories}
+      initialLatest={latest}
     />
   );
 }

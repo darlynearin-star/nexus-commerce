@@ -44,15 +44,22 @@ export async function fetchPublicStore(storeSlug: string) {
 }
 
 export async function fetchStoreHome(storeSlug: string) {
-  const [featuredRes, newRes, categoriesRes] = await Promise.all([
+  const [featuredRes, newRes, categoriesRes, latestRes] = await Promise.all([
     serverApi<{ data: any[] }>(`/api/products/featured/list`, storeSlug),
     serverApi<{ data: any[] }>(`/api/products/new/list`, storeSlug),
     serverApi<{ data: any[] }>(`/api/categories?sortBy=productCount`, storeSlug),
+    // Not every merchant flags products as featured or new — the demo store
+    // flags none — and the home page used to be almost empty as a result.
+    // Latest is the fallback rail, and also gives the hero and the category
+    // tiles a photograph to work with. The limit is deliberately wider than
+    // the rail so every populated category can be represented in the tiles.
+    serverApi<{ data: any[] }>(`/api/products?limit=24&sort=createdAt&order=desc`, storeSlug),
   ]);
   return {
     featured: featuredRes?.data ?? [],
     newArrivals: newRes?.data ?? [],
     categories: categoriesRes?.data ?? [],
+    latest: latestRes?.data ?? [],
   };
 }
 

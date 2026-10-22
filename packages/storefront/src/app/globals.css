@@ -842,3 +842,351 @@ html.has-reveal-observer .trust-pill.revealed {
   .container { padding: 0 2rem; }
   body { font-size: 16px; }
 }
+
+/* ============================================================
+   STOREFRONT — editorial hero, photo category tiles, 4:5 cards
+
+   The store home used to open with a line of text on a flat panel, then
+   repeat three identical grids. Everything below is about putting the
+   merchant's own photography to work: a portrait shot in the hero, the
+   collection's categories as images, and product cards in the 4:5 crop
+   fashion retail has converged on.
+   ============================================================ */
+
+/* ---- Editorial hero ---- */
+.store-hero {
+  position: relative;
+  isolation: isolate;
+  padding: clamp(2rem, 5vw, 3.75rem) 0 clamp(2.25rem, 5vw, 4rem);
+}
+/* Warm halo behind the copy, same language as the rest of the page. */
+.store-hero::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -10% -20% 30% -20%;
+  background: radial-gradient(60% 70% at 18% 0%, var(--glow), transparent 70%);
+  pointer-events: none;
+}
+.store-hero__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+  align-items: center;
+  gap: clamp(1.75rem, 5vw, 4.5rem);
+}
+.store-hero__grid--text { grid-template-columns: minmax(0, 1fr); }
+.store-hero__copy { max-width: 34rem; }
+.store-hero__title {
+  font-family: var(--font-display);
+  font-size: clamp(2.35rem, 5.6vw, 4rem);
+  font-weight: var(--weight-display);
+  line-height: 1.03;
+  letter-spacing: -0.028em;
+  margin-bottom: 1rem;
+  text-wrap: balance;
+}
+.store-hero__lede {
+  font-size: var(--text-lead);
+  line-height: 1.65;
+  color: var(--text-secondary);
+  max-width: 44ch;
+  margin-bottom: 1.9rem;
+}
+.store-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.store-hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  list-style: none;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+.store-hero__meta li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.store-hero__meta svg { color: var(--primary); flex-shrink: 0; }
+
+.store-hero__media {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  box-shadow: 0 34px 70px -44px rgba(0, 0, 0, 0.65);
+  isolation: isolate;
+}
+.store-hero__media img {
+  object-fit: cover;
+  transition: transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.store-hero__media:hover img { transform: scale(1.035); }
+.store-hero__caption {
+  position: absolute;
+  left: 0.875rem;
+  right: 0.875rem;
+  bottom: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius-md);
+  background: var(--glass-tint-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
+  color: #fff;
+}
+[data-theme="light"] .store-hero__caption {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(0, 0, 0, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(0, 0, 0, 0.08);
+  color: var(--text);
+}
+.store-hero__caption span {
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.store-hero__caption strong {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.store-hero__caption em {
+  font-style: normal;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+@media (max-width: 900px) {
+  .store-hero__grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+  }
+  .store-hero__copy { max-width: none; }
+  /* A 4:5 crop is very tall once the copy stacks above it; 5:4 keeps the
+     product visible without pushing the first products off the screen. */
+  .store-hero__media { aspect-ratio: 5 / 4; }
+  .store-hero__meta { margin-top: 1.5rem; }
+}
+
+@media (max-width: 480px) {
+  .store-hero__actions .btn { flex: 1 1 auto; }
+}
+
+/* ---- Category tiles (photographic) ---- */
+.category-tiles {
+  display: grid;
+  /* auto-fit (not auto-fill) collapses unused tracks, so four categories in a
+     wide row stretch to fill it instead of leaving two empty gaps. */
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: 1rem;
+}
+.category-tile {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: #fff;
+  isolation: isolate;
+}
+.category-tile img {
+  object-fit: cover;
+  transition: transform 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.category-tile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 38%, rgba(0, 0, 0, 0.66) 100%);
+  pointer-events: none;
+}
+.category-tile:hover img { transform: scale(1.045); }
+.category-tile__label {
+  position: absolute;
+  z-index: 2;
+  left: 1rem;
+  right: 1rem;
+  bottom: 0.9rem;
+}
+.category-tile__name {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.category-tile__count {
+  font-size: 0.75rem;
+  opacity: 0.78;
+  margin-top: 0.15rem;
+}
+
+/* Fallback grid: stores whose products have no photography keep the icon
+   tiles — they read as intentional, not as a broken image state. */
+.category-tiles--icons { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+.category-tiles--icons .category-tile {
+  aspect-ratio: auto;
+  color: inherit;
+  text-align: center;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--surface);
+}
+.category-tiles--icons .category-tile::after { display: none; }
+.category-tiles--icons .category-tile:hover {
+  border-color: var(--text-secondary);
+  box-shadow: 0 14px 32px -16px rgba(0, 0, 0, 0.34);
+}
+
+@media (max-width: 640px) {
+  .category-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.625rem; }
+  .category-tile__name { font-size: 1rem; }
+}
+
+/* ---- Product card, grid view: 4:5 media, hover second shot ---- */
+.product-card {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-lg);
+}
+.product-card__media {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: var(--bg-secondary);
+}
+.product-card__img {
+  object-fit: cover;
+}
+/* Second photograph, revealed on pointer hover only. Touch devices keep the
+   first image rather than toggling on tap, which would fight the tap-through
+   to the product page. */
+.product-card__img--alt {
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .product-card:hover .product-card__img--alt { opacity: 1; }
+}
+.product-card__chip {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  z-index: 2;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--primary);
+  color: var(--bg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+.product-card__chip--muted {
+  background: var(--surface);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.product-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.7rem 0.8rem 0.85rem;
+}
+.product-card__brand {
+  font-size: 0.6875rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.product-card__name {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  /* Two lines maximum, so cards in a row keep their baselines aligned even
+     when one merchant writes a paragraph where another writes a word. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.product-card__price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin-top: 0.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.product-card__price s {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+/* Stretched hit area: keeps the whole card clickable without nesting the
+   quick-add and wishlist buttons inside an <a>. */
+.product-card__hit {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+}
+.product-card__hit:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+.product-card__quick {
+  position: absolute;
+  z-index: 3;
+  right: 0.6rem;
+  bottom: 0.6rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 6px 18px -8px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+.product-card__quick:hover { transform: scale(1.08); background: var(--primary); color: var(--bg); border-color: transparent; }
+.product-card__quick.is-done { background: var(--success); border-color: transparent; color: #fff; }
+@media (hover: hover) and (pointer: fine) {
+  /* Pointer users get the button on hover; keyboard users get it on focus. */
+  .product-card__quick { opacity: 0; transform: translateY(4px); transition: opacity 0.2s ease, transform 0.2s ease, background 0.18s ease, color 0.18s ease; }
+  .product-card:hover .product-card__quick,
+  .product-card:focus-within .product-card__quick { opacity: 1; transform: none; }
+}

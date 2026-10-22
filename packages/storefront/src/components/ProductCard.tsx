@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Image from 'next/image';
-import { Heart } from 'lucide-react';
+import { Check, Heart, Plus, SlidersHorizontal } from 'lucide-react';
 import Link from 'next/link';
 import { storeApi } from '@/lib/store-api';
 import { useAuth } from '@/lib/auth';
@@ -11,6 +11,7 @@ export type ProductView = 'grid' | 'list' | 'compact' | 'minimal';
 
 const img = (id: string) => `https://picsum.photos/seed/${id}/400/400`;
 const firstImage = (p: any) => p.images?.[0] || img(p.id);
+const secondImage = (p: any) => (Array.isArray(p.images) && p.images[1]) || null;
 const truncate = (s: string, n: number) => (s && s.length > n ? `${s.slice(0, n)}…` : s || '');
 
 interface ProductCardProps {
@@ -22,6 +23,13 @@ interface ProductCardProps {
     price: number;
     description?: string;
     images?: string[];
+    compareAtPrice?: number | null;
+    stock?: number;
+    lowStockThreshold?: number;
+    trackInventory?: boolean;
+    allowBackorder?: boolean;
+    isNew?: boolean;
+    variants?: unknown[];
     averageRating?: number;
     reviewCount?: number;
   };
@@ -48,6 +56,60 @@ function AddToCartButton({ product }: { product: ProductCardProps['product'] }) 
   );
 }
 
+/**
+ * Quick-add for the grid view.
+ *
+ * Products that carry variants cannot be added blind — they need a size or a
+ * colour — so the same button becomes a link to the product page in that case.
+ * Everything else adds the base product, which is exactly what the cart API
+ * does with no variantId.
+ */
+function QuickAdd({ product, href }: { product: ProductCardProps['product']; href: string }) {
+  const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const hasVariants = Array.isArray(product.variants) && product.variants.length > 0;
+
+  if (hasVariants) {
+    return (
+      <Link
+        href={href}
+        className="product-card__quick"
+        aria-label={`Choose options for ${product.name}`}
+        onClick={e => e.stopPropagation()}
+      >
+        <SlidersHorizontal size={16} />
+      </Link>
+    );
+  }
+
+  const add = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (busy) return;
+    setBusy(true);
+    try {
+      await storeApi.post('/cart/add', { productId: product.id });
+      setDone(true);
+      setTimeout(() => setDone(false), 1800);
+    } catch (err: any) {
+      console.error('Cart error:', err);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      className={`product-card__quick${done ? ' is-done' : ''}`}
+      onClick={add}
+      aria-label={done ? 'Added to cart' : `Add ${product.name} to cart`}
+    >
+      {done ? <Check size={16} /> : <Plus size={16} />}
+    </button>
+  );
+}
+
 function HeartButton({ product, top, right }: { product: ProductCardProps['product']; top: string; right: string }) {
   const { user } = useAuth();
   const [saved, setSaved] = useState(false);
@@ -63,7 +125,7 @@ function HeartButton({ product, top, right }: { product: ProductCardProps['produ
           storeApi.post('/wishlist/remove', { productId: product.id }).catch(() => setSaved(true));
         }
       }}
-      style={{ position: 'absolute', top, right, background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer', color: saved ? 'var(--error)' : 'var(--text-secondary)', padding: '0.375rem', borderRadius: 'var(--radius-pill)', zIndex: 1, lineHeight: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}
+      style={{ position: 'absolute', top, right, background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer', color: saved ? 'var(--error)' : 'var(--text-secondary)', padding: '0.375rem', borderRadius: 'var(--radius-pill)', zIndex: 3, lineHeight: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}
       aria-label="Toggle wishlist"
     >
       <Heart size={16} fill={saved ? 'currentColor' : 'none'} />
@@ -141,26 +203,74 @@ export default function ProductCard({ product, showAddToCart = true, storeSlug: 
     );
   }
 
-  // GRID (default): full-featured card, balanced for product browsing.
+  // GRID (default): 4:5 portrait media, second photograph on hover, quick-add.
+  //
+  // The card is an <article> with a stretched link overlay instead of one big
+  // <a>: the wishlist and quick-add controls are interactive, and nesting a
+  // <button> inside an anchor is invalid and awkward for screen readers.
+  const alt = secondImage(product);
+  const tracked = product.trackInventory !== false;
+  const stock = typeof product.stock === 'number' ? product.stock : undefined;
+  // Deliberately no "sold out" state here. cart.ts only rejects a quantity
+  // above `stock` when stock is greater than zero, so stock 0 means "not
+  // enforced" (and merchant dashboards default new products to 0). Badging
+  // those as sold out would empty the storefront of every fresh listing and
+  // contradict the add-to-cart button on the product page.
+  const lowStock = tracked && stock !== undefined && stock > 0 && stock <= (product.lowStockThreshold ?? 10);
+  const compareAt = product.compareAtPrice && product.compareAtPrice > product.price ? product.compareAtPrice : null;
+  const discountPct = compareAt ? Math.round((1 - product.price / compareAt) * 100) : 0;
+
+  const chip = discountPct >= 1
+    ? { label: `−${discountPct}%`, muted: false }
+    : product.isNew
+      ? { label: 'New', muted: false }
+      : lowStock
+        ? { label: 'Low stock', muted: true }
+        : null;
+
   return (
-    <Link href={href} className="card" style={{ ...base, display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '0.625rem', borderRadius: 'var(--radius-md)' }}>
-      <HeartButton product={product} top="0.5rem" right="0.5rem" />
-      <div style={{ aspectRatio: '1', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', overflow: 'hidden', position: 'relative' }}>
-        <Image src={firstImage(product)} alt={product.name} fill sizes="(max-width: 768px) 50vw, 300px" style={{ objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = img((product as any).id); }} />
-      </div>
-      <div style={{ padding: '0 0.25rem 0.125rem' }}>
-        <p style={{ fontSize: '0.68rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.125rem' }}>{product.brand}</p>
-        <h3 style={{ fontSize: '0.875rem', fontWeight: 600, lineHeight: 1.3, fontFamily: 'var(--font-sans)' }}>{product.name}</h3>
-        {(product.averageRating || product.reviewCount) && (
-          <div style={{ marginTop: '0.25rem' }}>
-            <StarRating rating={product.averageRating || 4} count={product.reviewCount || 0} size={12} />
-          </div>
+    <article className="card product-card">
+      <div className="product-card__media">
+        <Image
+          src={firstImage(product)}
+          alt={product.name}
+          fill
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          className="product-card__img"
+          onError={e => { (e.target as HTMLImageElement).src = img((product as any).id); }}
+        />
+        {alt && (
+          <Image
+            src={alt}
+            alt=""
+            aria-hidden
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="product-card__img product-card__img--alt"
+          />
         )}
+        {chip && (
+          <span className={`product-card__chip${chip.muted ? ' product-card__chip--muted' : ''}`}>
+            {chip.label}
+          </span>
+        )}
+        <HeartButton product={product} top="0.6rem" right="0.6rem" />
+        <QuickAdd product={product} href={href} />
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0 0.25rem' }}>
-        <span style={{ fontSize: '1rem', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>UGX {product.price.toLocaleString()}</span>
+
+      <div className="product-card__body">
+        {product.brand && <p className="product-card__brand">{product.brand}</p>}
+        <h3 className="product-card__name">{product.name}</h3>
+        {(product.averageRating || product.reviewCount) && (
+          <StarRating rating={product.averageRating || 4} count={product.reviewCount || 0} size={12} />
+        )}
+        <div className="product-card__price">
+          <span>UGX {product.price.toLocaleString()}</span>
+          {compareAt && <s>UGX {compareAt.toLocaleString()}</s>}
+        </div>
       </div>
-      {showAddToCart && <div style={{ padding: '0 0.25rem 0.25rem' }}><AddToCartButton product={product} /></div>}
-    </Link>
+
+      <Link href={href} className="product-card__hit" aria-label={`View ${product.name}`} />
+    </article>
   );
 }
