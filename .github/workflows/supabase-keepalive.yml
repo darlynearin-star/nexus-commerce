@@ -1,0 +1,62 @@
+name: supabase-keepalive
+
+# Supabase pauses a free project after 7 days with no activity. This keeps it
+# awake. It is deliberately separate from keepalive.yml, which wakes Render:
+# that job pings /api/health, which returns a static JSON body and never opens a
+# database connection, so it does not count as Supabase activity.
+
+on:
+  schedule:
+    # Daily gives a 7x margin against the 7-day rule. 03:17 avoids the
+    # top-of-the-hour rush when GitHub's scheduled runs queue up.
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wake-supabase:
+    name: Wake Supabase
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase auth health
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -eu
+
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ]; then
+            echo "::error::SUPABASE_URL and SUPABASE_ANON_KEY must be set as repository secrets."
+            echo "Settings -> Secrets and variables -> Actions -> New repository secret."
+            exit 1
+          fi
+
+          base="${SUPABASE_URL%/}"
+          # /rest/v1/ now rejects publishable keys ("Secret API key required"),
+          # and we are not putting a secret key in CI. Auth health requires the
+          # key, so a 200 proves both the project and the credential are live.
+          echo "Pinging ${base}/auth/v1/health"
+
+          # A paused project can take 30-60s to answer its first request, so retry
+          # instead of failing on the cold start and waking someone up at 03:17.
+          for attempt in 1 2 3 4 5; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' \
+              --max-time 60 \
+              -H "apikey: ${SUPABASE_ANON_KEY}" \
+              -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+              "${base}/auth/v1/health") || code="000"
+
+            echo "attempt ${attempt}: HTTP ${code}"
+
+            if [ "${code}" = "200" ]; then
+              echo "Supabase answered. Project activity recorded."
+              exit 0
+            fi
+
+            sleep 20
+          done
+
+          echo "::error::Supabase did not answer 200 after 5 attempts (last: ${code})."
+          exit 1
