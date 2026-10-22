@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
 import { api } from '@/lib/api';
@@ -262,7 +263,21 @@ function MarketingGuest() {
       <section className="hero-overlay" style={{ position: 'relative', padding: 'var(--section-y) 0' }}>
         <div className="hero-bg-cycle">
           {heroImages.map((src, i) => (
-            <div key={src} className={`hero-bg-slide ${i === bgIndex ? 'active' : ''}`} style={{ backgroundImage: `url(${src})` }} />
+            <div key={src} className={`hero-bg-slide ${i === bgIndex ? 'active' : ''}`}>
+              {/* next/image instead of a CSS background: the source JPEGs are
+                  135 kB each in light mode, and a background-image never gets
+                  the AVIF/WebP negotiation or the srcset that Image gives us.
+                  These are the page's LCP element, so the first one is
+                  priority; the second only fades in after seven seconds. */}
+              <Image
+                src={src}
+                alt=""
+                fill
+                priority={i === 0}
+                sizes="100vw"
+                style={{ objectFit: 'cover' }}
+              />
+            </div>
           ))}
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 2 }}>
