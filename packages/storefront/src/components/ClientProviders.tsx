@@ -7,11 +7,15 @@ import Footer from '@/components/Footer';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
 import SeoManager from '@/components/SeoManager';
 import SupportFab from '@/components/SupportFab';
+import { useLiquidGlass } from '@/lib/liquid-glass';
 
 // H12: no global activeStoreSlug seeding. Visitors are bound to a store only
 // by explicitly visiting one (StoreShell persists it) or picking one in the
 // header switcher — never by an invented default.
 export default function ClientProviders({ children }: { children: React.ReactNode }) {
+  // Global, single-listener cursor sheen for glass surfaces. No-op on touch.
+  useLiquidGlass();
+
   return (
     <>
       <SeoManager />
