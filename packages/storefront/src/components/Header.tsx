@@ -175,7 +175,7 @@ export default function Header() {
         @media (max-width: 768px) { .desktop-only { display: none !important; } .desktop-nav { display: none !important; } .mobile-menu-btn { display: inline-flex; } }
         @media (min-width: 769px) { .mobile-sidebar, .sidebar-overlay, .mobile-menu-btn { display: none !important; } }
         @media (max-width: 480px) { .user-name-header { display: none; } }
-        .mobile-sidebar { position: fixed; top: 0; right: -280px; width: 280px; height: 100vh; background: var(--surface); border-left: 1px solid var(--border); z-index: 200; transition: right 0.25s ease; overflow-y: auto; }
+        .mobile-sidebar { position: fixed; top: 0; right: -280px; width: 280px; height: 100vh; background: var(--glass-tint-strong); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border-left: 1px solid var(--glass-border); z-index: 200; transition: right 0.25s ease; overflow-y: auto; }
         .mobile-sidebar.open { right: 0; }
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 199; display: none; }
         .sidebar-overlay.open { display: block; }

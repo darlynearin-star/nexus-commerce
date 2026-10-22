@@ -25,11 +25,7 @@ export default function StoreHeader() {
     endsWith ? (pathname === href || pathname.startsWith(href)) : pathname === href;
 
   return (
-    <header style={{
-      position: 'sticky', top: 0, zIndex: 100,
-      background: 'var(--surface)',
-      borderBottom: '1px solid var(--border)',
-    }}>
+    <header className="glass" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
       <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64, gap: '1rem' }}>
         <Link href={`/store/${store.slug}`} style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', textDecoration: 'none' }}>
           {store.logoUrl ? (
