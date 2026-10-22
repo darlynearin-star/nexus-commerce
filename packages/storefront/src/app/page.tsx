@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { useScrollReveal } from '@/lib/use-scroll-reveal';
-import LandingStorePreview from '@/components/LandingStorePreview';
 import TemplatePreview, { TEMPLATE_IDS } from '@/components/TemplatePreview';
 import { Store, Palette, Globe, Gift, CreditCard, ArrowRight, CheckCircle, Layout, Users, DollarSign, ExternalLink, ShoppingBag, BookOpen, HelpCircle, EyeOff, Terminal, TrendingUp, ShieldCheck, Zap } from 'lucide-react';
 
@@ -240,36 +239,32 @@ function MarketingGuest() {
 
       {/* Hero */}
       <section className="hero-overlay lp-hero">
-        <div className="container lp-hero__grid">
-          <div className="lp-hero__copy">
-            <p className="eyebrow">For independent merchants across Uganda</p>
-            <h1 className="lp-hero__title">
-              Launch your online store <em>in minutes.</em>
-            </h1>
-            <p className="lp-hero__lede">
-              Pick a template, set your colors, add your products, and start selling. No coding, no hassle.
-            </p>
-            <div className="lp-hero__actions">
-              <Link href="/register" className="btn btn-primary lp-hero__cta">
-                Start Free Trial <ArrowRight size={16} />
-              </Link>
-              <Link href="/store/adorn" className="btn btn-secondary lp-hero__cta">
-                View Demo Store
-              </Link>
-            </div>
-            <div className="trust-strip lp-hero__trust">
-              {[
-                { icon: <CheckCircle size={15} style={{ color: 'var(--success)' }} />, label: '14 days free' },
-                { icon: <CheckCircle size={15} style={{ color: 'var(--success)' }} />, label: '3,000 UGX/week after' },
-                { icon: <ShieldCheck size={15} style={{ color: 'var(--success)' }} />, label: 'Cancel anytime' },
-                { icon: <Zap size={15} style={{ color: 'var(--success)' }} />, label: 'Live in 10 minutes' },
-              ].map((t, i) => (
-                <span key={i} className="trust-pill" style={{ border: '1px solid var(--border)', background: 'var(--surface)' }}>{t.icon} {t.label}</span>
-              ))}
-            </div>
+        <div className="container lp-hero__inner">
+          <p className="eyebrow">For independent merchants across Uganda</p>
+          <h1 className="lp-hero__title">
+            Launch your online store <em>in minutes.</em>
+          </h1>
+          <p className="lp-hero__lede">
+            Pick a template, set your colors, add your products, and start selling. No coding, no hassle.
+          </p>
+          <div className="lp-hero__actions">
+            <Link href="/register" className="btn btn-primary lp-hero__cta">
+              Start Free Trial <ArrowRight size={16} />
+            </Link>
+            <Link href="/store/adorn" className="btn btn-secondary lp-hero__cta">
+              View Demo Store
+            </Link>
           </div>
-
-          <LandingStorePreview />
+          <div className="trust-strip lp-hero__trust">
+            {[
+              { icon: <CheckCircle size={15} style={{ color: 'var(--success)' }} />, label: '14 days free' },
+              { icon: <CheckCircle size={15} style={{ color: 'var(--success)' }} />, label: '3,000 UGX/week after' },
+              { icon: <ShieldCheck size={15} style={{ color: 'var(--success)' }} />, label: 'Cancel anytime' },
+              { icon: <Zap size={15} style={{ color: 'var(--success)' }} />, label: 'Live in 10 minutes' },
+            ].map((t, i) => (
+              <span key={i} className="trust-pill" style={{ border: '1px solid var(--border)', background: 'var(--surface)' }}>{t.icon} {t.label}</span>
+            ))}
+          </div>
         </div>
       </section>
 

@@ -695,35 +695,30 @@ html.has-reveal-observer [data-reveal].revealed {
   .bento-lg, .bento-wide { grid-column: span 1; }
 }
 
-/* ---- Landing hero: copy + live store demo ---- */
+/* ---- Landing hero ---- */
 .lp-hero {
-  padding: clamp(2rem, 5.5vw, 4rem) 0 clamp(2rem, 5vw, 3.5rem);
+  padding: var(--section-y) 0;
   overflow: hidden;
 }
 .lp-hero .container { position: relative; z-index: 2; }
-.lp-hero__grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-  gap: clamp(2rem, 5vw, 4.5rem);
-  align-items: center;
-}
-.lp-hero__copy { max-width: 560px; }
+.lp-hero__inner { max-width: 780px; margin: 0 auto; text-align: center; }
 .lp-hero__title {
-  font-size: clamp(2.375rem, 4.9vw, 3.75rem);
+  font-size: clamp(2.375rem, 5.6vw, 3.75rem);
   line-height: 1.04;
   letter-spacing: var(--tracking-display);
   font-weight: var(--weight-display);
-  margin: 0 0 1rem;
+  margin: 0 0 1.25rem;
 }
 .lp-hero__title em { font-style: italic; color: var(--primary); }
 .lp-hero__lede {
   font-size: var(--text-lead);
   color: var(--text-secondary);
   line-height: 1.65;
-  max-width: 460px;
-  margin: 0 0 1.5rem;
+  max-width: 580px;
+  margin: 0 auto 1.75rem;
 }
-.lp-hero__actions { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.lp-hero__actions { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2rem; justify-content: center; }
+.lp-hero__trust { justify-content: center; }
 .btn.lp-hero__cta {
   font-size: 1rem;
   padding: 0.8125rem 1.55rem;
@@ -732,161 +727,9 @@ html.has-reveal-observer [data-reveal].revealed {
   justify-content: center;
   gap: 0.5rem;
 }
-@media (max-width: 900px) {
-  .lp-hero__grid { grid-template-columns: 1fr; gap: 2.25rem; }
-  .lp-hero__copy { max-width: 620px; }
-  .lp-hero__lede { max-width: none; }
-}
 @media (max-width: 560px) {
   .lp-hero__title { font-size: clamp(2.125rem, 9.5vw, 2.75rem); }
   .btn.lp-hero__cta { flex: 1 1 100%; }
-}
-
-/* ---- Live store demo, inside browser chrome ----
-   Deliberately a dark storefront: it reads as a screen showing the product,
-   not as another cream marketing panel. The palette is Elegance's. */
-.lp-demo {
-  position: relative;
-  isolation: isolate;
-  width: 100%;
-  max-width: 520px;
-  margin-left: auto;
-}
-.lp-demo::before {
-  content: '';
-  position: absolute;
-  inset: 8% -8% -10% -8%;
-  z-index: -1;
-  background: radial-gradient(58% 58% at 68% 32%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 72%);
-  pointer-events: none;
-}
-.lp-demo__frame {
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: #0a0a0a;
-  overflow: hidden;
-  box-shadow: 0 34px 70px -42px rgba(0, 0, 0, 0.6), 0 2px 10px rgba(0, 0, 0, 0.08);
-  transition: transform 0.4s ease, box-shadow 0.4s ease;
-}
-.lp-demo:hover .lp-demo__frame {
-  transform: translateY(-4px);
-  box-shadow: 0 44px 80px -42px rgba(0, 0, 0, 0.65), 0 2px 10px rgba(0, 0, 0, 0.08);
-}
-.lp-demo__bar {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  padding: 0.5rem 0.75rem;
-  background: #121110;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-.lp-demo__dots { display: flex; gap: 4px; flex-shrink: 0; }
-.lp-demo__dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, 0.18); }
-.lp-demo__url {
-  font-size: 0.625rem;
-  color: rgba(250, 250, 250, 0.55);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-  padding: 3px 10px;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.lp-demo__viewport { padding: 0.75rem; background: #0a0a0a; color: #fafafa; }
-.lp-demo__site {
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: #0a0a0a;
-}
-.lp-demo__nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.65rem 0.85rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-.lp-demo__brand {
-  font-family: var(--font-display);
-  font-size: 0.8125rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: #fafafa;
-}
-.lp-demo__links { display: flex; gap: 0.7rem; font-size: 0.5rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(250, 250, 250, 0.5); }
-.lp-demo__links i { font-style: normal; }
-.lp-demo__hero { position: relative; aspect-ratio: 16 / 9; background: linear-gradient(135deg, #1b1811, #0c0b09); }
-.lp-demo__hero img { object-fit: cover; }
-.lp-demo__hero::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(10, 10, 10, 0) 38%, rgba(10, 10, 10, 0.82) 100%);
-}
-.lp-demo__herotext {
-  position: absolute;
-  left: 0.85rem;
-  right: 0.85rem;
-  bottom: 0.75rem;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-.lp-demo__herotext span { font-size: 0.5rem; letter-spacing: 0.18em; text-transform: uppercase; color: #d4a843; }
-.lp-demo__herotext strong { font-family: var(--font-display); font-size: 0.9375rem; font-weight: 500; line-height: 1.2; color: #fafafa; }
-.lp-demo__herotext em { font-style: normal; font-size: 0.5625rem; color: rgba(250, 250, 250, 0.62); }
-.lp-demo__grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
-  padding: 0.7rem 0.85rem 0.9rem;
-}
-.lp-demo__tile { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.lp-demo__thumb {
-  position: relative;
-  aspect-ratio: 1 / 1;
-  border-radius: 6px;
-  overflow: hidden;
-  background: #161513;
-  margin-bottom: 3px;
-}
-.lp-demo__thumb img { object-fit: cover; }
-.lp-demo__tile span {
-  font-size: 0.5625rem;
-  line-height: 1.35;
-  color: #fafafa;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.lp-demo__tile em { font-style: normal; font-size: 0.5rem; color: rgba(250, 250, 250, 0.52); }
-.lp-demo__caption {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  margin-top: 0.8rem;
-  font-size: 0.8125rem;
-  color: var(--text-secondary);
-}
-.lp-demo__link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-weight: 600;
-  color: var(--text);
-  text-decoration: none;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 1px;
-}
-.lp-demo__link:hover { color: var(--primary); border-color: var(--primary); }
-@media (max-width: 900px) {
-  .lp-demo { margin: 0 auto; max-width: 540px; }
 }
 
 /* ---- Template previews (drawn from the real template palettes) ----
